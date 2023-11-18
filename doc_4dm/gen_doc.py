@@ -3,6 +3,7 @@
 import sys
 import os
 import re
+import json
 
 
 def print_usage():
@@ -22,6 +23,9 @@ class API:
     def __repr__(self) -> str:
         return "API({}, {}, {})".format(self.name, self.description, self.id)
 
+    def toJSON(self):
+        return self.__dict__
+
 
 def is_id_line(line):
     """
@@ -40,22 +44,33 @@ def get_id_manual(line):
     return result.group(1)
 
 
+def format_names(names):
+    return [re.sub(r"\s+", " ", name.replace(",", ", ")) for name in names]
+
+
 def parse_manual(lines):
     """
     Parses the manual lines into API objects.
     """
-    result: dict[str, API] = {}
+    result = {}
     state = None
-    name = ""
+    # name is an array to handle overloads
+    names: list[str] = []
     description = ""
     id = ""
+    # sometimes signatures span over multiple lines, when this flag is true, the
+    # signature is complete
     for line in lines:
         if line == "Name\n":
             state = "Name"
             continue
 
         if state == "Name" and line != "Description\n":
-            name = name + line
+            trimmed_line = line.replace("\n", "")
+            if trimmed_line == "":
+                continue
+
+            names.append(trimmed_line)
             continue
 
         if line == "Description\n":
@@ -70,13 +85,22 @@ def parse_manual(lines):
             if id is None:
                 continue
 
-            name = name.replace("\n", "")
             description = description.replace(
                 "\n", "").replace(".", ". ").strip()
-            api = API(name, description, id)
+
+            joined_names = " ".join(names)
+            names = []
+            func_start_indexes = [match.start(0) for match in re.finditer(
+                r"\w+ \w+\(", joined_names)]
+            for start_idx in func_start_indexes:
+                end_idx = joined_names.find(")", start_idx)
+                names.append(joined_names[start_idx:end_idx+1])
+
+            names = format_names(names)
+            api = {"names": names, "description": description, "id": id}
             result[id] = api
             state = ""
-            name = ""
+            names = []
             description = ""
             continue
 
@@ -152,8 +176,14 @@ for prototype_line in prototype_lines:
         continue
 
 
+def print_stderr(line):
+    print(line, file=sys.stderr)
+
+
 if len(no_doc_warnings) > 0:
-    print("completed with {} warnings:".format(len(no_doc_warnings)))
-    print("    documentation not found:")
+    print_stderr("completed with {} warnings:".format(len(no_doc_warnings)))
+    print_stderr("    documentation not found:")
     for warning in no_doc_warnings:
-        print("        {}".format(warning))
+        print_stderr("        {}".format(warning))
+
+print(json.dumps(manual))
