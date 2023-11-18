@@ -29,82 +29,17 @@
   },
   "815": {
     "names": [
-      "void Destroy_on_exit( )"
+      "void Destroy_on_exit()"
     ],
     "description": "Destroy current macro console panel when exit the program.",
     "id": "815"
   },
   "816": {
     "names": [
-      "void Retain_on_exit( )"
+      "void Retain_on_exit()"
     ],
     "description": "Retain current macro console panel on the screen after exit the macro.",
     "id": "816"
-  },
-  "192": {
-    "names": [],
-    "description": "",
-    "id": "192"
-  },
-  "193": {
-    "names": [],
-    "description": "",
-    "id": "193"
-  },
-  "194": {
-    "names": [],
-    "description": "",
-    "id": "194"
-  },
-  "203": {
-    "names": [],
-    "description": "",
-    "id": "203"
-  },
-  "204": {
-    "names": [],
-    "description": "",
-    "id": "204"
-  },
-  "205": {
-    "names": [],
-    "description": "",
-    "id": "205"
-  },
-  "206": {
-    "names": [],
-    "description": "",
-    "id": "206"
-  },
-  "207": {
-    "names": [],
-    "description": "",
-    "id": "207"
-  },
-  "208": {
-    "names": [],
-    "description": "",
-    "id": "208"
-  },
-  "209": {
-    "names": [],
-    "description": "",
-    "id": "209"
-  },
-  "210": {
-    "names": [],
-    "description": "",
-    "id": "210"
-  },
-  "211": {
-    "names": [],
-    "description": "",
-    "id": "211"
-  },
-  "212": {
-    "names": [],
-    "description": "",
-    "id": "212"
   },
   "381": {
     "names": [
@@ -665,171 +600,6 @@
     ],
     "description": "For the Textstyle_Data textdata, get the font weight and return it in weight. For the list of allowable weights, go to Allowable WeightsA function return value of zero indicates weight was successfully returned.",
     "id": "2619"
-  },
-  "1": {
-    "names": [],
-    "description": "",
-    "id": "1"
-  },
-  "2": {
-    "names": [],
-    "description": "",
-    "id": "2"
-  },
-  "3": {
-    "names": [],
-    "description": "",
-    "id": "3"
-  },
-  "5": {
-    "names": [],
-    "description": "",
-    "id": "5"
-  },
-  "4": {
-    "names": [],
-    "description": "",
-    "id": "4"
-  },
-  "6": {
-    "names": [],
-    "description": "",
-    "id": "6"
-  },
-  "7": {
-    "names": [],
-    "description": "",
-    "id": "7"
-  },
-  "8": {
-    "names": [],
-    "description": "",
-    "id": "8"
-  },
-  "9": {
-    "names": [],
-    "description": "",
-    "id": "9"
-  },
-  "10": {
-    "names": [],
-    "description": "",
-    "id": "10"
-  },
-  "11": {
-    "names": [],
-    "description": "",
-    "id": "11"
-  },
-  "12": {
-    "names": [],
-    "description": "",
-    "id": "12"
-  },
-  "13": {
-    "names": [],
-    "description": "",
-    "id": "13"
-  },
-  "14": {
-    "names": [],
-    "description": "",
-    "id": "14"
-  },
-  "15": {
-    "names": [],
-    "description": "",
-    "id": "15"
-  },
-  "16": {
-    "names": [],
-    "description": "",
-    "id": "16"
-  },
-  "17": {
-    "names": [],
-    "description": "",
-    "id": "17"
-  },
-  "18": {
-    "names": [],
-    "description": "",
-    "id": "18"
-  },
-  "330": {
-    "names": [],
-    "description": "",
-    "id": "330"
-  },
-  "19": {
-    "names": [],
-    "description": "",
-    "id": "19"
-  },
-  "20": {
-    "names": [],
-    "description": "",
-    "id": "20"
-  },
-  "3951": {
-    "names": [],
-    "description": "",
-    "id": "3951"
-  },
-  "3952": {
-    "names": [],
-    "description": "",
-    "id": "3952"
-  },
-  "3953": {
-    "names": [],
-    "description": "",
-    "id": "3953"
-  },
-  "3954": {
-    "names": [],
-    "description": "",
-    "id": "3954"
-  },
-  "3955": {
-    "names": [],
-    "description": "",
-    "id": "3955"
-  },
-  "3956": {
-    "names": [],
-    "description": "",
-    "id": "3956"
-  },
-  "3957": {
-    "names": [],
-    "description": "",
-    "id": "3957"
-  },
-  "3958": {
-    "names": [],
-    "description": "",
-    "id": "3958"
-  },
-  "3959": {
-    "names": [],
-    "description": "",
-    "id": "3959"
-  },
-  "3960": {
-    "names": [],
-    "description": "",
-    "id": "3960"
-  },
-  "3961": {
-    "names": [],
-    "description": "",
-    "id": "3961"
-  },
-  "3962": {
-    "names": [],
-    "description": "",
-    "id": "3962"
   },
   "1900": {
     "names": [
@@ -4460,11 +4230,6 @@
     "description": "Write out information about the Project attributes to the Output Window. A function return value of zero indicates the function was successful.",
     "id": "1383"
   },
-  "1384": {
-    "names": [],
-    "description": "Write out even more information about the Project attributes to the Output Window. A function return value of zero indicates the function was successful.",
-    "id": "1384"
-  },
   "1385": {
     "names": [
       "Integer Get_project_number_of_attributes(Integer &no_atts)"
@@ -7164,11 +6929,6 @@
     "description": "For the super string Element elt, define whether the pipe/culvert dimension Att_Diameter_Arrayis used or removed. See Pipe/Culvert Dimensions for information on the Pipe/Culvert dimensions or 5. 38. 1 SuperString Dimensionsfor information on all dimensions. If use is 1, the dimension Att_Diameter_Array is set.  That is, each pipe segment can have adifferent diameter and thickness (V10). If use is 0, the dimension is removed. Note if any other pipe/culvert dimensions exist (besides Att_Pipe_Justify), there is no change tothe super string and this calls return a non-zero value. This function has the new name for V10 onwards.  The old call will still work. A return value of 0 indicates the function call was successful.",
     "id": "714"
   },
-  "715": {
-    "names": [],
-    "description": "Query whether the pipe/culvert dimension Att_Diameter_Array exists for the super string elt. See Pipe/Culvert Dimensions for information on the Pipe/Culvert dimensions or 5. 38. 1 SuperString Dimensionsfor information on all dimensions. use is returned as 1 if the dimension exists. use is returned as 0 if the dimension doesn’t exist. This function has the new name for V10 onwards.  The old call will still work. A return value of 0 indicates the function call was successful.",
-    "id": "715"
-  },
   "1247": {
     "names": [
       "Integer Set_super_use_culvert(Element super, Integer use)"
@@ -7280,11 +7040,6 @@
     ],
     "description": "For the Element super of type Super which has culvert width and heights for each segment(i. e. the pipe/culvert dimension flag Att_Culvert_Array has been set), then for segment numberseg:if internal_width_height is returned as 1 then the culvert internal width is returned in w andthe internal height returned in h. if internal_width_height is not returned as 1 then the culvert external width is returned in wand the external height returned in h. The left thickness is returned in left_thickness, right thickness in right_thickness, top thicknessin top_thickness and bottom thickness in bottom_thickness. See Pipe/Culvert Dimensions for information on the Pipe/Culvert dimensions or 5. 38. 1 SuperSuper String ElementPage 431\f12d Model Programming Language ManualString Dimensionsfor information on all dimensions. If the Element super is not of type Super, or the dimension is not allocated, this call fails and anon-zero function value is returned. A return value of 0 indicates the function call was successfulNote - Get_super_use_segment_culvert can be called to make sure it is a variable segmentculvert string.",
     "id": "2652"
-  },
-  "706": {
-    "names": [],
-    "description": "For the Element super of type Super which is a constant diameter pipe string (i. e.  thedimension flag Att_Diameter_Value has been set and Att_Diameter_Array has not been set), setthe diameter to diameter. See Pipe/Culvert Dimensions for information on the Pipe/Culvert dimensions or 5. 38. 1 SuperString Dimensionsfor information on all dimensions. If the Element super is not of type Super, or the dimension is not allocated, this call fails and anon-zero function value is returned. Note - Get_super_use_pipe can be called to make sure it is constant diameter pipe string. This function has the new name for V10 onwards.  The old call will still work. A return value of 0 indicates the function call was successful.",
-    "id": "706"
   },
   "707": {
     "names": [
@@ -8780,11 +8535,6 @@
     "description": "Query whether the dimension Att_Hole_Value exists for the super string super. See Hole Dimension for information on hole dimensions or 5. 38. 1 Super String Dimensionsforinformation on all dimensions. use is returned as 1 if the dimension exists. use is returned as 0 if the dimension doesn’t exist. A return value of 0 indicates the function call was successful.",
     "id": "1457"
   },
-  "1460": {
-    "names": [],
-    "description": "Add the Element hole as a hole to the super Element super. The operation will fail if super already belongs to a model and a non-zero return value returned. So if an existing string in a model is to be used as a hole, the string must be copied and the copyused as the hole. A return value of zero indicates the function call was successful.",
-    "id": "1460"
-  },
   "1458": {
     "names": [
       "Integer Get_super_holes(Element super, Integer &numberless)"
@@ -9401,82 +9151,12 @@
     "description": "Checks to see if for segment number seg, an attribute of name att_name exists, and if it does,return the number of the attribute as num. A non-zero function return value indicates the attribute exists and its number was successfullyreturned. A zero function return value indicates the attribute does not exist, or the number was notsuccessfully returned. Warning - this is the opposite to most 12dPL function return values",
     "id": "1063"
   },
-  "1064": {
-    "names": [],
-    "description": "For the Element super, delete the attribute with the name att_name for segment number seg. If the Element super is not of type Super or super has no segment number seg, then a non-zeroreturn code is returned. A function return value of zero indicates the attribute was deleted.",
-    "id": "1064"
-  },
-  "1065": {
-    "names": [],
-    "description": "For the Element super, delete the attribute with attribute number att_no for segment numberseg. If the Element super is not of type Super or super has no segment number seg, then a non-zeroreturn code is returned. A function return value of zero indicates the attribute was deleted.",
-    "id": "1065"
-  },
-  "1066": {
-    "names": [],
-    "description": "Delete all the attributes of segment number seg of the super string super. A function return value of zero indicates the function was successful.",
-    "id": "1066"
-  },
-  "1067": {
-    "names": [],
-    "description": "Write out information to the Output Window about the segment attributes for segment numberseg of the super string super. A function return value of zero indicates the function was successful.",
-    "id": "1067"
-  },
-  "1068": {
-    "names": [],
-    "description": "Write out even more information to the Output Window about the segment attributes for segmentnumber seg of the super string super. A function return value of zero indicates the function was successful.",
-    "id": "1068"
-  },
   "1069": {
     "names": [
       "Integer Get_super_segment_number_of_attributes(Element elt, Integer seg, Integer &no_atts)"
     ],
     "description": "Get the total number of attributes for segment number seg of the Element super. The total number of attributes is returned in Integer no_atts. A function return value of zero indicates the number of attributes was successfully returned. A return value of 0 indicates the function call was successful.",
     "id": "1069"
-  },
-  "1070": {
-    "names": [],
-    "description": "For the Element super, get the attribute called att_name for the segment number seg and returnthe attribute value in text.  The attribute must be of type Text. Super String ElementPage 539\f12d Model Programming Language ManualIf the Element is not of type Super or the attribute is not of type Text then a non-zero return valueis returned. A function return value of zero indicates the attribute value is successfully returned. Note - the Get_attribute_type call can be used to get the type of the attribute called att_name.",
-    "id": "1070"
-  },
-  "1071": {
-    "names": [],
-    "description": "For the Element super, get the attribute called att_name for the segment number seg and returnthe attribute value in int.  The attribute must be of type Integer. If the Element is not of type Super or the attribute is not of type Integer then a non-zero returnvalue is returned. A function return value of zero indicates the attribute value is successfully returned. Note - the Get_attribute_type call can be used to get the type of the attribute called att_name.",
-    "id": "1071"
-  },
-  "1072": {
-    "names": [],
-    "description": "For the Element super, get the attribute called att_name for the segment number seg and returnthe attribute value in real.  The attribute must be of type Real. If the Element is not of type Super or the attribute is not of type Real then a non-zero return valueis returned. A function return value of zero indicates the attribute value is successfully returned. Note - the Get_attribute_type call can be used to get the type of the attribute called att_name.",
-    "id": "1072"
-  },
-  "1073": {
-    "names": [],
-    "description": "For the Element super, get the attribute number att_no for the segment number seg and returnthe attribute value in txt.  The attribute must be of type Text. If the Element is not of type Super or the attribute is not of type Text then a non-zero return valueis returned. A function return value of zero indicates the attribute value is successfully returned. Note - the Get_attribute_type call can be used to get the type of the attribute called att_no. Page 540Super String Element\fChapter 5 12dPL Library Calls",
-    "id": "1073"
-  },
-  "1074": {
-    "names": [],
-    "description": "For the Element super, get the attribute number att_no for the segment number seg and returnthe attribute value in int.  The attribute must be of type Integer. If the Element is not of type Super or the attribute is not of type Integer then a non-zero returnvalue is returned. A function return value of zero indicates the attribute value is successfully returned. Note - the Get_attribute_type call can be used to get the type of the attribute called att_no.",
-    "id": "1074"
-  },
-  "1075": {
-    "names": [],
-    "description": "For the Element super, get the attribute number att_no for the segment number seg and returnthe attribute value in real.  The attribute must be of type Real. If the Element is not of type Super or the attribute is not of type Real then a non-zero return valueis returned. A function return value of zero indicates the attribute value is successfully returned. Note - the Get_attribute_type call can be used to get the type of the attribute called att_no.",
-    "id": "1075"
-  },
-  "1076": {
-    "names": [],
-    "description": "For segment number seg of the Element super, get the name of the attribute number att_no. The attribute name is returned in txt. A function return value of zero indicates the attribute name was successfully returned.",
-    "id": "1076"
-  },
-  "1077": {
-    "names": [],
-    "description": "For segment number seg of the Element super, get the type of the attribute with nameatt_name.  The attribute type is returned in att_type. A function return value of zero indicates the attribute type was successfully returned.",
-    "id": "1077"
-  },
-  "1078": {
-    "names": [],
-    "description": "For segment number seg of the Element super, get the type of the attribute with attributenumber att_no.  The attribute type is returned in att_type. A function return value of zero indicates the attribute type was successfully returned.",
-    "id": "1078"
   },
   "1079": {
     "names": [
@@ -9491,31 +9171,6 @@
     ],
     "description": "For segment number seg of the Element super, get the length (in bytes) of the attribute numberatt_no.  The attribute length is returned in att_len. A function return value of zero indicates the attribute length was successfully returned. Note - the length is useful for attributes of type Text and Binary.",
     "id": "1080"
-  },
-  "1081": {
-    "names": [],
-    "description": "For the Element super and on the segment number seg,if the attribute called att_name does not exist then create it as type Text and give it the valuetxt. if the attribute called att_name does exist and it is type Text, then set its value to txt. If the attribute exists and is not of type Text then a non-zero return value is returned. A function return value of zero indicates the attribute value is successfully set. Note - the Get_attribute_type call can be used to get the type of the attribute called att_name.",
-    "id": "1081"
-  },
-  "1082": {
-    "names": [],
-    "description": "For the Element super and on the segment number seg,if the attribute called att_name does not exist then create it as type Integer and give it the valueint. if the attribute called att_name does exist and it is type Integer, then set its value to int. If the attribute exists and is not of type Integer then a non-zero return value is returned. A function return value of zero indicates the attribute value is successfully set. Note - the Get_attribute_type call can be used to get the type of the attribute called att_name.",
-    "id": "1082"
-  },
-  "1083": {
-    "names": [],
-    "description": "For the Element super and on the segment number seg,if the attribute called att_name does not exist then create it as type Real and give it the valuereal. if the attribute called att_name does exist and it is type Real, then set its value to real. If the attribute exists and is not of type Real then a non-zero return value is returned. A function return value of zero indicates the attribute value is successfully set. Note - the Get_attribute_type call can be used to get the type of the attribute called att_name.",
-    "id": "1083"
-  },
-  "1084": {
-    "names": [],
-    "description": "For the Element super and on the segment number seg,if the attribute with number att_no does not exist then create it as type Text and give it thevalue txt. Super String ElementPage 543\f12d Model Programming Language Manualif the attribute with number att_no does exist and it is type Text, then set its value to txt. If the attribute exists and is not of type Text then a non-zero return value is returned. A function return value of zero indicates the attribute value is successfully set. Note - the Get_attribute_type call can be used to get the type of the attribute number att_no.",
-    "id": "1084"
-  },
-  "1085": {
-    "names": [],
-    "description": "For the Element super and on the segment number seg,if the attribute with number att_no does not exist then create it as type Integer and give it thevalue int. if the attribute with number att_no does exist and it is type Integer, then set its value to int. If the attribute exists and is not of type Integer then a non-zero return value is returned. A function return value of zero indicates the attribute value is successfully set. Note - the Get_attribute_type call can be used to get the type of the attribute number att_no.",
-    "id": "1085"
   },
   "1086": {
     "names": [
@@ -9796,21 +9451,6 @@
     ],
     "description": "This call sets the current alignment style of the super alignment super_alignment to be the stylenamed style. This call returns 0 if it succeeds and non zero if it fails.",
     "id": "2806"
-  },
-  "3053": {
-    "names": [],
-    "description": "Check if horizontal parts of a super alignment super_alignment is validOutput value valid: 0 not valid, 1 validA return value of zero indicates the function call was successful.",
-    "id": "3053"
-  },
-  "3054": {
-    "names": [],
-    "description": "Check if vertical parts of a super alignment super_alignment is validOutput value valid: 0 not valid, 1 validSuper Alignment String ElementPage 579\f12d Model Programming Language ManualA return value of zero indicates the function call was successful.",
-    "id": "3054"
-  },
-  "3055": {
-    "names": [],
-    "description": "Check if a super alignment super_alignment is validOutput value valid: 0 not valid, 1 validA return value of zero indicates the function call was successful.",
-    "id": "3055"
   },
   "1898": {
     "names": [
@@ -11779,11 +11419,6 @@
     "description": "For the Element drain, get the attribute with number att_no for the pit number pit and return theattribute value in real.  The attribute must be of type Real. If the Element is not of type Drainage or the attribute is not of type Real then a non-zero returnvalue is returned. A function return value of zero indicates the attribute value is successfully returned. Note - the Get_drainage_pit_attribute_type call can be used to get the type of the attribute withattribute number att_no.",
     "id": "1000"
   },
-  "999": {
-    "names": [],
-    "description": "For the Element drain, get the attribute with number att_no for the pit number pit and return theattribute value in int.  The attribute must be of type Integer. If the Element is not of type Drainage or the attribute is not of type Integer then a non-zero returnvalue is returned. A function return value of zero indicates the attribute value is successfully returned. Note - the Get_drainage_pit_attribute_type call can be used to get the type of the attribute withattribute number att_no.",
-    "id": "999"
-  },
   "998": {
     "names": [
       "Integer Get_drainage_pit_attribute(Element drain, Integer pit, Integer att_no, Text &txt)"
@@ -11811,11 +11446,6 @@
     ],
     "description": "For the Element drain, get the attribute called att_name for the pit number pit and return theattribute value in txt.  The attribute must be of type Text. If the Element is not of type Drainage or the attribute is not of type Text then a non-zero returnvalue is returned. A function return value of zero indicates the attribute value is successfully returned. Note - the Get_drainage_pit_attribute_type call can be used to get the type of the attribute calledatt_name. Drainage String ElementPage 669\f12d Model Programming Language Manual",
     "id": "995"
-  },
-  "996": {
-    "names": [],
-    "description": "For the Element drain, get the attribute called att_name for the pit number pit and return theattribute value in int.  The attribute must be of type Integer. If the Element is not of type Drainage or the attribute is not of type Integer then a non-zero returnvalue is returned. A function return value of zero indicates the attribute value is successfully returned. Note - the Get_drainage_pit_attribute_type call can be used to get the type of the attribute calledatt_name.",
-    "id": "996"
   },
   "2022": {
     "names": [
@@ -11928,41 +11558,6 @@
     ],
     "description": "For the Element drain and on the pit number pit,if the attribute called att_name does not exist then create it as type Text and give it the valuetxt. if the attribute called att_name does exist and it is type Text, then set its value to txt. If the attribute exists and is not of type Text then a non-zero return value is returned. A function return value of zero indicates the attribute value is successfully set. Note - the Get_drainage_pit_attribute_type call can be used to get the type of the attribute calledatt_name.",
     "id": "1006"
-  },
-  "987": {
-    "names": [],
-    "description": "For the Element drain, checks to see if an attribute with the name att_name exists for pitnumber pit. A non-zero function return value indicates that an attribute of that name exists. If the attribute does not exist, or drain is not of type Drainage, or there is no pit number pit, azero function return value is returned. Warning - this is the opposite of most 12dPL function return values.",
-    "id": "987"
-  },
-  "988": {
-    "names": [],
-    "description": "For the Element drain, checks to see if an attribute with the name att_name exists for pitnumber pit. If the attribute of that name exists, its attribute number is returned is no. A non-zero function return value indicates that an attribute of that name exists. If the attribute does not exist, or drain is not of type Drainage, or there is no pit number pit, azero function return value is returned. Warning - this is the opposite of most 12dPL function return values.",
-    "id": "988"
-  },
-  "989": {
-    "names": [],
-    "description": "For the Element drain, delete the attribute with the name att_name for pit number pit. If the Element drain is not of type Drainage or drain has no pit number pit, then a non-zeroreturn code is returned. A function return value of zero indicates the attribute was deleted.",
-    "id": "989"
-  },
-  "990": {
-    "names": [],
-    "description": "For the Element drain, delete the attribute with attribute number att_no for pit number pit. If the Element drain is not of type Drainage or drain has no pit number pit, then a non-zeroreturn code is returned. A function return value of zero indicates the attribute was deleted.",
-    "id": "990"
-  },
-  "991": {
-    "names": [],
-    "description": "Delete all the attributes of pit number pit of the drainage string drain. A function return value of zero indicates the function was successful.",
-    "id": "991"
-  },
-  "992": {
-    "names": [],
-    "description": "Write out information to the Output Window about the pit attributes for pit number pit of thedrainage string drain. A function return value of zero indicates the function was successful.",
-    "id": "992"
-  },
-  "993": {
-    "names": [],
-    "description": "Write out even more information to the Output Window about the pit attributes for pit number pitof the drainage string drain. A function return value of zero indicates the function was successful. Page 676Drainage String Element\fChapter 5 12dPL Library Calls",
-    "id": "993"
   },
   "536": {
     "names": [
@@ -12321,87 +11916,12 @@
     "description": "For the Element drain and on the pipe number pipe, if the attribute number att_no exists and itis of type Attributes, then its value is set to att. If there is no attribute with number att_no then nothing can be done and a non-zero return codeis returned. If the attribute of number att_no exists and is not of type Attributes then a non-zero return valueis returned. A function return value of zero indicates the attribute value is successfully set. Note - the Get_attribute_type call can be used to get the type of the attribute called att_no.",
     "id": "2041"
   },
-  "1020": {
-    "names": [],
-    "description": "For the Element drain, get the attribute called att_name for the pipe number pipe and return theattribute value in txt.  The attribute must be of type Text. If the Element is not of type Drainage or the attribute is not of type Text then a non-zero returnvalue is returned. A function return value of zero indicates the attribute value is successfully returned. Note - the Get_drainage_pipe_attribute_type call can be used to get the type of the attributecalled att_name.",
-    "id": "1020"
-  },
-  "1021": {
-    "names": [],
-    "description": "For the Element drain, get the attribute called att_name for the pipe number pipe and return theattribute value in int.  The attribute must be of type Integer. If the Element is not of type Drainage or the attribute is not of type Integer then a non-zero returnvalue is returned. A function return value of zero indicates the attribute value is successfully returned. Note - the Get_drainage_pipe_attribute_type call can be used to get the type of the attributecalled att_name.",
-    "id": "1021"
-  },
-  "1022": {
-    "names": [],
-    "description": "For the Element drain, get the attribute called att_name for the pipe number pipe and return theattribute value in real.  The attribute must be of type Real. If the Element is not of type Drainage or the attribute is not of type Real then a non-zero returnvalue is returned. A function return value of zero indicates the attribute value is successfully returned. Note - the Get_drainage_pipe_attribute_type call can be used to get the type of the attributecalled att_name.",
-    "id": "1022"
-  },
-  "1023": {
-    "names": [],
-    "description": "For the Element drain, get the attribute with number att_no for the pipe number pipe and returnthe attribute value in txt.  The attribute must be of type Text. If the Element is not of type Drainage or the attribute is not of type Text then a non-zero returnvalue is returned. A function return value of zero indicates the attribute value is successfully returned. Note - the Get_drainage_pipe_attribute_type call can be used to get the type of the attribute withattribute number att_no.",
-    "id": "1023"
-  },
-  "1024": {
-    "names": [],
-    "description": "For the Element drain, get the attribute with number att_no for the pipe number pipe and returnthe attribute value in int.  The attribute must be of type Integer. If the Element is not of type Drainage or the attribute is not of type Integer then a non-zero returnvalue is returned. A function return value of zero indicates the attribute value is successfully returned. Note - the Get_drainage_pipe_attribute_type call can be used to get the type of the attribute withattribute number att_no.",
-    "id": "1024"
-  },
-  "1025": {
-    "names": [],
-    "description": "For the Element drain, get the attribute with number att_no for the pipe number pipe and returnthe attribute value in real.  The attribute must be of type Real. If the Element is not of type Drainage or the attribute is not of type Real then a non-zero returnvalue is returned. A function return value of zero indicates the attribute value is successfully returned. Note - the Get_drainage_pipe_attribute_type call can be used to get the type of the attribute withattribute number att_no.",
-    "id": "1025"
-  },
-  "1012": {
-    "names": [],
-    "description": "For the Element drain, checks to see if an attribute with the name att_name exists for pipenumber pipe. A non-zero function return value indicates that an attribute of that name exists. If the attribute does not exist, or drain is not of type Drainage, or there is no pipe number pipe, azero function return value is returned. Warning this is the opposite of most 12dPL function return values.",
-    "id": "1012"
-  },
-  "1013": {
-    "names": [],
-    "description": "For the Element drain, checks to see if an attribute with the name att_name exists for pipenumber pipe. If the attribute of that name exists, its attribute number is returned is no. A non-zero function return value indicates that an attribute of that name exists. If the attribute does not exist, or drain is not of type Drainage, or there is no pipe number pipe, azero function return value is returned. Warning this is the opposite of most 12dPL function return values.",
-    "id": "1013"
-  },
-  "1014": {
-    "names": [],
-    "description": "For the Element drain, delete the attribute with the name att_name for pipe number pipe. If the Element drain is not of type Drainage or drain has no pipe number pipe, then a non-zeroreturn code is returned. A function return value of zero indicates the attribute was deleted.",
-    "id": "1014"
-  },
-  "1015": {
-    "names": [],
-    "description": "For the Element drain, delete the attribute with attribute number att_no for pipe number pipe. If the Element drain is not of type Drainage or drain has no pipe number pipe, then a non-zeroreturn code is returned. Page 698Drainage String Element\fChapter 5 12dPL Library CallsA function return value of zero indicates the attribute was deleted.",
-    "id": "1015"
-  },
-  "1016": {
-    "names": [],
-    "description": "Delete all the attributes of pipe number pipe of the drainage string drain. A function return value of zero indicates the function was successful.",
-    "id": "1016"
-  },
-  "1017": {
-    "names": [],
-    "description": "Write out information to the Output Window about the pipe attributes for pipe number pipe of thedrainage string drain. A function return value of zero indicates the function was successful.",
-    "id": "1017"
-  },
-  "1018": {
-    "names": [],
-    "description": "Write out even more information to the Output Window about the pipe attributes for pipe numberpipe of the drainage string drain. A function return value of zero indicates the function was successful.",
-    "id": "1018"
-  },
   "1019": {
     "names": [
       "Integer Get_drainage_pipe_number_of_attributes(Element drain, Integer pipe, Integer &no_atts)"
     ],
     "description": "Get the total number of attributes for pipe number pipe of the Element drain. The total number of attributes is returned in Integer no_atts. A function return value of zero indicates the number of attributes was successfully returned.",
     "id": "1019"
-  },
-  "1029": {
-    "names": [],
-    "description": "For pipe number pipe of the Element drain, get the length (in bytes) of the attribute with thename att_name.  The attribute length is returned in att_len. A function return value of zero indicates the attribute length was successfully returned. Note - the length is useful for user attributes of type Text and Binary.",
-    "id": "1029"
-  },
-  "1030": {
-    "names": [],
-    "description": "For pipe number pipe of the Element drain, get the length (in bytes) of the attribute numberatt_no.  The attribute length is returned in att_len. A function return value of zero indicates the attribute length was successfully returned. Note - the length is useful for attributes of type Text and Binary.",
-    "id": "1030"
   },
   "1026": {
     "names": [
@@ -12424,27 +11944,12 @@
     "description": "For pipe number pipe of the Element drain, get the type of the attribute with attribute numberatt_no.  The attribute type is returned in att_type. A function return value of zero indicates the attribute type was successfully returned.",
     "id": "1028"
   },
-  "1031": {
-    "names": [],
-    "description": "For the Element drain and on the pipe number pipe,if the attribute called att_name does not exist then create it as type Text and give it the valuetxt. if the attribute called att_name does exist and it is type Text, then set its value to txt. If the attribute exists and is not of type Text then a non-zero return value is returned. A function return value of zero indicates the attribute value is successfully set. Note - the Get_drainage_pipe_attribute_type call can be used to get the type of the attributecalled att_name.",
-    "id": "1031"
-  },
-  "1032": {
-    "names": [],
-    "description": "For the Element drain and on the pipe number pipe,if the attribute called att_name does not exist then create it as type Integer and give it the valueint. if the attribute called att_name does exist and it is type Integer, then set its value to int. If the attribute exists and is not of type Integer then a non-zero return value is returned. A function return value of zero indicates the attribute value is successfully set. Note - the Get_drainage_pipe_attribute_type call can be used to get the type of the attributecalled att_name.",
-    "id": "1032"
-  },
   "1033": {
     "names": [
       "Integer Set_drainage_pipe_attribute(Element drain, Integer pipe, Text att_name, Real real)"
     ],
     "description": "Drainage String ElementPage 701\f12d Model Programming Language ManualFor the Element drain and on the pipe number pipe,if the attribute called att_name does not exist then create it as type Real and give it the valuereal. if the attribute called att_name does exist and it is type Real, then set its value to real. If the attribute exists and is not of type Real then a non-zero return value is returned. A function return value of zero indicates the attribute value is successfully set. Note - the Get_drainage_pipe_attribute_type call can be used to get the type of the attributecalled att_name.",
     "id": "1033"
-  },
-  "1034": {
-    "names": [],
-    "description": "For the Element drain and on the pipe number pipe,if the attribute with number att_no does not exist then create it as type Text and give it thevalue txt. if the attribute with number att_no does exist and it is type Text, then set its value to txt. If the attribute exists and is not of type Text then a non-zero return value is returned. A function return value of zero indicates the attribute value is successfully set. Note - the Get_drainage_pipe_attribute_type call can be used to get the type of the attributenumber att_no.",
-    "id": "1034"
   },
   "1035": {
     "names": [
@@ -16103,11 +15608,6 @@
     ],
     "description": "XMLPage 869\f12d Model Programming Language ManualCount the number of attributes attributes_count of an XML_Node nodeOutput the list of attribute names to namesOutput the list of attribute values to valuesA return value of zero indicates the function call was successful.",
     "id": "3057"
-  },
-  "3058": {
-    "names": [],
-    "description": "Get the Text name and Text value of an attribute with given index attribute_index of anXML_Node nodeReturn 0 for success -2 if attribute index is out of bound.",
-    "id": "3058"
   },
   "2951": {
     "names": [
@@ -19792,11 +19292,6 @@
     "description": "For the Tree_Page parent, find the n’th child page of parent and return the page as child_page. A function return value of zero indicates a child page was successfully returned.",
     "id": "2579"
   },
-  "2580": {
-    "names": [],
-    "description": "This call checks if the given child Tree_Page child belongs to the parent Tree_Page parent. A non-zero function return value indicates that child is a child page of parent. Warning this is the opposite of most 12dPL function return values",
-    "id": "2580"
-  },
   "2581": {
     "names": [
       "Integer Has_widget(Tree_Page page, Widget w)"
@@ -22762,11 +22257,6 @@
     "description": "Write out information about the macro attributes to the Output Window. A function return value of zero indicates the function was successful.",
     "id": "7536"
   },
-  "7537": {
-    "names": [],
-    "description": "Write out even more information about the macro attributes to the Output Window. A function return value of zero indicates the function was successful. Internal Macro CallsPage 1301\f12d Model Programming Language Manual",
-    "id": "7537"
-  },
   "3852": {
     "names": [
       "Integer Get_macro_number_of_attributes(Integer &no_atts)"
@@ -22892,11 +22382,6 @@
     ],
     "description": "Create a new chain parameter created object using given chain parameter file pvf_file. A function return value of zero indicates all the call were successful.",
     "id": "7600"
-  },
-  "7601": {
-    "names": [],
-    "description": "Null Chain_Parameters ch",
-    "id": "7601"
   },
   "7602": {
     "names": [

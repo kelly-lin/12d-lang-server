@@ -45,7 +45,12 @@ def get_id_manual(line):
 
 
 def format_names(names):
-    return [re.sub(r"\s+", " ", name.replace(",", ", ")) for name in names]
+    # correct spacing for commas
+    result = [re.sub(r"\s+", " ", name.replace(",", ", ")) for name in names]
+    # remove spaces in functions with no parameters
+    result = [re.sub(r"\(\s+\)", "()", name) for name in result]
+
+    return result
 
 
 def parse_manual(lines):
@@ -97,8 +102,9 @@ def parse_manual(lines):
                 names.append(joined_names[start_idx:end_idx+1])
 
             names = format_names(names)
-            api = {"names": names, "description": description, "id": id}
-            result[id] = api
+            if len(names) > 0:
+                result[id] = {"names": names, "description": description, "id": id}
+
             state = ""
             names = []
             description = ""
