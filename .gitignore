@@ -7,6 +7,10 @@
 *.dll
 *.so
 *.dylib
+*.bkp
+*.dtmp
+
+12d-lang-server
 
 # Test binary, built with `go test -c`
 *.test
