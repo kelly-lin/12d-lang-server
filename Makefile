@@ -9,7 +9,7 @@ build:
 
 .PHONY:
 log:
-	tail -f /tmp/12d-lang-server.log
+	tail -f -n 30 /tmp/12d-lang-server.log
 
 .PHONY:
 test:
