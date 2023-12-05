@@ -174,9 +174,10 @@ type CompletionResult struct {
 }
 
 type CompletionItem struct {
-	Label string `json:"label"`
-	Kind  *uint  `json:"kind,omitempty"`
-	Data  any    `json:"data,omitempty"`
+	Label         string `json:"label"`
+	Kind          *uint  `json:"kind,omitempty"`
+	Data          any    `json:"data,omitempty"`
+	Documentation string `json:"documentation,omitempty"`
 }
 
 type ServerCapabilities struct {
@@ -220,8 +221,22 @@ func HandleMessage(msg RequestMessage) (ResponseMessage, error) {
 		}, nil
 
 	case "textDocument/completion":
-		items := []CompletionItem{{Label: "Typescript"}, {Label: "Javascript"}}
+		items := []CompletionItem{
+			{Label: "Typescript", Documentation: "typescript docs"},
+			{Label: "Javascript", Documentation: "javascript docs"},
+		}
 		resultBytes, err := json.Marshal(items)
+		if err != nil {
+			return ResponseMessage{}, err
+		}
+		return ResponseMessage{
+			ID:     msg.ID,
+			Result: (*json.RawMessage)(&resultBytes),
+		}, nil
+
+	case "completionItem/resolve":
+		item := CompletionItem{Label: "Typescript", Documentation: "typescript docs"}
+		resultBytes, err := json.Marshal(item)
 		if err != nil {
 			return ResponseMessage{}, err
 		}
