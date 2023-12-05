@@ -3,16 +3,20 @@ package main
 import (
 	"bufio"
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"io"
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
 )
 
 const logFilepath = "/tmp/12d-lang-server.log"
 const contentLengthHeaderName = "Content-Length"
+
+var ErrUnhandledMethod = errors.New("unhandled method")
 
 var debugFlag = flag.Bool("d", false, "enable debugging features")
 var helpFlag = flag.Bool("h", false, "show help")
@@ -41,9 +45,21 @@ func main() {
 		}
 		log(fmt.Sprintf("method: %s\n", msg.Method))
 		log(fmt.Sprintf("message id: %d\n", msg.ID))
+		params, err := msg.Params.MarshalJSON()
+		if err != nil {
+			log(fmt.Sprintf("could not unmarshal params: %s\n", err))
+		}
+		log(fmt.Sprintf("params: %s\n", params))
+
+		// Notifications do not reply to the client.
+		if IsNotification(msg.Method) {
+			log("is notification, skipping...")
+			continue
+		}
+
 		content, err := HandleMessage(msg)
 		if err != nil {
-			log(fmt.Sprintf("could not handle message %v: %s", msg, err))
+			log(fmt.Sprintf("could not handle message %v: %s\n", msg, err))
 			continue
 		}
 		contentBytes, err := json.Marshal(content)
@@ -51,10 +67,10 @@ func main() {
 			log("could not marshal contents")
 			continue
 		}
-		res := fmt.Sprintf("%s: %d\r\n\r\n%s", contentLengthHeaderName, len(contentBytes), contentBytes)
-		log(fmt.Sprintf("resBytes: \n%s", res))
+		res := ToProtocol(contentBytes)
+		log(fmt.Sprintf("response: \n%s", res))
 		if _, err = fmt.Fprint(os.Stdout, res); err != nil {
-			log(fmt.Sprintf("could not handle message %v: %s", msg, err))
+			log(fmt.Sprintf("could print message to output %v: %s\n", msg, err))
 			continue
 		}
 	}
@@ -152,7 +168,24 @@ type InitializeResult struct {
 	ServerInfo   *ServerInfo        `json:"serverInfo,omitempty"`
 }
 
-type ServerCapabilities struct{}
+type CompletionResult struct {
+	IsIncomplete bool             `json:"isIncomplete"`
+	Items        []CompletionItem `json:"items"`
+}
+
+type CompletionItem struct {
+	Label string `json:"label"`
+	Kind  *uint  `json:"kind,omitempty"`
+	Data  any    `json:"data,omitempty"`
+}
+
+type ServerCapabilities struct {
+	CompletionProvider *CompletionOptions `json:"completionProvider,omitempty"`
+}
+
+type CompletionOptions struct {
+	ResolveProvider *bool `json:"resolveProvider,omitempty"`
+}
 
 type ServerInfo struct {
 	Name    string  `json:"name"`
@@ -161,20 +194,58 @@ type ServerInfo struct {
 
 // Handles the request message and returns the response.
 func HandleMessage(msg RequestMessage) (ResponseMessage, error) {
+	// Not going to handle any LSP version specific methods for now.
+	if matched, _ := regexp.MatchString(`^\$\/.+`, msg.Method); matched {
+		err := ResponseError{Code: -32601, Message: "unhandled method"}
+		return ResponseMessage{ID: msg.ID, Error: &err}, nil
+	}
+
 	switch msg.Method {
 	case "initialize":
-		res := InitializeResult{}
-		result, err := json.Marshal(res)
+		resolveProvider := true
+		result := InitializeResult{
+			Capabilities: ServerCapabilities{
+				CompletionProvider: &CompletionOptions{
+					ResolveProvider: &resolveProvider,
+				},
+			},
+		}
+		resultBytes, err := json.Marshal(result)
 		if err != nil {
-			return ResponseMessage{}, nil
+			return ResponseMessage{}, err
 		}
 		return ResponseMessage{
 			ID:     msg.ID,
-			Result: (*json.RawMessage)(&result),
+			Result: (*json.RawMessage)(&resultBytes),
+		}, nil
+
+	case "textDocument/completion":
+		items := []CompletionItem{{Label: "Typescript"}, {Label: "Javascript"}}
+		resultBytes, err := json.Marshal(items)
+		if err != nil {
+			return ResponseMessage{}, err
+		}
+		return ResponseMessage{
+			ID:     msg.ID,
+			Result: (*json.RawMessage)(&resultBytes),
 		}, nil
 
 	default:
 		// Unhandled method.
-		return ResponseMessage{}, nil
+		return ResponseMessage{}, ErrUnhandledMethod
+	}
+}
+
+func ToProtocol(contentBytes []byte) string {
+	return fmt.Sprintf("%s: %d\r\n\r\n%s", contentLengthHeaderName, len(contentBytes), contentBytes)
+}
+
+func IsNotification(method string) bool {
+	switch method {
+	case "initialized":
+		return true
+
+	default:
+		return false
 	}
 }
