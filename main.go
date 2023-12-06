@@ -38,18 +38,16 @@ func main() {
 
 	reader := bufio.NewReader(os.Stdin)
 	for {
-		log("\n\nreading message...\n")
+		log("\n------------------------------------------------------------------\nreading message...\n")
 		msg, err := ReadMessage(reader)
 		if err != nil {
 			log(err.Error())
 		}
-		log(fmt.Sprintf("method: %s\n", msg.Method))
-		log(fmt.Sprintf("message id: %d\n", msg.ID))
-		params, err := msg.Params.MarshalJSON()
-		if err != nil {
-			log(fmt.Sprintf("could not unmarshal params: %s\n", err))
+		logMsg(log, msg)
+
+		if msg.Method == "exit" {
+			os.Exit(0)
 		}
-		log(fmt.Sprintf("params: %s\n", params))
 
 		// Notifications do not reply to the client.
 		if IsNotification(msg.Method) {
@@ -74,6 +72,16 @@ func main() {
 			continue
 		}
 	}
+}
+
+func logMsg(log func(msg string), msg RequestMessage) {
+	log(fmt.Sprintf("method: %s\n", msg.Method))
+	log(fmt.Sprintf("message id: %d\n", msg.ID))
+	params, err := msg.Params.MarshalJSON()
+	if err != nil {
+		log(fmt.Sprintf("could not unmarshal params: %s\n", err))
+	}
+	log(fmt.Sprintf("params: %s\n", params))
 }
 
 // TODO: Hand rolling this for now, ideally we should use cobra-cli.
@@ -152,9 +160,9 @@ type RequestMessage struct {
 }
 
 type ResponseMessage struct {
-	ID     int64            `json:"id"`
-	Result *json.RawMessage `json:"result,omitempty"`
-	Error  *ResponseError   `json:"error,omitempty"`
+	ID     int64           `json:"id"`
+	Result json.RawMessage `json:"result,omitempty"`
+	Error  *ResponseError  `json:"error,omitempty"`
 }
 
 type ResponseError struct {
@@ -174,10 +182,15 @@ type CompletionResult struct {
 }
 
 type CompletionItem struct {
-	Label         string `json:"label"`
-	Kind          *uint  `json:"kind,omitempty"`
-	Data          any    `json:"data,omitempty"`
-	Documentation string `json:"documentation,omitempty"`
+	Label         string        `json:"label"`
+	Kind          *uint         `json:"kind,omitempty"`
+	Data          any           `json:"data,omitempty"`
+	Documentation MarkUpContent `json:"documentation,omitempty"`
+}
+
+type MarkUpContent struct {
+	Kind  string `json:"kind"`
+	Value string `json:"value"`
 }
 
 type ServerCapabilities struct {
@@ -201,6 +214,8 @@ func HandleMessage(msg RequestMessage) (ResponseMessage, error) {
 		return ResponseMessage{ID: msg.ID, Error: &err}, nil
 	}
 
+	doc := MarkUpContent{Kind: "markdown", Value: "```cpp\n" + `Integer Get_command_argument(Integer i, Text &argument)` + "\n```\nGet the number of tokens in the program command-line. The number of tokens is returned as the function return value. For some example code, see 5. 4 Command Line-Arguments."}
+
 	switch msg.Method {
 	case "initialize":
 		resolveProvider := true
@@ -217,13 +232,13 @@ func HandleMessage(msg RequestMessage) (ResponseMessage, error) {
 		}
 		return ResponseMessage{
 			ID:     msg.ID,
-			Result: (*json.RawMessage)(&resultBytes),
+			Result: json.RawMessage(resultBytes),
 		}, nil
 
 	case "textDocument/completion":
 		items := []CompletionItem{
-			{Label: "Typescript", Documentation: "typescript docs"},
-			{Label: "Javascript", Documentation: "javascript docs"},
+			{Label: "Typescript", Documentation: doc},
+			{Label: "Javascript", Documentation: doc},
 		}
 		resultBytes, err := json.Marshal(items)
 		if err != nil {
@@ -231,18 +246,26 @@ func HandleMessage(msg RequestMessage) (ResponseMessage, error) {
 		}
 		return ResponseMessage{
 			ID:     msg.ID,
-			Result: (*json.RawMessage)(&resultBytes),
+			Result: json.RawMessage(resultBytes),
 		}, nil
 
 	case "completionItem/resolve":
-		item := CompletionItem{Label: "Typescript", Documentation: "typescript docs"}
+		item := CompletionItem{
+			Label:         "Typescript",
+			Documentation: doc}
 		resultBytes, err := json.Marshal(item)
 		if err != nil {
 			return ResponseMessage{}, err
 		}
 		return ResponseMessage{
 			ID:     msg.ID,
-			Result: (*json.RawMessage)(&resultBytes),
+			Result: json.RawMessage(resultBytes),
+		}, nil
+
+	case "shutdown":
+		return ResponseMessage{
+			ID:     msg.ID,
+			Result: []byte("null"),
 		}, nil
 
 	default:
