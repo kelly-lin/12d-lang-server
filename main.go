@@ -214,7 +214,7 @@ func HandleMessage(msg RequestMessage) (ResponseMessage, error) {
 		return ResponseMessage{ID: msg.ID, Error: &err}, nil
 	}
 
-	doc := MarkUpContent{Kind: "markdown", Value: "```cpp\n" + `Integer Get_command_argument(Integer i, Text &argument)` + "\n```\nGet the number of tokens in the program command-line. The number of tokens is returned as the function return value. For some example code, see 5. 4 Command Line-Arguments."}
+	doc := MarkUpContent{Kind: "markdown", Value: "`Integer Get_command_argument(Integer i, Text &argument, Integer i, Text &argument, Integer i, Text &argument)`" + "\n\nGet the number of tokens in the program command-line. The number of tokens is returned as the function return value. For some example code, see 5. 4 Command Line-Arguments."}
 
 	switch msg.Method {
 	case "initialize":
@@ -239,6 +239,7 @@ func HandleMessage(msg RequestMessage) (ResponseMessage, error) {
 		items := []CompletionItem{
 			{Label: "Typescript", Documentation: doc},
 			{Label: "Javascript", Documentation: doc},
+			{Label: "Boo", Documentation: doc},
 		}
 		resultBytes, err := json.Marshal(items)
 		if err != nil {
