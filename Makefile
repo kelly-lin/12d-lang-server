@@ -5,7 +5,6 @@ run:
 .PHONY:
 build:
 	go build
-	go build -o ./client ./cmd/client
 
 .PHONY:
 log:
