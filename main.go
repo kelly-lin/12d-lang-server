@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"flag"
 	"fmt"
 	"os"
@@ -10,8 +9,6 @@ import (
 )
 
 const logFilepath = "/tmp/12d-lang-server.log"
-
-var ErrUnhandledMethod = errors.New("unhandled method")
 
 var debugFlag = flag.Bool("d", false, "enable debugging features")
 var helpFlag = flag.Bool("h", false, "show help")
