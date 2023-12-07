@@ -11,6 +11,8 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+
+    "github.com/kelly-lin/12d-lang-server/protocol"
 )
 
 const logFilepath = "/tmp/12d-lang-server.log"
@@ -74,7 +76,7 @@ func main() {
 	}
 }
 
-func logMsg(log func(msg string), msg RequestMessage) {
+func logMsg(log func(msg string), msg protocol.RequestMessage) {
 	log(fmt.Sprintf("method: %s\n", msg.Method))
 	log(fmt.Sprintf("message id: %d\n", msg.ID))
 	params, err := msg.Params.MarshalJSON()
@@ -114,8 +116,8 @@ func setupLogging(debugModeEnabled bool) (func(msg string), func(), error) {
 	return log, cleanUp, nil
 }
 
-func ReadMessage(r *bufio.Reader) (RequestMessage, error) {
-	message := RequestMessage{}
+func ReadMessage(r *bufio.Reader) (protocol.RequestMessage, error) {
+	message := protocol.RequestMessage{}
 	var contentLength int64
 	for {
 		line, err := r.ReadString('\n')
@@ -152,126 +154,72 @@ func ReadMessage(r *bufio.Reader) (RequestMessage, error) {
 	return message, nil
 }
 
-type RequestMessage struct {
-	JSONRPC string          `json:"jsonrpc"`
-	ID      int64           `json:"id"`
-	Method  string          `json:"method"`
-	Params  json.RawMessage `json:"params"`
-}
-
-type ResponseMessage struct {
-	ID     int64           `json:"id"`
-	Result json.RawMessage `json:"result,omitempty"`
-	Error  *ResponseError  `json:"error,omitempty"`
-}
-
-type ResponseError struct {
-	Code    int    `json:"code"`
-	Message string `json:"message"`
-	Data    any    `json:"data,omitempty"`
-}
-
-type InitializeResult struct {
-	Capabilities ServerCapabilities `json:"capabilities"`
-	ServerInfo   *ServerInfo        `json:"serverInfo,omitempty"`
-}
-
-type CompletionResult struct {
-	IsIncomplete bool             `json:"isIncomplete"`
-	Items        []CompletionItem `json:"items"`
-}
-
-type CompletionItem struct {
-	Label         string        `json:"label"`
-	Kind          *uint         `json:"kind,omitempty"`
-	Data          any           `json:"data,omitempty"`
-	Documentation MarkUpContent `json:"documentation,omitempty"`
-}
-
-type MarkUpContent struct {
-	Kind  string `json:"kind"`
-	Value string `json:"value"`
-}
-
-type ServerCapabilities struct {
-	CompletionProvider *CompletionOptions `json:"completionProvider,omitempty"`
-}
-
-type CompletionOptions struct {
-	ResolveProvider *bool `json:"resolveProvider,omitempty"`
-}
-
-type ServerInfo struct {
-	Name    string  `json:"name"`
-	Version *string `json:"version"`
-}
-
 // Handles the request message and returns the response.
-func HandleMessage(msg RequestMessage) (ResponseMessage, error) {
+func HandleMessage(msg protocol.RequestMessage) (protocol.ResponseMessage, error) {
 	// Not going to handle any LSP version specific methods for now.
 	if matched, _ := regexp.MatchString(`^\$\/.+`, msg.Method); matched {
-		err := ResponseError{Code: -32601, Message: "unhandled method"}
-		return ResponseMessage{ID: msg.ID, Error: &err}, nil
+		err := protocol.ResponseError{Code: -32601, Message: "unhandled method"}
+		return protocol.ResponseMessage{ID: msg.ID, Error: &err}, nil
 	}
 
-	doc := MarkUpContent{Kind: "markdown", Value: "`Integer Get_command_argument(Integer i, Text &argument, Integer i, Text &argument, Integer i, Text &argument)`" + "\n\nGet the number of tokens in the program command-line. The number of tokens is returned as the function return value. For some example code, see 5. 4 Command Line-Arguments."}
+	doc := protocol.MarkUpContent{Kind: "markdown", Value: "`Integer Get_command_argument(Integer i, Text &argument, Integer i, Text &argument, Integer i, Text &argument)`" + "\n\nGet the number of tokens in the program command-line. The number of tokens is returned as the function return value. For some example code, see 5. 4 Command Line-Arguments."}
 
 	switch msg.Method {
 	case "initialize":
 		resolveProvider := true
-		result := InitializeResult{
-			Capabilities: ServerCapabilities{
-				CompletionProvider: &CompletionOptions{
+		result := protocol.InitializeResult{
+			Capabilities: protocol.ServerCapabilities{
+				CompletionProvider: &protocol.CompletionOptions{
 					ResolveProvider: &resolveProvider,
 				},
 			},
 		}
 		resultBytes, err := json.Marshal(result)
 		if err != nil {
-			return ResponseMessage{}, err
+			return protocol.ResponseMessage{}, err
 		}
-		return ResponseMessage{
+		return protocol.ResponseMessage{
 			ID:     msg.ID,
 			Result: json.RawMessage(resultBytes),
 		}, nil
 
 	case "textDocument/completion":
-		items := []CompletionItem{
+		items := []protocol.CompletionItem{
 			{Label: "Typescript", Documentation: doc},
 			{Label: "Javascript", Documentation: doc},
 			{Label: "Boo", Documentation: doc},
 		}
 		resultBytes, err := json.Marshal(items)
 		if err != nil {
-			return ResponseMessage{}, err
+			return protocol.ResponseMessage{}, err
 		}
-		return ResponseMessage{
+		return protocol.ResponseMessage{
 			ID:     msg.ID,
 			Result: json.RawMessage(resultBytes),
 		}, nil
 
 	case "completionItem/resolve":
-		item := CompletionItem{
+		item := protocol.CompletionItem{
 			Label:         "Typescript",
 			Documentation: doc}
 		resultBytes, err := json.Marshal(item)
 		if err != nil {
-			return ResponseMessage{}, err
+			return protocol.ResponseMessage{}, err
 		}
-		return ResponseMessage{
+		return protocol.ResponseMessage{
 			ID:     msg.ID,
 			Result: json.RawMessage(resultBytes),
 		}, nil
 
 	case "shutdown":
-		return ResponseMessage{
+		return protocol.ResponseMessage{
 			ID:     msg.ID,
 			Result: []byte("null"),
 		}, nil
 
 	default:
 		// Unhandled method.
-		return ResponseMessage{}, ErrUnhandledMethod
+		return protocol.ResponseMessage{}, ErrUnhandledMethod
 	}
 }
 
