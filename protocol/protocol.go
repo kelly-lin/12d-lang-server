@@ -2,6 +2,93 @@ package protocol
 
 import "encoding/json"
 
+const (
+	TextCompletionItemKind          = "text"
+	MethodCompletionItemKind        = "method"
+	FunctionCompletionItemKind      = "function"
+	ConstructorCompletionItemKind   = "constructor"
+	FieldCompletionItemKind         = "field"
+	VariableCompletionItemKind      = "variable"
+	ClassCompletionItemKind         = "class"
+	InterfaceCompletionItemKind     = "interface"
+	ModuleCompletionItemKind        = "module"
+	PropertyCompletionItemKind      = "property"
+	UnitCompletionItemKind          = "unit"
+	ValueCompletionItemKind         = "value"
+	EnumCompletionItemKind          = "enum"
+	KeywordCompletionItemKind       = "keyword"
+	SnippetCompletionItemKind       = "snippet"
+	ColorCompletionItemKind         = "color"
+	FileCompletionItemKind          = "file"
+	ReferenceCompletionItemKind     = "reference"
+	FolderCompletionItemKind        = "folder"
+	EnumMemberCompletionItemKind    = "enummember"
+	ConstantCompletionItemKind      = "constant"
+	StructCompletionItemKind        = "struct"
+	EventCompletionItemKind         = "event"
+	OperatorCompletionItemKind      = "operator"
+	TypeParameterCompletionItemKind = "typeparameter"
+)
+
+func GetCompletionItemKind(kind string) *uint {
+	var result uint
+	switch kind {
+	case "text":
+		result = 1
+	case "method":
+		result = 2
+	case "function":
+		result = 3
+	case "constructor":
+		result = 4
+	case "field":
+		result = 5
+	case "variable":
+		result = 6
+	case "class":
+		result = 7
+	case "interface":
+		result = 8
+	case "module":
+		result = 9
+	case "property":
+		result = 10
+	case "unit":
+		result = 11
+	case "value":
+		result = 12
+	case "enum":
+		result = 13
+	case "keyword":
+		result = 14
+	case "snippet":
+		result = 15
+	case "color":
+		result = 16
+	case "file":
+		result = 17
+	case "reference":
+		result = 18
+	case "folder":
+		result = 19
+	case "enummember":
+		result = 20
+	case "constant":
+		result = 21
+	case "struct":
+		result = 22
+	case "event":
+		result = 23
+	case "operator":
+		result = 24
+	case "typeparameter":
+		result = 25
+	default:
+		result = 1
+	}
+	return &result
+}
+
 type RequestMessage struct {
 	JSONRPC string          `json:"jsonrpc"`
 	ID      int64           `json:"id"`
