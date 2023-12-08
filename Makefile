@@ -13,3 +13,7 @@ log:
 .PHONY:
 test:
 	go test ./...
+
+.PHONY:
+fmt:
+	go fmt ./...
