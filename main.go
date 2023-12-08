@@ -28,7 +28,7 @@ func main() {
 	}
 	defer cleanUp()
 
-    server.Serve(os.Stdin, os.Stdout, log)
+	server.Serve(os.Stdin, os.Stdout, log)
 }
 
 // TODO: Hand rolling this for now, ideally we should use cobra-cli.
