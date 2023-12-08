@@ -18,6 +18,8 @@ const contentLengthHeaderName = "Content-Length"
 
 var ErrUnhandledMethod = errors.New("unhandled method")
 
+// Serve reads JSONRPC from the reader, processes the message and responds by
+// writing to writer.
 func Serve(rd io.Reader, w io.Writer, logger func(msg string)) {
     reader := bufio.NewReader(rd)
 	for {
