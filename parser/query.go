@@ -38,6 +38,7 @@ func FindFuncDefinition(identifier string, source []byte) (Range, error) {
 	qc := sitter.NewQueryCursor()
 	qc.Exec(q, n)
 	var result Range
+    found := false
 	for {
 		m, ok := qc.NextMatch()
 		if !ok {
@@ -52,7 +53,12 @@ func FindFuncDefinition(identifier string, source []byte) (Range, error) {
 			end := c.Node.EndPoint()
 			result.End.Row = end.Row
             result.End.Column = end.Column
+            found = true
+            break
 		}
+        if found {
+            break
+        }
 	}
     return result, nil
 }
