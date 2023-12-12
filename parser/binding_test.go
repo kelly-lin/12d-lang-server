@@ -1,11 +1,11 @@
-package binding_test
+package parser_test
 
 import (
 	"context"
 	"testing"
 
-	sitter "github.com/smacker/go-tree-sitter"
 	pl12d "github.com/kelly-lin/12d-lang-server/parser"
+	sitter "github.com/smacker/go-tree-sitter"
 	"github.com/stretchr/testify/assert"
 )
 

@@ -1,4 +1,4 @@
-package binding
+package parser
 
 //#include "parser.h"
 //TSLanguage *tree_sitter_pl12d();
