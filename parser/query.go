@@ -10,16 +10,23 @@ import (
 
 var ErrNoDefinition = errors.New("no definition found")
 
+// 0 indexed row and column indices of a position in a document.
 type Point struct {
 	Row    uint32
 	Column uint32
 }
 
+// Range has a 0 indexed start and end point specifying the row and column
+// index of the range. Similar to ranges in programming languages, the end
+// point is exclusive.
 type Range struct {
 	Start Point
 	End   Point
 }
 
+// Find the definition of the function with the provided identifier inside
+// source and returns the range if it was found. If the definition was not found
+// then error ErrNoDefintion will be returned.
 func FindFuncDefinition(identifier string, source []byte) (Range, error) {
 	n, err := sitter.ParseCtx(context.Background(), source, GetLanguage())
 	if err != nil {
