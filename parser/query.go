@@ -2,10 +2,13 @@ package parser
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	sitter "github.com/smacker/go-tree-sitter"
 )
+
+var ErrNoDefinition = errors.New("no definition found")
 
 type Point struct {
 	Row    uint32
@@ -19,9 +22,9 @@ type Range struct {
 
 func FindFuncDefinition(identifier string, source []byte) (Range, error) {
 	n, err := sitter.ParseCtx(context.Background(), source, GetLanguage())
-    if err != nil {
-        return Range{}, err
-    }
+	if err != nil {
+		return Range{}, err
+	}
 
 	pattern := fmt.Sprintf(`(
     (source_file 
@@ -31,14 +34,14 @@ func FindFuncDefinition(identifier string, source []byte) (Range, error) {
     (#eq? @name %q)
 )`, identifier)
 	q, err := sitter.NewQuery([]byte(pattern), GetLanguage())
-    if err != nil {
-        return Range{}, err
-    }
+	if err != nil {
+		return Range{}, err
+	}
 
 	qc := sitter.NewQueryCursor()
 	qc.Exec(q, n)
 	var result Range
-    found := false
+	found := false
 	for {
 		m, ok := qc.NextMatch()
 		if !ok {
@@ -52,13 +55,16 @@ func FindFuncDefinition(identifier string, source []byte) (Range, error) {
 
 			end := c.Node.EndPoint()
 			result.End.Row = end.Row
-            result.End.Column = end.Column
-            found = true
-            break
+			result.End.Column = end.Column
+			found = true
+			break
 		}
-        if found {
-            break
-        }
+		if found {
+			break
+		}
 	}
-    return result, nil
+	if !found {
+		return Range{}, ErrNoDefinition
+	}
+	return result, nil
 }

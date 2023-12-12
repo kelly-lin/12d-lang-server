@@ -18,7 +18,7 @@ Integer Foo() {}`)
 		}
 		got, err := parser.FindFuncDefinition("Foo", sourceCode)
 		assert.NoError(err)
-		assert.Equal(want, got, "expected ranges to be equal but was not")
+		assert.Equal(want, got)
 	})
 
 	t.Run("should return the first definition", func(t *testing.T) {
@@ -31,6 +31,15 @@ Integer Foo() {}`)
 		}
 		got, err := parser.FindFuncDefinition("Foo", sourceCode)
 		assert.NoError(err)
-		assert.Equal(want, got, "expected ranges to be equal but was not")
+		assert.Equal(want, got)
+	})
+
+	t.Run("should error when no match is found", func(t *testing.T) {
+		assert := assert.New(t)
+		sourceCode := []byte(`void main() {}`)
+		want := parser.Range{}
+		got, err := parser.FindFuncDefinition("Foo", sourceCode)
+		assert.Equal(want, got)
+		assert.EqualError(err, parser.ErrNoDefinition.Error())
 	})
 }
