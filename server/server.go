@@ -18,42 +18,52 @@ const contentLengthHeaderName = "Content-Length"
 
 var ErrUnhandledMethod = errors.New("unhandled method")
 
+type Server struct {
+	documents map[string]string
+	logger    func(msg string)
+}
+
+func NewServer(logger func(msg string)) Server {
+	return Server{
+		documents: make(map[string]string),
+		logger:    logger,
+	}
+}
+
 // Serve reads JSONRPC from the reader, processes the message and responds by
 // writing to writer.
-func Serve(rd io.Reader, w io.Writer, logger func(msg string)) {
+func (s *Server) Serve(rd io.Reader, w io.Writer) {
 	reader := bufio.NewReader(rd)
 	for {
-		logger("\n------------------------------------------------------------------\nreading message...\n")
+		s.logger("\n------------------------------------------------------------------\nreading message...\n")
 		msg, err := ReadMessage(reader)
 		if err != nil {
-			logger(err.Error())
+			s.logger(err.Error())
 		}
-		logMsg(logger, msg)
+		logMsg(s.logger, msg)
 
 		if msg.Method == "exit" {
 			os.Exit(0)
 		}
 
-		// Notifications do not reply to the client.
-		if IsNotification(msg.Method) {
-			logger("is notification, skipping...")
+		content, numBytes, err := s.handleMessage(msg)
+		if err != nil {
+			s.logger(fmt.Sprintf("could not handle message %v: %s\n", msg, err))
 			continue
 		}
-
-		content, err := HandleMessage(msg)
-		if err != nil {
-			logger(fmt.Sprintf("could not handle message %v: %s\n", msg, err))
+		if numBytes == 0 {
+			s.logger("no bytes to reply, not responding")
 			continue
 		}
 		contentBytes, err := json.Marshal(content)
 		if err != nil {
-			logger("could not marshal contents")
+			s.logger("could not marshal contents")
 			continue
 		}
 		res := ToProtocol(contentBytes)
-		logger(fmt.Sprintf("response: \n%s", res))
+		s.logger(fmt.Sprintf("response: \n%s", res))
 		if _, err = fmt.Fprint(os.Stdout, res); err != nil {
-			logger(fmt.Sprintf("could print message to output %v: %s\n", msg, err))
+			s.logger(fmt.Sprintf("could print message to output %v: %s\n", msg, err))
 			continue
 		}
 	}
@@ -97,36 +107,43 @@ func ReadMessage(r *bufio.Reader) (protocol.RequestMessage, error) {
 	return message, nil
 }
 
-// Handles the request message and returns the response.
-func HandleMessage(msg protocol.RequestMessage) (protocol.ResponseMessage, error) {
+func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMessage, int, error) {
 	// Not going to handle any LSP version specific methods for now.
 	if matched, _ := regexp.MatchString(`^\$\/.+`, msg.Method); matched {
 		err := protocol.ResponseError{Code: -32601, Message: "unhandled method"}
-		return protocol.ResponseMessage{ID: msg.ID, Error: &err}, nil
+		return protocol.ResponseMessage{ID: msg.ID, Error: &err}, 0, nil
 	}
 
+	// TODO: stub documentation markdown, to extract this out to a formatting
+	// function.
 	doc := protocol.MarkUpContent{Kind: "markdown", Value: "`Integer Get_command_argument(Integer i, Text &argument, Integer i, Text &argument, Integer i, Text &argument)`" + "\n\nGet the number of tokens in the program command-line. The number of tokens is returned as the function return value. For some example code, see 5. 4 Command Line-Arguments."}
 
 	switch msg.Method {
 	case "initialize":
 		resolveProvider := true
+		definitionProvider := true
+		textDocumentSyncKind := protocol.TextDocumentSyncKindFull
 		result := protocol.InitializeResult{
 			Capabilities: protocol.ServerCapabilities{
 				CompletionProvider: &protocol.CompletionOptions{
 					ResolveProvider: &resolveProvider,
 				},
+				DefinitionProvider: &definitionProvider,
+				TextDocumentSync:   &textDocumentSyncKind,
 			},
 		}
 		resultBytes, err := json.Marshal(result)
 		if err != nil {
-			return protocol.ResponseMessage{}, err
+			return protocol.ResponseMessage{}, 0, err
 		}
 		return protocol.ResponseMessage{
 			ID:     msg.ID,
 			Result: json.RawMessage(resultBytes),
-		}, nil
+		}, len(resultBytes), nil
 
 	case "textDocument/completion":
+		// TODO: Below are stub completion items, to replace with proper
+		// completion items.
 		items := []protocol.CompletionItem{
 			{Label: "Typescript", Documentation: doc},
 			{Label: "Javascript", Documentation: doc},
@@ -134,12 +151,12 @@ func HandleMessage(msg protocol.RequestMessage) (protocol.ResponseMessage, error
 		}
 		resultBytes, err := json.Marshal(items)
 		if err != nil {
-			return protocol.ResponseMessage{}, err
+			return protocol.ResponseMessage{}, 0, err
 		}
 		return protocol.ResponseMessage{
 			ID:     msg.ID,
 			Result: json.RawMessage(resultBytes),
-		}, nil
+		}, len(resultBytes), nil
 
 	case "completionItem/resolve":
 		item := protocol.CompletionItem{
@@ -147,37 +164,41 @@ func HandleMessage(msg protocol.RequestMessage) (protocol.ResponseMessage, error
 			Documentation: doc}
 		resultBytes, err := json.Marshal(item)
 		if err != nil {
-			return protocol.ResponseMessage{}, err
+			return protocol.ResponseMessage{}, 0, err
 		}
 		return protocol.ResponseMessage{
 			ID:     msg.ID,
 			Result: json.RawMessage(resultBytes),
-		}, nil
+		}, 0, nil
 
 	case "shutdown":
+		resultBytes := []byte("null")
 		return protocol.ResponseMessage{
 			ID:     msg.ID,
-			Result: []byte("null"),
-		}, nil
+			Result: resultBytes,
+		}, len(resultBytes), nil
+
+	case "textDocument/didOpen":
+		var params protocol.DidOpenTextDocumentParams
+		if err := json.Unmarshal(msg.Params, &params); err != nil {
+			return protocol.ResponseMessage{}, 0, err
+		}
+		if params.TextDocument.LanguageID != "12dpl" {
+			return protocol.ResponseMessage{}, 0, fmt.Errorf("unhandled language %s, expected 12dpl", params.TextDocument.LanguageID)
+		}
+		s.documents[params.TextDocument.URI] = params.TextDocument.Text
+		return protocol.ResponseMessage{}, 0, nil
+
+	case "initialized":
+		return protocol.ResponseMessage{}, 0, nil
 
 	default:
-		// Unhandled method.
-		return protocol.ResponseMessage{}, ErrUnhandledMethod
+		return protocol.ResponseMessage{}, 0, ErrUnhandledMethod
 	}
 }
 
 func ToProtocol(contentBytes []byte) string {
 	return fmt.Sprintf("%s: %d\r\n\r\n%s", contentLengthHeaderName, len(contentBytes), contentBytes)
-}
-
-func IsNotification(method string) bool {
-	switch method {
-	case "initialized":
-		return true
-
-	default:
-		return false
-	}
 }
 
 func logMsg(log func(msg string), msg protocol.RequestMessage) {

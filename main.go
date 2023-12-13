@@ -28,7 +28,8 @@ func main() {
 	}
 	defer cleanUp()
 
-	server.Serve(os.Stdin, os.Stdout, log)
+	langServer := server.NewServer(log)
+	langServer.Serve(os.Stdin, os.Stdout)
 }
 
 // TODO: Hand rolling this for now, ideally we should use cobra-cli.

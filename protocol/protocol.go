@@ -30,6 +30,12 @@ const (
 	CompletionItemKindTypeParameter = "typeparameter"
 )
 
+const (
+	TextDocumentSyncKindNone        uint = 0
+	TextDocumentSyncKindFull        uint = 1
+	TextDocumentSyncKindIncremental uint = 2
+)
+
 func GetCompletionItemKind(kind string) *uint {
 	var result uint
 	switch kind {
@@ -133,6 +139,7 @@ type MarkUpContent struct {
 type ServerCapabilities struct {
 	CompletionProvider *CompletionOptions `json:"completionProvider,omitempty"`
 	DefinitionProvider *bool              `json:"definitionProvider,omitempty"`
+	TextDocumentSync   *uint              `json:"textDocumentSync,omitempty"`
 }
 
 type CompletionOptions struct {
@@ -142,4 +149,15 @@ type CompletionOptions struct {
 type ServerInfo struct {
 	Name    string  `json:"name"`
 	Version *string `json:"version"`
+}
+
+type DidOpenTextDocumentParams struct {
+	TextDocument TextDocumentItem `json:"textDocument"`
+}
+
+type TextDocumentItem struct {
+	URI        string `json:"uri"`
+	LanguageID string `json:"languageId"`
+	Version    int    `json:"version"`
+	Text       string `json:"text"`
 }
