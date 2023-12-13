@@ -3,31 +3,31 @@ package protocol
 import "encoding/json"
 
 const (
-	TextCompletionItemKind          = "text"
-	MethodCompletionItemKind        = "method"
-	FunctionCompletionItemKind      = "function"
-	ConstructorCompletionItemKind   = "constructor"
-	FieldCompletionItemKind         = "field"
-	VariableCompletionItemKind      = "variable"
-	ClassCompletionItemKind         = "class"
-	InterfaceCompletionItemKind     = "interface"
-	ModuleCompletionItemKind        = "module"
-	PropertyCompletionItemKind      = "property"
-	UnitCompletionItemKind          = "unit"
-	ValueCompletionItemKind         = "value"
-	EnumCompletionItemKind          = "enum"
-	KeywordCompletionItemKind       = "keyword"
-	SnippetCompletionItemKind       = "snippet"
-	ColorCompletionItemKind         = "color"
-	FileCompletionItemKind          = "file"
-	ReferenceCompletionItemKind     = "reference"
-	FolderCompletionItemKind        = "folder"
-	EnumMemberCompletionItemKind    = "enummember"
-	ConstantCompletionItemKind      = "constant"
-	StructCompletionItemKind        = "struct"
-	EventCompletionItemKind         = "event"
-	OperatorCompletionItemKind      = "operator"
-	TypeParameterCompletionItemKind = "typeparameter"
+	CompletionItemKindText          = "text"
+	CompletionItemKindMethod        = "method"
+	CompletionItemKindFunction      = "function"
+	CompletionItemKindConstructor   = "constructor"
+	CompletionItemKindField         = "field"
+	CompletionItemKindVariable      = "variable"
+	CompletionItemKindClass         = "class"
+	CompletionItemKindInterface     = "interface"
+	CompletionItemKindModule        = "module"
+	CompletionItemKindProperty      = "property"
+	CompletionItemKindUnit          = "unit"
+	CompletionItemKindValue         = "value"
+	CompletionItemKindEnum          = "enum"
+	CompletionItemKindKeyword       = "keyword"
+	CompletionItemKindSnippet       = "snippet"
+	CompletionItemKindColor         = "color"
+	CompletionItemKindFile          = "file"
+	CompletionItemKindReference     = "reference"
+	CompletionItemKindFolder        = "folder"
+	CompletionItemKindEnumMember    = "enummember"
+	CompletionItemKindConstant      = "constant"
+	CompletionItemKindStruct        = "struct"
+	CompletionItemKindEvent         = "event"
+	CompletionItemKindOperator      = "operator"
+	CompletionItemKindTypeParameter = "typeparameter"
 )
 
 func GetCompletionItemKind(kind string) *uint {
@@ -132,6 +132,7 @@ type MarkUpContent struct {
 
 type ServerCapabilities struct {
 	CompletionProvider *CompletionOptions `json:"completionProvider,omitempty"`
+	DefinitionProvider *bool              `json:"definitionProvider,omitempty"`
 }
 
 type CompletionOptions struct {
