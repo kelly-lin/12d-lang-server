@@ -43,7 +43,7 @@ func (s *Server) Serve(rd io.Reader, w io.Writer) {
 		if err != nil {
 			s.logger(err.Error())
 		}
-        s.logger(stringifyRequestMessage(msg))
+		s.logger(stringifyRequestMessage(msg))
 
 		if msg.Method == "exit" {
 			os.Exit(0)
@@ -128,17 +128,8 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 
 	switch msg.Method {
 	case "initialize":
-		resolveProvider := true
-		definitionProvider := true
-		textDocumentSyncKind := protocol.TextDocumentSyncKindFull
 		result := protocol.InitializeResult{
-			Capabilities: protocol.ServerCapabilities{
-				CompletionProvider: &protocol.CompletionOptions{
-					ResolveProvider: &resolveProvider,
-				},
-				DefinitionProvider: &definitionProvider,
-				TextDocumentSync:   &textDocumentSyncKind,
-			},
+			Capabilities: newServerCapabilities(),
 		}
 		resultBytes, err := json.Marshal(result)
 		if err != nil {
@@ -213,4 +204,18 @@ func toProtocol(contentBytes []byte) string {
 
 func stringifyRequestMessage(msg protocol.RequestMessage) string {
 	return fmt.Sprintf("message id: %d\nmethod: %s\nparams: %s\n", msg.ID, msg.Method, string(msg.Params))
+}
+
+func newServerCapabilities() protocol.ServerCapabilities {
+	resolveProvider := true
+	definitionProvider := true
+	textDocumentSyncKind := protocol.TextDocumentSyncKindFull
+    result := protocol.ServerCapabilities{
+		CompletionProvider: &protocol.CompletionOptions{
+			ResolveProvider: &resolveProvider,
+		},
+		DefinitionProvider: &definitionProvider,
+		TextDocumentSync:   &textDocumentSyncKind,
+	}
+	return result
 }
