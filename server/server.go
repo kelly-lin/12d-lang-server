@@ -16,18 +16,21 @@ import (
 
 const contentLengthHeaderName = "Content-Length"
 
+// Unhandled LSP method error.
 var ErrUnhandledMethod = errors.New("unhandled method")
 
-type Server struct {
-	documents map[string]string
-	logger    func(msg string)
-}
-
+// Creates a new language server.
 func NewServer(logger func(msg string)) Server {
 	return Server{
 		documents: make(map[string]string),
 		logger:    logger,
 	}
+}
+
+// Language server.
+type Server struct {
+	documents map[string]string
+	logger    func(msg string)
 }
 
 // Serve reads JSONRPC from the reader, processes the message and responds by
@@ -40,7 +43,7 @@ func (s *Server) Serve(rd io.Reader, w io.Writer) {
 		if err != nil {
 			s.logger(err.Error())
 		}
-		logMsg(s.logger, msg)
+        s.logger(stringifyRequestMessage(msg))
 
 		if msg.Method == "exit" {
 			os.Exit(0)
@@ -60,7 +63,7 @@ func (s *Server) Serve(rd io.Reader, w io.Writer) {
 			s.logger("could not marshal contents")
 			continue
 		}
-		res := ToProtocol(contentBytes)
+		res := toProtocol(contentBytes)
 		s.logger(fmt.Sprintf("response: \n%s", res))
 		if _, err = fmt.Fprint(os.Stdout, res); err != nil {
 			s.logger(fmt.Sprintf("could print message to output %v: %s\n", msg, err))
@@ -69,6 +72,8 @@ func (s *Server) Serve(rd io.Reader, w io.Writer) {
 	}
 }
 
+// Read LSP messages from the reader and return the unmarshalled request
+// message.
 func ReadMessage(r *bufio.Reader) (protocol.RequestMessage, error) {
 	message := protocol.RequestMessage{}
 	var contentLength int64
@@ -107,9 +112,11 @@ func ReadMessage(r *bufio.Reader) (protocol.RequestMessage, error) {
 	return message, nil
 }
 
+// Handles the request message and returns the response, number of bytes in the
+// response and error.
 func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMessage, int, error) {
 	// Not going to handle any LSP version specific methods (methods prefixed
-    // with "$") for now.
+	// with "$") for now.
 	if matched, _ := regexp.MatchString(`^\$\/.+`, msg.Method); matched {
 		err := protocol.ResponseError{Code: -32601, Message: "unhandled method"}
 		return protocol.ResponseMessage{ID: msg.ID, Error: &err}, 0, nil
@@ -198,16 +205,12 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 	}
 }
 
-func ToProtocol(contentBytes []byte) string {
+// Formats content into LSP format by adding in headers and field names ready
+// to send over the wire.
+func toProtocol(contentBytes []byte) string {
 	return fmt.Sprintf("%s: %d\r\n\r\n%s", contentLengthHeaderName, len(contentBytes), contentBytes)
 }
 
-func logMsg(log func(msg string), msg protocol.RequestMessage) {
-	log(fmt.Sprintf("method: %s\n", msg.Method))
-	log(fmt.Sprintf("message id: %d\n", msg.ID))
-	params, err := msg.Params.MarshalJSON()
-	if err != nil {
-		log(fmt.Sprintf("could not unmarshal params: %s\n", err))
-	}
-	log(fmt.Sprintf("params: %s\n", params))
+func stringifyRequestMessage(msg protocol.RequestMessage) string {
+	return fmt.Sprintf("message id: %d\nmethod: %s\nparams: %s\n", msg.ID, msg.Method, string(msg.Params))
 }
