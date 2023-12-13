@@ -116,7 +116,7 @@ func ReadMessage(r *bufio.Reader) (protocol.RequestMessage, error) {
 // response and error.
 func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMessage, int, error) {
 	// Not going to handle any LSP version specific methods (methods prefixed
-	// with "$") for now.
+	// with "$/") for now.
 	if matched, _ := regexp.MatchString(`^\$\/.+`, msg.Method); matched {
 		err := protocol.ResponseError{Code: -32601, Message: "unhandled method"}
 		return protocol.ResponseMessage{ID: msg.ID, Error: &err}, 0, nil
