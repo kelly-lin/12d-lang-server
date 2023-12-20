@@ -21,99 +21,169 @@ func TestServer(t *testing.T) {
 	t.Run("textDocument/definition", func(t *testing.T) {
 		defer goleak.VerifyNone(t)
 		assert := assert.New(t)
-		file, err := os.Create("/tmp/server_test.txt")
+		logger, err := newLogger()
 		assert.NoError(err)
-		logger := func(msg string) {
-			_, _ = file.WriteString(msg)
-		}
-		serv := server.NewServer(logger)
-		inReader, inWriter := io.Pipe()
-		defer inReader.Close()
-		defer inWriter.Close()
-		outReader, outWriter := io.Pipe()
-		defer outReader.Close()
-		defer outWriter.Close()
-		go (func(inReader *io.PipeReader, outWriter *io.PipeWriter) {
-			if err := serv.Serve(inReader, outWriter); err != nil {
-				logger(fmt.Sprintf("%s\n", err))
-				return
-			}
-		})(inReader, outWriter)
+		in, out, cleanUp := startServer(logger)
+		defer cleanUp()
 
-		didOpenMsg := protocol.RequestMessage{
-			JSONRPC: "2.0",
-			ID:      1,
-			Method:  "textDocument/didOpen",
-		}
-		didOpenParams := protocol.DidOpenTextDocumentParams{
-			TextDocument: protocol.TextDocumentItem{
-				URI:        "file:///foo.4dm",
-				LanguageID: "12dpl",
-				Text:       "void main() {}",
-			},
-		}
-		didOpenParamsBytes, err := json.Marshal(didOpenParams)
+		var id int64 = 1
+		uri := "file:///foo.4dm"
+		text := "Integer Add(Integer augend, Integer addend) {\n\treturn augend + addend;\n}\n\nvoid main() {}"
+		didOpenMsgBytes, err := newDidOpenRequestMessageBytes(id, uri, text)
 		assert.NoError(err)
-		didOpenMsg.Params = json.RawMessage(didOpenParamsBytes)
-		didOpenMsgBytes, err := json.Marshal(didOpenMsg)
-		assert.NoError(err)
-		_, err = inWriter.Write([]byte(server.ToProtocolMessage(didOpenMsgBytes)))
+		_, err = in.Writer.Write([]byte(server.ToProtocolMessage(didOpenMsgBytes)))
 		assert.NoError(err)
 
-		definitionMsg := protocol.RequestMessage{
-			JSONRPC: "2.0",
-			ID:      1,
-			Method:  "textDocument/definition",
-		}
-		definitionParams := protocol.DefinitionParams{
-			TextDocumentPositionParams: protocol.TextDocumentPositionParams{
-				TextDocument: protocol.TextDocumentIdentifier{
-					URI: "file:///foo.4dm",
-				},
-				Position: protocol.Position{
-					Line:      0,
-					Character: 5,
-				},
-			},
-		}
-		definitionParamsBytes, err := json.Marshal(definitionParams)
+		position := protocol.Position{Line: 0, Character: 5}
+		definitionMsgBytes, err := newDefinitionRequestMessageBytes(id, uri, position)
 		assert.NoError(err)
-		definitionMsg.Params = json.RawMessage(definitionParamsBytes)
-		definitionMsgBytes, err := json.Marshal(definitionMsg)
-		assert.NoError(err)
-		_, err = inWriter.Write([]byte(server.ToProtocolMessage(definitionMsgBytes)))
+		_, err = in.Writer.Write([]byte(server.ToProtocolMessage(definitionMsgBytes)))
 		assert.NoError(err)
 
-		r := bufio.NewReader(outReader)
-		line, err := r.ReadString('\n')
+		got, err := getReponseMessage(out.Reader)
 		assert.NoError(err)
-		numBytesString := strings.TrimPrefix(line, "Content-Length: ")
-		numBytes, err := strconv.Atoi(strings.TrimSpace(numBytesString))
-		assert.NoError(err)
-		_, err = r.ReadString('\n')
-		assert.NoError(err)
-
-		got := make([]byte, numBytes)
-		_, _ = io.ReadFull(r, got)
-		assert.NoError(err)
-
-		locationBytes, err := json.Marshal(protocol.Location{
-			URI: "file:///foo.4dm",
-			Range: protocol.Range{
-				Start: protocol.Position{
-					Line:      0,
-					Character: 5,
-				},
-				End: protocol.Position{
-					Line:      0,
-					Character: 9,
-				},
-			},
-		})
-		assert.NoError(err)
-		wantMsg := protocol.ResponseMessage{ID: 1, Result: json.RawMessage(locationBytes)}
-		want, err := json.Marshal(wantMsg)
+		want, err := newLocationResponseMessage(
+			id,
+			uri,
+			protocol.Position{Line: 4, Character: 5},
+			protocol.Position{Line: 4, Character: 9},
+		)
 		assert.NoError(err)
 		assert.Equal(want, got)
 	})
+}
+
+// Creates a new protocol request message with definition params and returns the
+// wire representation.
+func newDefinitionRequestMessageBytes(id int64, uri string, position protocol.Position) ([]byte, error) {
+	definitionParams := protocol.DefinitionParams{
+		TextDocumentPositionParams: protocol.TextDocumentPositionParams{
+			TextDocument: protocol.TextDocumentIdentifier{
+				URI: uri,
+			},
+			Position: position,
+		},
+	}
+	definitionParamsBytes, err := json.Marshal(definitionParams)
+	if err != nil {
+		return nil, err
+	}
+	definitionMsg := protocol.RequestMessage{
+		JSONRPC: "2.0",
+		ID:      id,
+		Method:  "textDocument/definition",
+		Params:  json.RawMessage(definitionParamsBytes),
+	}
+	definitionMsgBytes, err := json.Marshal(definitionMsg)
+	if err != nil {
+		return nil, err
+	}
+	return definitionMsgBytes, nil
+}
+
+func newDidOpenRequestMessageBytes(id int64, uri, text string) ([]byte, error) {
+	didOpenParams := protocol.DidOpenTextDocumentParams{
+		TextDocument: protocol.TextDocumentItem{
+			URI:        uri,
+			LanguageID: "12dpl",
+			Text:       text,
+		},
+	}
+	didOpenParamsBytes, err := json.Marshal(didOpenParams)
+	if err != nil {
+		return nil, err
+	}
+	didOpenMsg := protocol.RequestMessage{
+		JSONRPC: "2.0",
+		ID:      id,
+		Method:  "textDocument/didOpen",
+		Params:  json.RawMessage(didOpenParamsBytes),
+	}
+	didOpenMsgBytes, err := json.Marshal(didOpenMsg)
+	if err != nil {
+		return nil, err
+	}
+	return didOpenMsgBytes, nil
+}
+
+// Creates a new protocol response message with definition location and returns
+// the wire representation.
+func newLocationResponseMessage(id int64, uri string, start, end protocol.Position) (protocol.ResponseMessage, error) {
+	locationBytes, err := json.Marshal(protocol.Location{
+		URI:   uri,
+		Range: protocol.Range{Start: start, End: end},
+	})
+	if err != nil {
+		return protocol.ResponseMessage{}, err
+	}
+	msg := protocol.ResponseMessage{ID: id, Result: json.RawMessage(locationBytes)}
+	return msg, nil
+}
+
+// Creates a new logging function for debugging.
+func newLogger() (func(msg string), error) {
+	file, err := os.Create("/tmp/server_test.txt")
+	if err != nil {
+		return nil, err
+	}
+	logger := func(msg string) {
+		_, _ = file.WriteString(msg)
+	}
+	return logger, nil
+}
+
+// Starts the language server in a goroutine and returns the input pipe, output
+// pipe and a clean up function.
+func startServer(logger func(msg string)) (Pipe, Pipe, func()) {
+	serv := server.NewServer(logger)
+	inReader, inWriter := io.Pipe()
+	outReader, outWriter := io.Pipe()
+	go (func() {
+		if err := serv.Serve(inReader, outWriter); err != nil {
+			logger(fmt.Sprintf("%s\n", err))
+			return
+		}
+	})()
+	cleanUp := func() {
+		inReader.Close()
+		inWriter.Close()
+		outReader.Close()
+		outWriter.Close()
+	}
+	return Pipe{Reader: inReader, Writer: inWriter},
+		Pipe{Reader: outReader, Writer: outWriter},
+		cleanUp
+}
+
+type Pipe struct {
+	Reader *io.PipeReader
+	Writer *io.PipeWriter
+}
+
+// Reads a single message from reader returns the parsed response message.
+func getReponseMessage(rd io.Reader) (protocol.ResponseMessage, error) {
+	r := bufio.NewReader(rd)
+	line, err := r.ReadString('\n')
+	if err != nil {
+		return protocol.ResponseMessage{}, err
+	}
+	numBytesString := strings.TrimPrefix(line, "Content-Length: ")
+	numBytes, err := strconv.Atoi(strings.TrimSpace(numBytesString))
+	if err != nil {
+		return protocol.ResponseMessage{}, err
+	}
+	_, err = r.ReadString('\n')
+	if err != nil {
+		return protocol.ResponseMessage{}, err
+	}
+	msgBytes := make([]byte, numBytes)
+	_, _ = io.ReadFull(r, msgBytes)
+	if err != nil {
+		return protocol.ResponseMessage{}, err
+	}
+	var msg protocol.ResponseMessage
+	if err := json.Unmarshal(msgBytes, &msg); err != nil {
+		return protocol.ResponseMessage{}, err
+	}
+	return msg, nil
 }
