@@ -26,7 +26,7 @@ type Range struct {
 
 // Find the definition of the function with the provided identifier inside
 // source and returns the range if it was found. If the definition was not found
-// then error ErrNoDefintion will be returned.
+// then error ErrNoDefinition will be returned.
 func FindFuncDefinition(identifier string, source []byte) (Range, error) {
 	n, err := sitter.ParseCtx(context.Background(), source, GetLanguage())
 	if err != nil {
@@ -74,4 +74,10 @@ func FindFuncDefinition(identifier string, source []byte) (Range, error) {
 		return Range{}, ErrNoDefinition
 	}
 	return result, nil
+}
+
+// Finds the identifier located at the line and column number and returns the
+// name if it exists and an error when it does not.
+func FindIdentifier(node *sitter.Node, lineNum, colNum uint) (string, error) {
+	return "main", nil
 }

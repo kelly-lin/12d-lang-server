@@ -29,7 +29,10 @@ func main() {
 	defer cleanUp()
 
 	langServer := server.NewServer(log)
-	langServer.Serve(os.Stdin, os.Stdout)
+	if err := langServer.Serve(os.Stdin, os.Stdout); err != nil {
+		log(fmt.Sprintf("%s\n", err.Error()))
+		os.Exit(1)
+	}
 }
 
 // TODO: Hand rolling this for now, ideally we should use cobra-cli.

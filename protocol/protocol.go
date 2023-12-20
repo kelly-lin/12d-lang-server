@@ -161,3 +161,31 @@ type TextDocumentItem struct {
 	Version    int    `json:"version"`
 	Text       string `json:"text"`
 }
+
+type DefinitionParams struct {
+	TextDocumentPositionParams
+}
+
+type TextDocumentPositionParams struct {
+	TextDocument TextDocumentIdentifier `json:"textDocument"`
+	Position     Position               `json:"position"`
+}
+
+type TextDocumentIdentifier struct {
+	URI string `json:"uri"`
+}
+
+type Position struct {
+	Line      uint `json:"line"`
+	Character uint `json:"character"`
+}
+
+type Location struct {
+	URI   string `json:"uri"`
+	Range Range  `json:"range"`
+}
+
+type Range struct {
+	Start Position `json:"start"`
+	End   Position `json:"end"`
+}

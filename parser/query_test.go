@@ -1,9 +1,12 @@
 package parser_test
 
 import (
+	"context"
 	"testing"
 
 	"github.com/kelly-lin/12d-lang-server/parser"
+	pl12d "github.com/kelly-lin/12d-lang-server/parser"
+	sitter "github.com/smacker/go-tree-sitter"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -42,4 +45,17 @@ Integer Foo() {}`)
 		assert.Equal(want, got)
 		assert.EqualError(err, parser.ErrNoDefinition.Error())
 	})
+}
+
+func TestFindIdentifier(t *testing.T) {
+	assert := assert.New(t)
+	sourceCode := []byte(`void main() {}`)
+	n, err := sitter.ParseCtx(context.Background(), sourceCode, pl12d.GetLanguage())
+	assert.NoError(err)
+	want := "main"
+	lineNum := 0
+	colNum := 5
+	got, err := parser.FindIdentifier(n, uint(lineNum), uint(colNum))
+	assert.NoError(err)
+	assert.Equal(want, got)
 }
