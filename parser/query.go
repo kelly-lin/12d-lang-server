@@ -145,14 +145,25 @@ func FindIdentifier(node *sitter.Node, sourceCode []byte, lineNum, colNum uint) 
 			break
 		}
 		numSteps++
-		isInsideRow := uint(currentNode.StartPoint().Row) >= lineNum && lineNum <= uint(currentNode.EndPoint().Row)
-		isInsideColumn := uint(currentNode.StartPoint().Column) >= colNum && lineNum <= uint(currentNode.EndPoint().Column)
-		if currentNode.Type() == "identifier" && isInsideRow && isInsideColumn {
+		isOnSameLine := func(n *sitter.Node) bool {
+			return uint(n.StartPoint().Row) == lineNum && lineNum == uint(n.EndPoint().Row)
+		}
+		isInsideColumn := func(n *sitter.Node) bool {
+			return uint(n.StartPoint().Column) <= colNum && colNum <= uint(n.EndPoint().Column)
+		}
+		if currentNode.Type() == "identifier" && isOnSameLine(currentNode) && isInsideColumn(currentNode) {
 			fmt.Printf("found node in %d steps\n", numSteps)
 			return currentNode.Content(sourceCode), nil
 		}
 		for i := 0; i < int(currentNode.ChildCount()); i++ {
-			queue.Enqueue(currentNode.Child(i))
+			currentChild := currentNode.Child(i)
+			// Since the tree nodes will be ordered by line numbers, if the
+			// child's line number is greater, we do not need to check the other
+			// children.
+			if uint(currentChild.StartPoint().Row) > lineNum {
+				break
+			}
+			queue.Enqueue(currentChild)
 		}
 	}
 	return "", ErrNoDefinition

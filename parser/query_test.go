@@ -62,7 +62,7 @@ void main() {
 	assert.NoError(err)
 	want := "Add"
 	lineNum := 7
-	colNum := 17
+	colNum := 21
 	got, err := parser.FindIdentifier(n, sourceCode, uint(lineNum), uint(colNum))
 	assert.NoError(err)
 	assert.Equal(want, got)
