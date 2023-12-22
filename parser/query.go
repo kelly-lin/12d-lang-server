@@ -133,6 +133,19 @@ func (q *Queue) HasItems() bool {
 	return len(q.items)-q.idx > 0
 }
 
+func debugNode(n *sitter.Node) {
+	fmt.Printf(
+		"node: %s:%s [%d, %d] - [%d, %d]\n",
+		n.Type(),
+		// n.Content(sourceCode),
+		"",
+		n.StartPoint().Row,
+		n.StartPoint().Column,
+		n.EndPoint().Row,
+		n.EndPoint().Column,
+	)
+}
+
 // Finds the identifier located at the line and column number and returns the
 // name if it exists and an error when it does not.
 func FindIdentifier(node *sitter.Node, sourceCode []byte, lineNum, colNum uint) (string, error) {
@@ -157,13 +170,14 @@ func FindIdentifier(node *sitter.Node, sourceCode []byte, lineNum, colNum uint) 
 		}
 		for i := 0; i < int(currentNode.ChildCount()); i++ {
 			currentChild := currentNode.Child(i)
+			debugNode(currentChild)
 			// Since the tree nodes will be ordered by line numbers, if the
 			// child's line number is greater, we do not need to check the other
 			// children.
-			if uint(currentChild.StartPoint().Row) > lineNum {
-				break
+			isInsideLineRange := uint(currentChild.StartPoint().Row) <= lineNum && lineNum <= uint(currentChild.EndPoint().Row)
+			if isInsideLineRange {
+                queue.Enqueue(currentChild)
 			}
-			queue.Enqueue(currentChild)
 		}
 	}
 	return "", ErrNoDefinition
