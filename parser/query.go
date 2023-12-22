@@ -151,32 +151,28 @@ func debugNode(n *sitter.Node) {
 func FindIdentifier(node *sitter.Node, sourceCode []byte, lineNum, colNum uint) (string, error) {
 	queue := NewQueue()
 	queue.Enqueue(node)
-	numSteps := 0
 	for queue.HasItems() {
 		currentNode, err := queue.Dequeue()
 		if err != nil {
 			break
 		}
-		numSteps++
-		isOnSameLine := func(n *sitter.Node) bool {
-			return uint(n.StartPoint().Row) == lineNum && lineNum == uint(n.EndPoint().Row)
-		}
-		isInsideColumn := func(n *sitter.Node) bool {
-			return uint(n.StartPoint().Column) <= colNum && colNum <= uint(n.EndPoint().Column)
-		}
-		if currentNode.Type() == "identifier" && isOnSameLine(currentNode) && isInsideColumn(currentNode) {
-			fmt.Printf("found node in %d steps\n", numSteps)
+		isIdentifier := currentNode.Type() == "identifier"
+		isOnSameLine := uint(currentNode.StartPoint().Row) == lineNum && lineNum == uint(currentNode.EndPoint().Row)
+		isInsideColumnRange := uint(currentNode.StartPoint().Column) <= colNum && colNum <= uint(currentNode.EndPoint().Column)
+		if isIdentifier && isOnSameLine && isInsideColumnRange {
 			return currentNode.Content(sourceCode), nil
 		}
+		// If we need more performance we might be able to improve this by doing
+		// a binary search.
 		for i := 0; i < int(currentNode.ChildCount()); i++ {
 			currentChild := currentNode.Child(i)
-			debugNode(currentChild)
 			// Since the tree nodes will be ordered by line numbers, if the
 			// child's line number is greater, we do not need to check the other
 			// children.
-			isInsideLineRange := uint(currentChild.StartPoint().Row) <= lineNum && lineNum <= uint(currentChild.EndPoint().Row)
+			isInsideLineRange := uint(currentChild.StartPoint().Row) <= lineNum &&
+				lineNum <= uint(currentChild.EndPoint().Row)
 			if isInsideLineRange {
-                queue.Enqueue(currentChild)
+				queue.Enqueue(currentChild)
 			}
 		}
 	}
