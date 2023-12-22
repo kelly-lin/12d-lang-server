@@ -49,13 +49,21 @@ Integer Foo() {}`)
 
 func TestFindIdentifier(t *testing.T) {
 	assert := assert.New(t)
-	sourceCode := []byte(`void main() {}`)
+	sourceCode := []byte(`Integer Add(Integer addend, Integer augend) {
+    return addend + augend;
+}
+
+void main() {
+    Integer foo = 1;
+    Integer bar = 1;
+    Integer result = Add(foo, bar);
+}`)
 	n, err := sitter.ParseCtx(context.Background(), sourceCode, pl12d.GetLanguage())
 	assert.NoError(err)
-	want := "main"
-	lineNum := 0
-	colNum := 5
-	got, err := parser.FindIdentifier(n, uint(lineNum), uint(colNum))
+	want := "Add"
+	lineNum := 7
+	colNum := 17
+	got, err := parser.FindIdentifier(n, sourceCode, uint(lineNum), uint(colNum))
 	assert.NoError(err)
 	assert.Equal(want, got)
 }

@@ -2,6 +2,7 @@ package server
 
 import (
 	"bufio"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -32,14 +33,17 @@ func NewServer(logger func(msg string)) Server {
 	return Server{
 		documents: make(map[string]string),
 		logger:    serverLogger,
+		nodes:     make(map[string]*sitter.Node),
 	}
 }
 
 // Language server.
 type Server struct {
-	// The root node of the tree.
-	rootNode *sitter.Node
+	// Map of file URI and parsed nodes
+	nodes map[string]*sitter.Node
 	// Map of file URI and source code.
+	// TODO: should we be storing a []byte instead of a string? If most of our
+	// consumers are expecting []byte, we should change this type.
 	documents map[string]string
 	logger    func(msg string)
 }
@@ -198,6 +202,11 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 			return protocol.ResponseMessage{}, 0, fmt.Errorf("unhandled language %s, expected 12dpl", params.TextDocument.LanguageID)
 		}
 		s.documents[params.TextDocument.URI] = params.TextDocument.Text
+		rootNode, err := sitter.ParseCtx(context.Background(), []byte(params.TextDocument.Text), parser.GetLanguage())
+		if err != nil {
+			return protocol.ResponseMessage{}, 0, err
+		}
+		s.nodes[params.TextDocument.URI] = rootNode
 		return protocol.ResponseMessage{}, 0, nil
 
 	case "textDocument/definition":
@@ -205,16 +214,21 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 		if err := json.Unmarshal(msg.Params, &params); err != nil {
 			return protocol.ResponseMessage{}, 0, err
 		}
+		rootNode, ok := s.nodes[params.TextDocument.URI]
+		if !ok {
+			return protocol.ResponseMessage{}, 0, errors.New("source node not found")
+		}
 		sourceCode, ok := s.documents[params.TextDocument.URI]
 		if !ok {
 			return protocol.ResponseMessage{}, 0, errors.New("source code not found")
 		}
-		identifier, err := parser.FindIdentifier(s.rootNode, params.Position.Line, params.Position.Character)
+		identifier, err := parser.FindIdentifier(rootNode, []byte(sourceCode), params.Position.Line, params.Position.Character)
 		if err != nil {
 			return protocol.ResponseMessage{}, 0, err
 		}
 		// Is this byte slice conversion expensive? If it is, we might need to
-		// find a way so that we do not have to do the conversion.
+		// find a way so that we do not have to do the conversion. Ideally we
+		// should just need to parse the source code once and cache it.
 		definitionRange, err := parser.FindFuncDefinition(identifier, []byte(sourceCode))
 		// TODO: check for ErrNoDefinition.
 		if err != nil {

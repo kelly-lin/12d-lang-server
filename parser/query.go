@@ -76,8 +76,84 @@ func FindFuncDefinition(identifier string, source []byte) (Range, error) {
 	return result, nil
 }
 
+type Stack struct {
+	items []*sitter.Node
+	idx   int
+}
+
+func NewStack() Stack {
+	return Stack{items: []*sitter.Node{}, idx: -1}
+}
+
+func (s *Stack) Push(node *sitter.Node) {
+	s.idx++
+	if s.idx == len(s.items) {
+		s.items = append(s.items, node)
+		return
+	}
+	s.items[s.idx] = node
+}
+
+func (s *Stack) Pop() (*sitter.Node, error) {
+	if !s.HasItems() {
+		return nil, errors.New("stack is empty")
+	}
+	result := s.items[s.idx]
+	s.idx--
+	return result, nil
+}
+
+func (s *Stack) HasItems() bool {
+	return s.idx >= 0
+}
+
+func NewQueue() Queue {
+	return Queue{items: []*sitter.Node{}, idx: 0}
+}
+
+type Queue struct {
+	items []*sitter.Node
+	idx   int
+}
+
+func (q *Queue) Enqueue(item *sitter.Node) {
+	q.items = append(q.items, item)
+}
+
+func (q *Queue) Dequeue() (*sitter.Node, error) {
+	if !q.HasItems() {
+		return nil, errors.New("no items to dequeue")
+	}
+	result := q.items[q.idx]
+	q.idx++
+	return result, nil
+}
+
+func (q *Queue) HasItems() bool {
+	return len(q.items)-q.idx > 0
+}
+
 // Finds the identifier located at the line and column number and returns the
 // name if it exists and an error when it does not.
-func FindIdentifier(node *sitter.Node, lineNum, colNum uint) (string, error) {
-	return "main", nil
+func FindIdentifier(node *sitter.Node, sourceCode []byte, lineNum, colNum uint) (string, error) {
+	queue := NewQueue()
+	queue.Enqueue(node)
+	numSteps := 0
+	for queue.HasItems() {
+		currentNode, err := queue.Dequeue()
+		if err != nil {
+			break
+		}
+		numSteps++
+		isInsideRow := uint(currentNode.StartPoint().Row) >= lineNum && lineNum <= uint(currentNode.EndPoint().Row)
+		isInsideColumn := uint(currentNode.StartPoint().Column) >= colNum && lineNum <= uint(currentNode.EndPoint().Column)
+		if currentNode.Type() == "identifier" && isInsideRow && isInsideColumn {
+			fmt.Printf("found node in %d steps\n", numSteps)
+			return currentNode.Content(sourceCode), nil
+		}
+		for i := 0; i < int(currentNode.ChildCount()); i++ {
+			queue.Enqueue(currentNode.Child(i))
+		}
+	}
+	return "", ErrNoDefinition
 }
