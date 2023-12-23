@@ -28,13 +28,19 @@ func TestServer(t *testing.T) {
 
 		var id int64 = 1
 		uri := "file:///foo.4dm"
-		text := "Integer Add(Integer augend, Integer addend) {\n\treturn augend + addend;\n}\n\nvoid main() {}"
+		text := `Integer Add(Integer augend, Integer addend) {
+    return augend + addend;
+}
+
+void main() {
+    Integer result = Add(1, 2);
+}`
 		didOpenMsgBytes, err := newDidOpenRequestMessageBytes(id, uri, text)
 		assert.NoError(err)
 		_, err = in.Writer.Write([]byte(server.ToProtocolMessage(didOpenMsgBytes)))
 		assert.NoError(err)
 
-		position := protocol.Position{Line: 0, Character: 5}
+		position := protocol.Position{Line: 5, Character: 21}
 		definitionMsgBytes, err := newDefinitionRequestMessageBytes(id, uri, position)
 		assert.NoError(err)
 		_, err = in.Writer.Write([]byte(server.ToProtocolMessage(definitionMsgBytes)))
@@ -45,8 +51,8 @@ func TestServer(t *testing.T) {
 		want, err := newLocationResponseMessage(
 			id,
 			uri,
-			protocol.Position{Line: 4, Character: 5},
-			protocol.Position{Line: 4, Character: 9},
+			protocol.Position{Line: 0, Character: 8},
+			protocol.Position{Line: 0, Character: 11},
 		)
 		assert.NoError(err)
 		assert.Equal(want, got)

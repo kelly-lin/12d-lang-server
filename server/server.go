@@ -223,6 +223,12 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 			return protocol.ResponseMessage{}, 0, errors.New("source code not found")
 		}
 		identifier, err := parser.FindIdentifier(rootNode, []byte(sourceCode), params.Position.Line, params.Position.Character)
+		if errors.Is(err, parser.ErrNoDefinition) {
+			return protocol.ResponseMessage{
+				ID:     msg.ID,
+				Result: json.RawMessage([]byte("null")),
+			}, len([]byte("null")), nil
+		}
 		if err != nil {
 			return protocol.ResponseMessage{}, 0, err
 		}
@@ -230,7 +236,12 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 		// find a way so that we do not have to do the conversion. Ideally we
 		// should just need to parse the source code once and cache it.
 		definitionRange, err := parser.FindFuncDefinition(identifier, []byte(sourceCode))
-		// TODO: check for ErrNoDefinition.
+		if errors.Is(err, parser.ErrNoDefinition) {
+			return protocol.ResponseMessage{
+				ID:     msg.ID,
+				Result: json.RawMessage([]byte("null")),
+			}, len([]byte("null")), nil
+		}
 		if err != nil {
 			return protocol.ResponseMessage{}, 0, err
 		}
