@@ -10,7 +10,9 @@
 *.bkp
 *.dtmp
 
-12d-lang-server
+12dls
+!cmd/12dls
+
 
 # Test binary, built with `go test -c`
 *.test

@@ -4,7 +4,7 @@ run:
 
 .PHONY:
 build:
-	go build
+	go build ./cmd/12dls
 
 .PHONY:
 log:
