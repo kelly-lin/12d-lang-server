@@ -20,4 +20,4 @@ fmt:
 
 .PHONY:
 gendoc:
-	python3 ./doc/4dm/gen_doc.py ./doc/4dm/proto_v14.txt ./doc/4dm/12d_progm_v14.txt
+	@python3 ./doc/4dm/gen_doc.py ./doc/4dm/proto_v14.txt ./doc/4dm/12d_progm_v15.txt
