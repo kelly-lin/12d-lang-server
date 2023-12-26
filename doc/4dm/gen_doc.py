@@ -124,9 +124,9 @@ def print_stderr(line):
 
 
 def transformManualToJsonFormat(manual):
-    result = {"api": []}
+    result = {"items": []}
     for id in manual:
-        result["api"].append(manual[id])
+        result["items"].append(manual[id])
 
     return result
 
