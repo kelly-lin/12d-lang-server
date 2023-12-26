@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/kelly-lin/12d-lang-server/lang"
 	"github.com/kelly-lin/12d-lang-server/parser"
 	"github.com/kelly-lin/12d-lang-server/protocol"
 	sitter "github.com/smacker/go-tree-sitter"
@@ -186,12 +187,55 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 			Result: json.RawMessage(resultBytes),
 		}, 0, nil
 
-	case "shutdown":
-		resultBytes := []byte("null")
+	case "textDocument/hover":
+		var params protocol.HoverParams
+		if err := json.Unmarshal(msg.Params, &params); err != nil {
+			return protocol.ResponseMessage{}, 0, err
+		}
+		rootNode, ok := s.nodes[params.TextDocument.URI]
+		if !ok {
+			return protocol.ResponseMessage{}, 0, errors.New("source node not found")
+		}
+		sourceCode, ok := s.documents[params.TextDocument.URI]
+		// TODO: handle this error properly, should we be sending an error code
+		// back to the client?
+		if !ok {
+			return protocol.ResponseMessage{}, 0, errors.New("source code not found")
+		}
+		identifier, err := parser.FindIdentifier(rootNode, []byte(sourceCode), params.Position.Line, params.Position.Character)
+		if errors.Is(err, parser.ErrNoDefinition) {
+			return protocol.ResponseMessage{
+				ID:     msg.ID,
+				Result: json.RawMessage(protocol.NullResult),
+			}, len(protocol.NullResult), nil
+		}
+		if err != nil {
+			return protocol.ResponseMessage{}, 0, err
+		}
+		libItems, ok := lang.Lib[identifier]
+		if !ok || len(libItems) == 0 {
+			return protocol.ResponseMessage{
+				ID:     msg.ID,
+				Result: protocol.NullResult,
+			}, len(protocol.NullResult), nil
+		}
+		// TODO: Returning the first item for now until we figure out how to
+		// handle overloads.
+		result := protocol.Hover{Contents: libItems[0].Desc}
+		resultBytes, err := json.Marshal(result)
+		if err != nil {
+			return protocol.ResponseMessage{}, 0, err
+		}
 		return protocol.ResponseMessage{
 			ID:     msg.ID,
-			Result: resultBytes,
+			Result: json.RawMessage(resultBytes),
 		}, len(resultBytes), nil
+
+	case "shutdown":
+		return protocol.ResponseMessage{
+			ID:     msg.ID,
+			Result: protocol.NullResult,
+		}, len(protocol.NullResult), nil
 
 	case "textDocument/didOpen":
 		var params protocol.DidOpenTextDocumentParams
@@ -226,8 +270,8 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 		if errors.Is(err, parser.ErrNoDefinition) {
 			return protocol.ResponseMessage{
 				ID:     msg.ID,
-				Result: json.RawMessage([]byte("null")),
-			}, len([]byte("null")), nil
+				Result: json.RawMessage(protocol.NullResult),
+			}, len(protocol.NullResult), nil
 		}
 		if err != nil {
 			return protocol.ResponseMessage{}, 0, err
@@ -239,8 +283,8 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 		if errors.Is(err, parser.ErrNoDefinition) {
 			return protocol.ResponseMessage{
 				ID:     msg.ID,
-				Result: json.RawMessage([]byte("null")),
-			}, len([]byte("null")), nil
+				Result: json.RawMessage(protocol.NullResult),
+			}, len(protocol.NullResult), nil
 		}
 		if err != nil {
 			return protocol.ResponseMessage{}, 0, err
@@ -295,6 +339,7 @@ func newServerCapabilities() protocol.ServerCapabilities {
 			ResolveProvider: &resolveProvider,
 		},
 		DefinitionProvider: &definitionProvider,
+		HoverProvider:      true,
 		TextDocumentSync:   &textDocumentSyncKind,
 	}
 	return result

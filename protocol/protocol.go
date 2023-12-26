@@ -36,6 +36,8 @@ const (
 	TextDocumentSyncKindIncremental uint = 2
 )
 
+var NullResult = json.RawMessage("null")
+
 func GetCompletionItemKind(kind string) *uint {
 	var result uint
 	switch kind {
@@ -139,6 +141,7 @@ type MarkUpContent struct {
 type ServerCapabilities struct {
 	CompletionProvider *CompletionOptions `json:"completionProvider,omitempty"`
 	DefinitionProvider *bool              `json:"definitionProvider,omitempty"`
+	HoverProvider      bool               `json:"hoverProvider"`
 	TextDocumentSync   *uint              `json:"textDocumentSync,omitempty"`
 }
 
@@ -178,6 +181,19 @@ type TextDocumentIdentifier struct {
 type Position struct {
 	Line      uint `json:"line"`
 	Character uint `json:"character"`
+}
+
+type HoverParams struct {
+	TextDocumentPositionParams
+}
+
+type Hover struct {
+	Contents string `json:"contents"`
+}
+
+type MarkedString struct {
+	Language string `json:"language"`
+	Value    string `json:"value"`
 }
 
 type Location struct {
