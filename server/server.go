@@ -110,8 +110,7 @@ func readMessage(r *bufio.Reader) (protocol.RequestMessage, error) {
 		name := line[:colonIndex]
 		value := strings.TrimSpace(line[colonIndex+1:])
 		if name == "Content-Length" {
-			contentLength, err = strconv.ParseInt(value, 10, 64)
-			if err != nil {
+			if contentLength, err = strconv.ParseInt(value, 10, 64); err != nil {
 				return message, fmt.Errorf("failed to parse content length: %s", err)
 			}
 		}
@@ -153,9 +152,11 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 			return protocol.ResponseMessage{}, 0, err
 		}
 		return protocol.ResponseMessage{
-			ID:     msg.ID,
-			Result: json.RawMessage(resultBytes),
-		}, len(resultBytes), nil
+				ID:     msg.ID,
+				Result: json.RawMessage(resultBytes),
+			},
+			len(resultBytes),
+			nil
 
 	case "textDocument/completion":
 		// TODO: Below are stub completion items, to replace with proper
@@ -170,9 +171,11 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 			return protocol.ResponseMessage{}, 0, err
 		}
 		return protocol.ResponseMessage{
-			ID:     msg.ID,
-			Result: json.RawMessage(resultBytes),
-		}, len(resultBytes), nil
+				ID:     msg.ID,
+				Result: json.RawMessage(resultBytes),
+			},
+			len(resultBytes),
+			nil
 
 	case "completionItem/resolve":
 		item := protocol.CompletionItem{
@@ -183,9 +186,11 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 			return protocol.ResponseMessage{}, 0, err
 		}
 		return protocol.ResponseMessage{
-			ID:     msg.ID,
-			Result: json.RawMessage(resultBytes),
-		}, 0, nil
+				ID:     msg.ID,
+				Result: json.RawMessage(resultBytes),
+			},
+			0,
+			nil
 
 	case "textDocument/hover":
 		var params protocol.HoverParams
@@ -205,9 +210,11 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 		identifier, err := parser.FindIdentifier(rootNode, []byte(sourceCode), params.Position.Line, params.Position.Character)
 		if errors.Is(err, parser.ErrNoDefinition) {
 			return protocol.ResponseMessage{
-				ID:     msg.ID,
-				Result: json.RawMessage(protocol.NullResult),
-			}, len(protocol.NullResult), nil
+					ID:     msg.ID,
+					Result: json.RawMessage(protocol.NullResult),
+				},
+				len(protocol.NullResult),
+				nil
 		}
 		if err != nil {
 			return protocol.ResponseMessage{}, 0, err
@@ -215,9 +222,11 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 		libItems, ok := lang.Lib[identifier]
 		if !ok || len(libItems) == 0 {
 			return protocol.ResponseMessage{
-				ID:     msg.ID,
-				Result: protocol.NullResult,
-			}, len(protocol.NullResult), nil
+					ID:     msg.ID,
+					Result: protocol.NullResult,
+				},
+				len(protocol.NullResult),
+				nil
 		}
 		result := protocol.Hover{Contents: libItems}
 		resultBytes, err := json.Marshal(result)
@@ -225,15 +234,19 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 			return protocol.ResponseMessage{}, 0, err
 		}
 		return protocol.ResponseMessage{
-			ID:     msg.ID,
-			Result: json.RawMessage(resultBytes),
-		}, len(resultBytes), nil
+				ID:     msg.ID,
+				Result: json.RawMessage(resultBytes),
+			},
+			len(resultBytes),
+			nil
 
 	case "shutdown":
 		return protocol.ResponseMessage{
-			ID:     msg.ID,
-			Result: protocol.NullResult,
-		}, len(protocol.NullResult), nil
+				ID:     msg.ID,
+				Result: protocol.NullResult,
+			},
+			len(protocol.NullResult),
+			nil
 
 	case "textDocument/didOpen":
 		var params protocol.DidOpenTextDocumentParams
@@ -267,9 +280,11 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 		identifier, err := parser.FindIdentifier(rootNode, []byte(sourceCode), params.Position.Line, params.Position.Character)
 		if errors.Is(err, parser.ErrNoDefinition) {
 			return protocol.ResponseMessage{
-				ID:     msg.ID,
-				Result: json.RawMessage(protocol.NullResult),
-			}, len(protocol.NullResult), nil
+					ID:     msg.ID,
+					Result: json.RawMessage(protocol.NullResult),
+				},
+				len(protocol.NullResult),
+				nil
 		}
 		if err != nil {
 			return protocol.ResponseMessage{}, 0, err
@@ -280,9 +295,11 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 		definitionRange, err := parser.FindFuncDefinition(identifier, []byte(sourceCode))
 		if errors.Is(err, parser.ErrNoDefinition) {
 			return protocol.ResponseMessage{
-				ID:     msg.ID,
-				Result: json.RawMessage(protocol.NullResult),
-			}, len(protocol.NullResult), nil
+					ID:     msg.ID,
+					Result: json.RawMessage(protocol.NullResult),
+				},
+				len(protocol.NullResult),
+				nil
 		}
 		if err != nil {
 			return protocol.ResponseMessage{}, 0, err
@@ -296,9 +313,11 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 			return protocol.ResponseMessage{}, 0, err
 		}
 		return protocol.ResponseMessage{
-			ID:     msg.ID,
-			Result: json.RawMessage(locationBytes),
-		}, len(locationBytes), nil
+				ID:     msg.ID,
+				Result: json.RawMessage(locationBytes),
+			},
+			len(locationBytes),
+			nil
 
 	case "initialized":
 		return protocol.ResponseMessage{}, 0, nil
