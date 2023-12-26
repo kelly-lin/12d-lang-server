@@ -219,9 +219,7 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 				Result: protocol.NullResult,
 			}, len(protocol.NullResult), nil
 		}
-		// TODO: Returning the first item for now until we figure out how to
-		// handle overloads.
-		result := protocol.Hover{Contents: libItems[0].Desc}
+		result := protocol.Hover{Contents: libItems}
 		resultBytes, err := json.Marshal(result)
 		if err != nil {
 			return protocol.ResponseMessage{}, 0, err

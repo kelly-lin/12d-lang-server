@@ -188,7 +188,7 @@ type HoverParams struct {
 }
 
 type Hover struct {
-	Contents string `json:"contents"`
+	Contents []string `json:"contents"`
 }
 
 type MarkedString struct {
