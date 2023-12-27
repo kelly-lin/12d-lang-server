@@ -228,10 +228,10 @@ def patch_manual(patch_filepath, manual):
                     print("patch failed, manual item with id {} does not exist".format(
                         patch["id"]))
                     exit(1)
-                if "new" in patch["names"]:
-                    manual[patch_id]["names"] = patch["names"]["new"]
-                if "new" in patch["description"]:
-                    manual[patch_id]["description"] = patch["description"]["new"]
+                if "names" in patch:
+                    manual[patch_id]["names"] = patch["names"]
+                if "description" in patch:
+                    manual[patch_id]["description"] = patch["description"]
 
 
 def main():
