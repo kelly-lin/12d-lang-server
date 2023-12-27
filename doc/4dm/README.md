@@ -64,15 +64,17 @@ See below for steps on creating a patch.
    }
    ```
 
-A patch item follows the structure:
+   A patch item follows the structure:
 
-```typescript
-type PatchItem = {
-  // The function id.
-  id: string;
-  // New names.
-  names?: string[];
-  // New description.
-  description?: string;
-};
-```
+   ```typescript
+   type PatchItem = {
+     // The function id.
+     id: string;
+     // New names.
+     names?: string[];
+     // New description.
+     description?: string;
+   };
+   ```
+
+3. Commit changes and open a pull request.
