@@ -3498,7 +3498,7 @@
       "names": [
         "Integer Set_attribute(Attributes attr, Text att_name, Text att)"
       ],
-      "description": "For the Attributes attr,\uf020if the attribute called att_name does not exist then create it as type Text and give it the valueatt. \uf020if the first attribute called att_name does exist and it is type Text, then set its value to att. If the attribute exists and is not of type Text, then a non-zero return value is returned. A function return value of zero indicates the attribute value is successfully set. Note - the Get_attribute_type call can be used to get the type of the attribute called att_name.",
+      "description": "For the Attributes attr, if the attribute called att_name does not exist then create it as type Text and give it the value att. If the first attribute called att_name does exist and it is type Text, then set its value to att. If the attribute exists and is not of type Text, then a non-zero return value is returned. A function return value of zero indicates the attribute value is successfully set. Note - the Get_attribute_type call can be used to get the type of the attribute called att_name.",
       "id": "1960"
     },
     {

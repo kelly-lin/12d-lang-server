@@ -8,10 +8,12 @@ import json
 
 def print_usage():
     print("""Usage:
-    gen_doc.py <prototype> <manual>
+    gen_doc.py <prototype> <manual> [patch]
 
 Description:
-    Generates function call signature documentation from manual and prototype file.""")
+    Generates function call signature documentation from manual (text file) and
+    prototype file (text file). The resulting documentation (json) will be
+    patched with the provided patch file (json file)""")
 
 
 def is_id_line(line):
@@ -131,7 +133,7 @@ def transformManualToJsonFormat(manual):
     return result
 
 
-def main():
+def validate_args():
     args = sys.argv[1:]
     if len(args) == 0:
         print_usage()
@@ -157,18 +159,28 @@ def main():
         print("manual filepath is required")
         print_usage()
         sys.exit(1)
-
     if not os.path.isfile(manual_filepath):
         print("manual file provided does not exist")
         print_usage()
         sys.exit(1)
 
-    manual_file = open(manual_filepath, "r")
-    manual_lines = manual_file.readlines()
-    manual = parse_manual(manual_lines)
+    patch_filepath = None
+    if len(args) > 2:
+        patch_filepath = args[2]
+        if patch_filepath is not None and not os.path.isfile(patch_filepath):
+            print("patch file provided does not exist")
+            print_usage()
+            sys.exit(1)
 
-    prototype_file = open(prototype_filepath, "r")
-    prototype_lines = prototype_file.readlines()
+    return prototype_filepath, manual_filepath, patch_filepath
+
+
+def insert_missing_manual_items(prototype_lines, manual) -> list[str]:
+    """
+    Finds the prototypes defined in the prototype lines that do not exist in the
+    manual and inserts them into the manual them with an empty manual item and
+    returns a list of warnings.
+    """
     no_doc_warnings = []
     for prototype_line in prototype_lines:
         id = get_id_proto(prototype_line)
@@ -181,7 +193,7 @@ def main():
             # no_doc_warnings.append(prototype_line.strip())
             # Even though we did not successully parse the documentation from
             # the manual, we should still add in the function into the manual
-            # so that we can manually add them in if we need to.
+            # so that we can manually add them by patching.
             match = re.search(r"(.*);.*\/\/ ID = \d+", prototype_line)
             if match is not None:
                 name = match.group(1).strip()
@@ -191,12 +203,43 @@ def main():
                     "id": id
                 }
 
+    return no_doc_warnings
+
+
+def print_warnings(no_doc_warnings):
+    print_stderr("completed with {} warnings:".format(
+        len(no_doc_warnings)))
+    print_stderr("    documentation not found:")
+    for warning in no_doc_warnings:
+        print_stderr("        {}".format(warning))
+
+
+def main():
+    prototype_filepath, manual_filepath, patch_filepath = validate_args()
+
+    manual_file = open(manual_filepath, "r")
+    manual_lines = manual_file.readlines()
+    manual = parse_manual(manual_lines)
+
+    prototype_file = open(prototype_filepath, "r")
+    prototype_lines = prototype_file.readlines()
+    no_doc_warnings = insert_missing_manual_items(prototype_lines, manual)
+
+    if patch_filepath is not None:
+        with open(patch_filepath) as patch_file:
+            patch = json.load(patch_file)
+            for patch in patch["patches"]:
+                patch_id = patch["id"]
+                if not patch_id in manual:
+                    print("patch failed, manual item with id {} does not exist".format(
+                        patch["id"]))
+                    exit(1)
+
+                manual[patch_id]["names"] = patch["names"]
+                manual[patch_id]["description"] = patch["description"]["new"]
+
     if len(no_doc_warnings) > 0:
-        print_stderr("completed with {} warnings:".format(
-            len(no_doc_warnings)))
-        print_stderr("    documentation not found:")
-        for warning in no_doc_warnings:
-            print_stderr("        {}".format(warning))
+        print_warnings(no_doc_warnings)
 
     print(json.dumps(transformManualToJsonFormat(manual), indent=2))
 
