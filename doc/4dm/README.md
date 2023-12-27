@@ -19,9 +19,9 @@ See below for steps on creating a patch.
 ## How to create a patch
 
 1. Locate the library function you would like to patch in
-   `/doc/4dm/generated.json`.
-2. Make a change to the field in the manual item. For example, if we wanted to
-   change the description of the function below:
+   `/doc/4dm/generated.json`. For example, if we wanted to
+   change the description of the manual item shown below.
+
    Before
 
    ```json
@@ -50,7 +50,7 @@ See below for steps on creating a patch.
    }
    ```
 
-3. Add a patch item into `/doc/4dm/patch.json`.
+2. Add a patch item into `/doc/4dm/patch.json`.
 
    ```json
    {
