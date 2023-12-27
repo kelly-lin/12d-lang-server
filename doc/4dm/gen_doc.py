@@ -214,17 +214,11 @@ def print_warnings(no_doc_warnings):
         print_stderr("        {}".format(warning))
 
 
-def main():
-    prototype_filepath, manual_filepath, patch_filepath = validate_args()
-
-    manual_file = open(manual_filepath, "r")
-    manual_lines = manual_file.readlines()
-    manual = parse_manual(manual_lines)
-
-    prototype_file = open(prototype_filepath, "r")
-    prototype_lines = prototype_file.readlines()
-    no_doc_warnings = insert_missing_manual_items(prototype_lines, manual)
-
+def patch_manual(patch_filepath, manual):
+    """
+    Patch the manual provided patch located at patch filepath. It will override
+    the parsed manual properties.
+    """
     if patch_filepath is not None:
         with open(patch_filepath) as patch_file:
             patch = json.load(patch_file)
@@ -237,6 +231,20 @@ def main():
 
                 manual[patch_id]["names"] = patch["names"]
                 manual[patch_id]["description"] = patch["description"]["new"]
+
+
+def main():
+    prototype_filepath, manual_filepath, patch_filepath = validate_args()
+
+    manual_file = open(manual_filepath, "r")
+    manual_lines = manual_file.readlines()
+    manual = parse_manual(manual_lines)
+
+    prototype_file = open(prototype_filepath, "r")
+    prototype_lines = prototype_file.readlines()
+    no_doc_warnings = insert_missing_manual_items(prototype_lines, manual)
+
+    patch_manual(patch_filepath, manual)
 
     if len(no_doc_warnings) > 0:
         print_warnings(no_doc_warnings)
