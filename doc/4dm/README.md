@@ -2,18 +2,14 @@
 
 This project automatically generates the 12dpl library documentation to display
 in language services (e.g. showing documentation when hovering over a 12dpl
-library function) by mapping the functions defined in a protypes file and
-parsing the 12d programming manual with the script `/doc/4dm/gen_doc.py`. This
-allows the project to update the documentation efficiently when new versions of
-the 12d compiler is released.
+library function) by mapping the functions defined in a protypes file with
+the 12d programming manual with the script `/doc/4dm/gen_doc.py`.
 
 The automatic generation allows us to gather the large amount of documentation
-very quickly but also comes at a price with many errors such as incorrect spacing
-and having pdf header/footer text included in function call descriptions and
-including symbol chacaracters in the text. To address this, a documentation
+very quickly, but also comes at a price with many errors such as incorrect
+spacing and having pdf header/footer text included in function call descriptions
+and including symbol chacaracters in the text. To address this, a documentation
 patching system has been implemented to correct the mistakes.
-
-See below for steps on creating a patch.
 
 ## How to create a patch
 
