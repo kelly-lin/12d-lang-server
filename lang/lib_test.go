@@ -36,3 +36,30 @@ func TestGeneratedLib(t *testing.T) {
 		t.Fatal("library and generated manual file are out of sync, regenerate the library file")
 	}
 }
+
+// Tests to see if the patches have been applied to the generated manual file.
+func TestPatchesApplied(t *testing.T) {
+	assert := assert.New(t)
+	wd, err := os.Getwd()
+	assert.NoError(err)
+	cmd := exec.Command(
+		"python3",
+		path.Join(wd, "../doc/4dm/gen_doc.py"),
+		path.Join(wd, "../doc/4dm/proto_v14.txt"),
+		path.Join(wd, "../doc/4dm/12d_progm_v15.txt"),
+		path.Join(wd, "../doc/4dm/patch.json"),
+	)
+	output := bytes.NewBuffer(nil)
+	cmd.Stdout = output
+	err = cmd.Run()
+	assert.NoError(err)
+	got := output.Bytes()
+
+	f, err := os.Open(path.Join(wd, "../doc/4dm/generated.json"))
+	want, err := io.ReadAll(f)
+	assert.NoError(err)
+
+	if !reflect.DeepEqual(want, got) {
+		t.Fatal("generated manual file has not been patched with the latest patches, regenerate the manual file")
+	}
+}
