@@ -1,19 +1,11 @@
+#!/usr/bin/python3
 # Generates function call signature documentation from manual and prototype file.
 
 import sys
 import os
 import re
 import json
-
-
-def print_usage():
-    print("""Usage:
-    gen_doc.py <prototype> <manual> [patch]
-
-Description:
-    Generates function call signature documentation from manual (text file) and
-    prototype file (text file). The resulting documentation (json) will be
-    patched with the provided patch file (json file)""")
+import argparse
 
 
 def is_id_line(line):
@@ -133,46 +125,27 @@ def transformManualToJsonFormat(manual):
     return result
 
 
-def validate_args():
-    args = sys.argv[1:]
-    if len(args) == 0:
-        print_usage()
-        sys.exit(1)
+def parse_args():
+    parser = argparse.ArgumentParser(
+        description="""Generates function call signature documentation from manual (text file)
+and prototype file (text file). The resulting documentation (json) will
+be patched with the provided patch file (json file)""",
+        formatter_class=argparse.RawTextHelpFormatter
+    )
+    parser.add_argument("prototype_filepath")
+    parser.add_argument("manual_filepath")
+    parser.add_argument("-p", help="patch filepath")
+    args = parser.parse_args()
 
-    if args[0] == "-h":
-        print_usage()
-        sys.exit(0)
+    if not os.path.isfile(args.prototype_filepath):
+        exit("prototype file provided does not exist")
+    if not os.path.isfile(args.manual_filepath):
+        exit("manual file provided does not exist")
 
-    prototype_filepath = args[0]
-    if prototype_filepath is None:
-        print("prototype filepath is required")
-        print_usage()
-        sys.exit(1)
+    if args.p is not None and not os.path.isfile(args.p):
+        exit("patch file provided does not exist")
 
-    if not os.path.isfile(prototype_filepath):
-        print("prototype file provided does not exist")
-        print_usage()
-        sys.exit(1)
-
-    manual_filepath = args[1]
-    if manual_filepath is None:
-        print("manual filepath is required")
-        print_usage()
-        sys.exit(1)
-    if not os.path.isfile(manual_filepath):
-        print("manual file provided does not exist")
-        print_usage()
-        sys.exit(1)
-
-    patch_filepath = None
-    if len(args) > 2:
-        patch_filepath = args[2]
-        if patch_filepath is not None and not os.path.isfile(patch_filepath):
-            print("patch file provided does not exist")
-            print_usage()
-            sys.exit(1)
-
-    return prototype_filepath, manual_filepath, patch_filepath
+    return args.prototype_filepath, args.manual_filepath, args.p
 
 
 def insert_missing_manual_items(prototype_lines, manual) -> list[str]:
@@ -191,7 +164,7 @@ def insert_missing_manual_items(prototype_lines, manual) -> list[str]:
 
         if not id in manual:
             # no_doc_warnings.append(prototype_line.strip())
-            # Even though we did not successully parse the documentation from
+            # Even though we did not successfully parse the documentation from
             # the manual, we should still add in the function into the manual
             # so that we can manually add them by patching.
             match = re.search(r"(.*);.*\/\/ ID = \d+", prototype_line)
@@ -235,7 +208,7 @@ def patch_manual(patch_filepath, manual):
 
 
 def main():
-    prototype_filepath, manual_filepath, patch_filepath = validate_args()
+    prototype_filepath, manual_filepath, patch_filepath = parse_args()
 
     manual_file = open(manual_filepath, "r")
     manual_lines = manual_file.readlines()

@@ -20,7 +20,7 @@ fmt:
 
 .PHONY:
 gendoc:
-	@python3 ./doc/4dm/gen_doc.py ./doc/4dm/proto_v14.txt ./doc/4dm/12d_progm_v15.txt ./doc/4dm/patch.json > ./doc/4dm/generated.json
+	@./doc/4dm/gen_doc.py -p ./doc/4dm/patch.json ./doc/4dm/proto_v14.txt ./doc/4dm/12d_progm_v15.txt > ./doc/4dm/generated.json
 
 .PHONY:
 genlib:
