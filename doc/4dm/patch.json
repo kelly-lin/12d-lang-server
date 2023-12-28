@@ -6,6 +6,13 @@
         "Integer Set_attribute(Attributes attr, Text att_name, Text att)"
       ],
       "description": "For the Attributes attr, if the attribute called att_name does not exist then create it as type Text and give it the value att. If the first attribute called att_name does exist and it is type Text, then set its value to att. If the attribute exists and is not of type Text, then a non-zero return value is returned. A function return value of zero indicates the attribute value is successfully set. Note - the Get_attribute_type call can be used to get the type of the attribute called att_name."
+    },
+    {
+      "names": [
+        "Integer Get_command_argument(Integer i, Text &argument)"
+      ],
+      "description": "Get the i'th token from the command-line. The token is returned by the Text argument. The arguments start from 1. A function return value of zero indicates the i'th argument was successfully returned. For some example code, see 5. 4 Command Line-Arguments.",
+      "id": "433"
     }
   ]
 }

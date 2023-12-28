@@ -11,7 +11,7 @@
       "names": [
         "Integer Get_command_argument(Integer i, Text &argument)"
       ],
-      "description": "Get the i\u2019th token from the command-line. The token is returned by the Text argument. The arguments start from 1. A function return value of zero indicates the i\u2019th argument was successfully returned. For some example code, see 5. 4 Command Line-Arguments.",
+      "description": "Get the i'th token from the command-line. The token is returned by the Text argument. The arguments start from 1. A function return value of zero indicates the i'th argument was successfully returned. For some example code, see 5. 4 Command Line-Arguments.",
       "id": "433"
     },
     {
