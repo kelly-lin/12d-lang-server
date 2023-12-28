@@ -9,26 +9,26 @@ The automatic generation allows us to gather the large amount of documentation
 very quickly, but also comes at a price with many errors such as:
 
 - Incorrect spacing.
-- Inclusion of PDF header/footer text included in function call descriptions.
-- Inclusion of junk symbol chacaracters in the text.
+- Inclusion of PDF header/footer text in function call descriptions.
+- Inclusion of junk symbol characters in the text.
 - Other errors.
 
 To address these issues, a documentation patching system has been implemented to
 correct the mistakes.
 
-## How to create a patch
+## How to create or modify a patch
 
 1. Locate the library function you would like to patch in
    `/doc/4dm/generated.json` and make your changes directly in the file.
-   For example, if we wanted to change the description of the manual item shown
-   below, we would edit and save the change in the `/doc/4dm/generated.json`
-   file.
+   For example, if we wanted to change the name and description of the manual
+   item shown below, we would edit them in the `/doc/4dm/generated.json` file
+   and save the changes.
 
    ```json
    {
      "items": [
        {
-         "names": ["void Exit(Integer exit_code)"],
+         "names": ["void Exit(    Integer exit_code )"],
          "description": "some wrong description",
          "id": "417"
        }
@@ -49,8 +49,12 @@ correct the mistakes.
    ```
 
 2. Open up a terminal and run the patcher script `make genpatch`. This will
-   create a new patch in `/doc/4dm/patch.json` if it does not exist, otherwise
-   it will be modified if it does.
-3. Run the command to update the library `make genlib`. This will regenerate the
+   create a new patch in `/doc/4dm/patch.json` if it does not exist otherwise
+   it will be modified.
+3. Run the command `make gendoc` to patch the `/doc/4dm/generated.json` file
+   with updated changes.
+4. Run the command `make genlib` to update the library. This will regenerate the
    go code that the language server uses to serve documentation to the client.
-4. Commit changes and open a pull request.
+5. Run the tests `make test` and ensure everything is still passing.
+6. Commit changes to `/doc/4dm/patch.json`, `/doc/4dm/generated.json` and
+   `./lang/lib.go` and open a pull request.
