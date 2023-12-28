@@ -14,7 +14,8 @@ Language server for the 12d programming language (12dPL) conforming to the
 ## Dependencies
 
 - [Go](https://go.dev/)
-- make
+- Make
+- Python 3
 
 ## Building
 
