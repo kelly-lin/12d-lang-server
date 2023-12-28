@@ -10,9 +10,8 @@ the 12d compiler is released.
 The automatic generation allows us to gather the large amount of documentation
 very quickly but also comes at a price with many errors such as incorrect spacing
 and having pdf header/footer text included in function call descriptions and
-including symbol chacaracters in the text.
-
-A documentation patching system has been implemented to correct the mistakes.
+including symbol chacaracters in the text. To address this, a documentation
+patching system has been implemented to correct the mistakes.
 
 See below for steps on creating a patch.
 
@@ -22,7 +21,7 @@ See below for steps on creating a patch.
    `/doc/4dm/generated.json`. For example, if we wanted to
    change the description of the manual item shown below.
 
-   Before
+   From
 
    ```json
    {
@@ -36,7 +35,7 @@ See below for steps on creating a patch.
    }
    ```
 
-   After
+   To
 
    ```json
    {
@@ -50,21 +49,10 @@ See below for steps on creating a patch.
    }
    ```
 
-2. Add a patch item into `/doc/4dm/patch.json`.
+   We need to note down the `id` of the manual item and modify the `description`
+   and write a patch.
 
-   ```json
-   {
-     "patches": [
-       {
-         "id": "417",
-         "names": ["void Exit(Integer exit_code)"]
-         "description": "Immediately exit the program and write the message macro exited with code exit_code to the information/error message area of the macro console panel."
-       }
-     ]
-   }
-   ```
-
-   A patch item follows the structure:
+   A patch follows the structure:
 
    ```typescript
    type PatchItem = {
@@ -75,6 +63,30 @@ See below for steps on creating a patch.
      // New description.
      description?: string;
    };
+   ```
+
+   So the resulting patch would be:
+
+   ```json
+   {
+     "id": "417",
+     "names": ["void Exit(Integer exit_code)"],
+     "description": "Immediately exit the program and write the message macro exited with code exit_code to the information/error message area of the macro console panel."
+   }
+   ```
+
+2. Add a patch item into `/doc/4dm/patch.json`.
+
+   ```json
+   {
+     "patches": [
+       {
+         "id": "417",
+         "names": ["void Exit(Integer exit_code)"],
+         "description": "Immediately exit the program and write the message macro exited with code exit_code to the information/error message area of the macro console panel."
+       }
+     ]
+   }
    ```
 
 3. Commit changes and open a pull request.
