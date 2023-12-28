@@ -24,6 +24,10 @@ correct the mistakes.
    item shown below, we would edit them in the `/doc/4dm/generated.json` file
    and save the changes.
 
+   Note: do not change the order or add/remove items in the list, the scripts
+   depend on the order to detect changes. If an error occurs, the scripts will
+   exit with an error.
+
    ```json
    {
      "items": [
@@ -49,8 +53,8 @@ correct the mistakes.
    ```
 
 2. Open up a terminal and run the patcher script `make genpatch`. This will
-   create a new patch in `/doc/4dm/patch.json` if it does not exist otherwise
-   it will be modified.
+   create a new patch object in `/doc/4dm/patch.json` if it does not exist
+   otherwise it will be modified.
 3. Run the command `make gendoc` to patch the `/doc/4dm/generated.json` file
    with updated changes.
 4. Run the command `make genlib` to update the library. This will regenerate the
