@@ -54,7 +54,7 @@ correct the mistakes.
 
 2. Open up a terminal and run the patcher script `make genpatch`. This will
    create a new patch object in `/doc/4dm/patch.json` if it does not exist
-   otherwise it will be modified.
+   or modified otherwise.
 3. Run the command `make gendoc` to patch the `/doc/4dm/generated.json` file
    with updated changes.
 4. Run the command `make genlib` to update the library. This will regenerate the
