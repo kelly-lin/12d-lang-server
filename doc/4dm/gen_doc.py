@@ -128,13 +128,11 @@ def transformManualToJsonFormat(manual):
 def parse_args():
     parser = argparse.ArgumentParser(
         description="""Generates function call signature documentation from manual (text file)
-and prototype file (text file). The resulting documentation (json) will
-be patched with the provided patch file (json file)""",
+and prototype file (text file).""",
         formatter_class=argparse.RawTextHelpFormatter
     )
     parser.add_argument("prototype_filepath")
     parser.add_argument("manual_filepath")
-    parser.add_argument("-p", help="patch filepath")
     args = parser.parse_args()
 
     if not os.path.isfile(args.prototype_filepath):
@@ -142,10 +140,7 @@ be patched with the provided patch file (json file)""",
     if not os.path.isfile(args.manual_filepath):
         exit("manual file provided does not exist")
 
-    if args.p is not None and not os.path.isfile(args.p):
-        exit("patch file provided does not exist")
-
-    return args.prototype_filepath, args.manual_filepath, args.p
+    return args.prototype_filepath, args.manual_filepath
 
 
 def insert_missing_manual_items(prototype_lines, manual) -> list[str]:
@@ -187,28 +182,8 @@ def print_warnings(no_doc_warnings):
         print_stderr("        {}".format(warning))
 
 
-def patch_manual(patch_filepath, manual):
-    """
-    Patch the manual provided patch located at patch filepath. It will override
-    the parsed manual properties.
-    """
-    if patch_filepath is not None:
-        with open(patch_filepath) as patch_file:
-            patch = json.load(patch_file)
-            for patch in patch["patches"]:
-                patch_id = patch["id"]
-                if not patch_id in manual:
-                    print("patch failed, manual item with id {} does not exist".format(
-                        patch["id"]))
-                    exit(1)
-                if "names" in patch:
-                    manual[patch_id]["names"] = patch["names"]
-                if "description" in patch:
-                    manual[patch_id]["description"] = patch["description"]
-
-
 def main():
-    prototype_filepath, manual_filepath, patch_filepath = parse_args()
+    prototype_filepath, manual_filepath = parse_args()
 
     manual_file = open(manual_filepath, "r")
     manual_lines = manual_file.readlines()
@@ -217,8 +192,6 @@ def main():
     prototype_file = open(prototype_filepath, "r")
     prototype_lines = prototype_file.readlines()
     no_doc_warnings = insert_missing_manual_items(prototype_lines, manual)
-
-    patch_manual(patch_filepath, manual)
 
     if len(no_doc_warnings) > 0:
         print_warnings(no_doc_warnings)
