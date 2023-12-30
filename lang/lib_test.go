@@ -42,20 +42,17 @@ func TestPatchesApplied(t *testing.T) {
 	assert := assert.New(t)
 	wd, err := os.Getwd()
 	assert.NoError(err)
-	cmd := exec.Command(
-		"python3",
-		path.Join(wd, "../doc/4dm/gen_doc.py"),
-		path.Join(wd, "../doc/4dm/proto_v14.txt"),
-		path.Join(wd, "../doc/4dm/12d_progm_v15.txt"),
-		path.Join(wd, "../doc/4dm/patch.json"),
-	)
+	// The output of this command would be the patched documentation.
+	cmd := exec.Command("python3", "../doc/4dm/patch_doc.py", "../doc/4dm/patch.json", "../doc/4dm/generated.json")
 	output := bytes.NewBuffer(nil)
 	cmd.Stdout = output
 	err = cmd.Run()
 	assert.NoError(err)
 	got := output.Bytes()
 
+	// The current documentation file.
 	f, err := os.Open(path.Join(wd, "../doc/4dm/generated.json"))
+	assert.NoError(err)
 	want, err := io.ReadAll(f)
 	assert.NoError(err)
 
