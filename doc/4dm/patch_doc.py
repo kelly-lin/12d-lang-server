@@ -30,7 +30,8 @@ def patch_manual(patch_filepath, manual, manual_id_idx_map):
 def parse_args():
     parser = argparse.ArgumentParser(description="Patches the manual",)
     parser.add_argument("patch_filepath")
-    parser.add_argument("manual_filepath", nargs="?", help="filepath to manual, if not provided standard input will be used")
+    parser.add_argument("manual_filepath", nargs="?",
+                        help="filepath to manual, if not provided standard input will be used")
     args = parser.parse_args()
 
     if not os.path.isfile(args.patch_filepath):
