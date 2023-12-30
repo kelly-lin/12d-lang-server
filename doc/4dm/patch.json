@@ -13,6 +13,13 @@
       ],
       "description": "Get the i'th token from the command-line. The token is returned by the Text argument. The arguments start from 1. A function return value of zero indicates the i'th argument was successfully returned. For some example code, see 5. 4 Command Line-Arguments.",
       "id": "433"
+    },
+    {
+      "names": [
+        "Text Text_upper(Text text)"
+      ],
+      "description": "Create a Text from the Text text that has all the alphabetic characters converted to upper-case. The function return value is the upper case Text.",
+      "id": "383"
     }
   ]
 }

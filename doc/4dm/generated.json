@@ -60,7 +60,7 @@
       "names": [
         "Text Text_upper(Text text)"
       ],
-      "description": "TextPage 85\f12d Model Programming Language ManualCreate a Text from the Text text that has all the alphabetic characters converted to upper-case. The function return value is the upper case Text.",
+      "description": "Create a Text from the Text text that has all the alphabetic characters converted to upper-case. The function return value is the upper case Text.",
       "id": "383"
     },
     {
