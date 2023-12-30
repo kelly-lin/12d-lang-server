@@ -10,7 +10,7 @@ def get_head_manual(filepath):
     """
     Get the version of the manual from the HEAD of the branch.
     """
-    get_head_version_args = ["git", "show", "main:{}".format(filepath)]
+    get_head_version_args = ["git", "show", "HEAD:{}".format(filepath)]
     proc = subprocess.run(get_head_version_args, stdout=subprocess.PIPE)
     if not proc.returncode == 0:
         exit("failed to execute: {}".format(get_head_version_args))
