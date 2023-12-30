@@ -148,7 +148,7 @@ func debugNode(n *sitter.Node) {
 
 // Finds the identifier located at the line and column number and returns the
 // name if it exists and an error when it does not.
-func FindIdentifier(node *sitter.Node, sourceCode []byte, lineNum, colNum uint) (string, error) {
+func FindIdentifierNode(node *sitter.Node, lineNum, colNum uint) (*sitter.Node, error) {
 	queue := NewQueue()
 	queue.Enqueue(node)
 	for queue.HasItems() {
@@ -160,7 +160,7 @@ func FindIdentifier(node *sitter.Node, sourceCode []byte, lineNum, colNum uint) 
 		isOnSameLine := uint(currentNode.StartPoint().Row) == lineNum && lineNum == uint(currentNode.EndPoint().Row)
 		isInsideColumnRange := uint(currentNode.StartPoint().Column) <= colNum && colNum <= uint(currentNode.EndPoint().Column)
 		if isIdentifier && isOnSameLine && isInsideColumnRange {
-			return currentNode.Content(sourceCode), nil
+			return currentNode, nil
 		}
 		// If we need more performance we might be able to improve this by doing
 		// a binary search.
@@ -176,5 +176,5 @@ func FindIdentifier(node *sitter.Node, sourceCode []byte, lineNum, colNum uint) 
 			}
 		}
 	}
-	return "", ErrNoDefinition
+	return nil, ErrNoDefinition
 }

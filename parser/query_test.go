@@ -63,7 +63,7 @@ void main() {
 	want := "Add"
 	lineNum := 7
 	colNum := 21
-	got, err := parser.FindIdentifier(n, sourceCode, uint(lineNum), uint(colNum))
+	node, err := parser.FindIdentifierNode(n, uint(lineNum), uint(colNum))
 	assert.NoError(err)
-	assert.Equal(want, got)
+	assert.Equal(want, node.Content(sourceCode))
 }
