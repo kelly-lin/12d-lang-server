@@ -208,7 +208,7 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 			return protocol.ResponseMessage{}, 0, errors.New("source code not found")
 		}
 		identifierNode, err := parser.FindIdentifierNode(rootNode, params.Position.Line, params.Position.Character)
-        identifier := identifierNode.Content([]byte(sourceCode))
+		identifier := identifierNode.Content([]byte(sourceCode))
 		if errors.Is(err, parser.ErrNoDefinition) {
 			return protocol.ResponseMessage{
 					ID:     msg.ID,
@@ -291,24 +291,48 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 		if err != nil {
 			return protocol.ResponseMessage{}, 0, err
 		}
-		// Is this byte slice conversion expensive? If it is, we might need to
-		// find a way so that we do not have to do the conversion. Ideally we
-		// should just need to parse the source code once and cache it.
-		definitionRange, err := parser.FindFuncDefinition(identifier, []byte(sourceCode))
-		if errors.Is(err, parser.ErrNoDefinition) {
-			return protocol.ResponseMessage{
-					ID:     msg.ID,
-					Result: json.RawMessage(protocol.NullResult),
-				},
-				len(protocol.NullResult),
-				nil
-		}
-		if err != nil {
-			return protocol.ResponseMessage{}, 0, err
+		var locRange parser.Range
+		switch identifierNode.Parent().Type() {
+		case "call_expression":
+			// Is this byte slice conversion expensive? If it is, we might need to
+			// find a way so that we do not have to do the conversion. Ideally we
+			// should just need to parse the source code once and cache it.
+			locRange, err = parser.FindFuncDefinition(identifier, []byte(sourceCode))
+			if errors.Is(err, parser.ErrNoDefinition) {
+				return protocol.ResponseMessage{
+						ID:     msg.ID,
+						Result: json.RawMessage(protocol.NullResult),
+					},
+					len(protocol.NullResult),
+					nil
+			}
+			if err != nil {
+				return protocol.ResponseMessage{}, 0, err
+			}
+
+		case "binary_expression":
+			currentNode := identifierNode
+			for currentNode.Parent() != nil {
+				currentNode = currentNode.Parent()
+				if currentNode.Type() == "function_definition" {
+					paramsNode := currentNode.ChildByFieldName("declarator").ChildByFieldName("parameters")
+					paramsText := paramsNode.Content([]byte(sourceCode))
+					colStart := uint32(paramsNode.StartPoint().Column)
+					if idx := strings.Index(paramsText, identifier); idx != -1 {
+						locRange = parser.Range{
+							Start: parser.Point{Row: paramsNode.StartPoint().Row, Column: colStart + uint32(idx)},
+							End:   parser.Point{Row: paramsNode.StartPoint().Row, Column: colStart + uint32(idx) + uint32(len(identifier))},
+						}
+						break
+					}
+				}
+			}
+
+		default:
 		}
 		location := protocol.Location{
 			URI:   params.TextDocument.URI,
-			Range: ToProtocolRange(definitionRange),
+			Range: ToProtocolRange(locRange),
 		}
 		locationBytes, err := json.Marshal(location)
 		if err != nil {
