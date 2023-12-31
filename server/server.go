@@ -326,6 +326,8 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 	}
 }
 
+// Find the definition of the node reprepsenting by idenitifier node and
+// identifier. The identifier node is the target for the definition.
 func FindDefinition(identifierNode *sitter.Node, identifier string, sourceCode string) (parser.Range, error) {
 	switch identifierNode.Parent().Type() {
 	case "call_expression":
