@@ -291,44 +291,17 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 		if err != nil {
 			return protocol.ResponseMessage{}, 0, err
 		}
-		var locRange parser.Range
-		switch identifierNode.Parent().Type() {
-		case "call_expression":
-			// Is this byte slice conversion expensive? If it is, we might need to
-			// find a way so that we do not have to do the conversion. Ideally we
-			// should just need to parse the source code once and cache it.
-			locRange, err = parser.FindFuncDefinition(identifier, []byte(sourceCode))
-			if errors.Is(err, parser.ErrNoDefinition) {
-				return protocol.ResponseMessage{
-						ID:     msg.ID,
-						Result: json.RawMessage(protocol.NullResult),
-					},
-					len(protocol.NullResult),
-					nil
-			}
-			if err != nil {
-				return protocol.ResponseMessage{}, 0, err
-			}
-
-		case "binary_expression":
-			currentNode := identifierNode
-			for currentNode.Parent() != nil {
-				currentNode = currentNode.Parent()
-				if currentNode.Type() == "function_definition" {
-					paramsNode := currentNode.ChildByFieldName("declarator").ChildByFieldName("parameters")
-					paramsText := paramsNode.Content([]byte(sourceCode))
-					colStart := uint32(paramsNode.StartPoint().Column)
-					if idx := strings.Index(paramsText, identifier); idx != -1 {
-						locRange = parser.Range{
-							Start: parser.Point{Row: paramsNode.StartPoint().Row, Column: colStart + uint32(idx)},
-							End:   parser.Point{Row: paramsNode.StartPoint().Row, Column: colStart + uint32(idx) + uint32(len(identifier))},
-						}
-						break
-					}
-				}
-			}
-
-		default:
+		locRange, err := FindDefinition(identifierNode, identifier, sourceCode)
+		if errors.Is(err, parser.ErrNoDefinition) {
+			return protocol.ResponseMessage{
+					ID:     msg.ID,
+					Result: json.RawMessage(protocol.NullResult),
+				},
+				len(protocol.NullResult),
+				nil
+		}
+		if err != nil {
+			return protocol.ResponseMessage{}, 0, err
 		}
 		location := protocol.Location{
 			URI:   params.TextDocument.URI,
@@ -350,6 +323,41 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 
 	default:
 		return protocol.ResponseMessage{}, 0, ErrUnhandledMethod
+	}
+}
+
+func FindDefinition(identifierNode *sitter.Node, identifier string, sourceCode string) (parser.Range, error) {
+	switch identifierNode.Parent().Type() {
+	case "call_expression":
+		// Is this byte slice conversion expensive? If it is, we might need to
+		// find a way so that we do not have to do the conversion. Ideally we
+		// should just need to parse the source code once and cache it.
+		locRange, err := parser.FindFuncDefinition(identifier, []byte(sourceCode))
+		return locRange, err
+
+	case "binary_expression":
+		currentNode := identifierNode
+		for currentNode.Parent() != nil {
+			currentNode = currentNode.Parent()
+			// TODO: we are finding the definition in the parameter list for now
+			// we need to handle locally declared variables as well.
+			if currentNode.Type() == "function_definition" {
+				paramsNode := currentNode.ChildByFieldName("declarator").ChildByFieldName("parameters")
+				paramsText := paramsNode.Content([]byte(sourceCode))
+				colStart := uint32(paramsNode.StartPoint().Column)
+				if idx := strings.Index(paramsText, identifier); idx != -1 {
+					return parser.Range{
+							Start: parser.Point{Row: paramsNode.StartPoint().Row, Column: colStart + uint32(idx)},
+							End:   parser.Point{Row: paramsNode.StartPoint().Row, Column: colStart + uint32(idx) + uint32(len(identifier))},
+						},
+						nil
+				}
+			}
+		}
+		return parser.Range{}, errors.New("parent function definition not found")
+
+	default:
+		return parser.Range{}, errors.New("unhandled expression type")
 	}
 }
 
