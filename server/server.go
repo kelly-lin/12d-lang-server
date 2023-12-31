@@ -279,7 +279,6 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 			return protocol.ResponseMessage{}, 0, errors.New("source code not found")
 		}
 		identifierNode, err := parser.FindIdentifierNode(rootNode, params.Position.Line, params.Position.Character)
-		identifier := identifierNode.Content([]byte(sourceCode))
 		if errors.Is(err, parser.ErrNoDefinition) {
 			return protocol.ResponseMessage{
 					ID:     msg.ID,
@@ -288,6 +287,7 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 				len(protocol.NullResult),
 				nil
 		}
+		identifier := identifierNode.Content([]byte(sourceCode))
 		if err != nil {
 			return protocol.ResponseMessage{}, 0, err
 		}
