@@ -341,8 +341,6 @@ func FindDefinition(identifierNode *sitter.Node, identifier string, sourceCode s
 		currentNode := identifierNode
 		for currentNode.Parent() != nil {
 			currentNode = currentNode.Parent()
-			// TODO: we are finding the definition in the parameter list for now
-			// we need to handle locally declared variables as well.
 			if currentNode.Type() == "function_definition" {
 				paramsNode := currentNode.ChildByFieldName("declarator").ChildByFieldName("parameters")
 				paramsText := paramsNode.Content([]byte(sourceCode))
@@ -353,6 +351,21 @@ func FindDefinition(identifierNode *sitter.Node, identifier string, sourceCode s
 							End:   parser.Point{Row: paramsNode.StartPoint().Row, Column: colStart + uint32(idx) + uint32(len(identifier))},
 						},
 						nil
+				}
+			}
+			if currentNode.Type() == "compound_statement" {
+				for i := 0; i < int(currentNode.ChildCount()); i++ {
+					currentChildNode := currentNode.Child(i)
+					if currentChildNode.Type() == "declaration" {
+						identifierDeclarationNode := currentChildNode.ChildByFieldName("declarator").ChildByFieldName("declarator")
+						if identifierDeclarationNode.Content([]byte(sourceCode)) == identifier {
+							return parser.Range{
+									Start: parser.Point{Row: identifierDeclarationNode.StartPoint().Row, Column: identifierDeclarationNode.StartPoint().Column},
+									End:   parser.Point{Row: identifierDeclarationNode.EndPoint().Row, Column: identifierDeclarationNode.EndPoint().Column},
+								},
+								nil
+						}
+					}
 				}
 			}
 		}

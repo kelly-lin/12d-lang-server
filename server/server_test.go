@@ -103,6 +103,51 @@ void main() {
 		assert.Equal(want.Error, got.Error)
 		assert.Equal(string(want.Result), string(got.Result))
 	})
+
+	t.Run("local variable", func(t *testing.T) {
+		defer goleak.VerifyNone(t)
+		assert := assert.New(t)
+		logger, err := newLogger()
+		assert.NoError(err)
+		in, out, cleanUp := startServer(logger)
+		defer cleanUp()
+
+		var id int64 = 1
+		uri := "file:///foo.4dm"
+		text := `Integer Add_one(Integer addend) {
+    Integer augend = 1;
+    return augend + addend;
+}
+
+void main() {
+    Integer result = AddOne(1);
+}`
+		didOpenMsgBytes, err := newDidOpenRequestMessageBytes(id, uri, text)
+		assert.NoError(err)
+		_, err = in.Writer.Write([]byte(server.ToProtocolMessage(didOpenMsgBytes)))
+		assert.NoError(err)
+
+		// This is refers to the augend variable in the return statement.
+		position := protocol.Position{Line: 2, Character: 11}
+		definitionMsgBytes, err := newDefinitionRequestMessageBytes(id, uri, position)
+		assert.NoError(err)
+		_, err = in.Writer.Write([]byte(server.ToProtocolMessage(definitionMsgBytes)))
+		assert.NoError(err)
+
+		got, err := getReponseMessage(out.Reader)
+		assert.NoError(err)
+		want, err := newLocationResponseMessage(
+			id,
+			uri,
+			// This is refers to the augend local variable.
+			protocol.Position{Line: 1, Character: 12},
+			protocol.Position{Line: 1, Character: 18},
+		)
+		assert.NoError(err)
+		assert.Equal(want.ID, got.ID)
+		assert.Equal(want.Error, got.Error)
+		assert.Equal(string(want.Result), string(got.Result))
+	})
 }
 
 // Creates a new protocol request message with definition params and returns the
