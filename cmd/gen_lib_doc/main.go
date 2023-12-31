@@ -56,12 +56,14 @@ package lang
 
 // Map of library func identifier and slice of docstrings in markdown.
 var Lib = map[string][]string{
-{{range $name, $descriptions := .}}    "{{$name}}": {
+{{- range $name, $descriptions := .}}
+	"{{$name}}": {
 {{- range $description := $descriptions}}
-        "{{$description}}",
+		"{{$description}}",
 {{- end}}
-    },
-{{end}}}
+	},
+{{- end}}
+}
 `))
 	if err := templ.Execute(os.Stdout, agg); err != nil {
 		fmt.Printf("could not execute template: %s\n", err)
