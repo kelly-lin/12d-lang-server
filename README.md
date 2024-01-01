@@ -51,3 +51,17 @@ Patching](./doc/4dm/README.md).
 ### Bugfixes
 
 Contribute to the project directly by fixing bugs and opening a pull request.
+
+### TODO
+
+-[] Support reference type func parameters.
+
+    ```12dpl
+        Integer Foo(Integer &bar) {}
+    ```
+
+-[] Support multiple single line declaration.
+
+    ```12dpl
+        Integer foo, bar = 1;
+    ```
