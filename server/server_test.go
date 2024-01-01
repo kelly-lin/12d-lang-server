@@ -90,7 +90,7 @@ void main() {
 				},
 			},
 			{
-				Desc: "local variable",
+				Desc: "binary expression local variable",
 				SourceCode: `Integer Add_one(Integer addend) {
     Integer augend = 1;
     return augend + addend;
