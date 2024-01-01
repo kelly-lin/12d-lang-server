@@ -19,11 +19,18 @@ import (
 
 func TestServer(t *testing.T) {
 	t.Run("textDocument/definition", func(t *testing.T) {
+		// Helper returns the response message and fails if the test if the
+		// response message could not be created.
+		mustNewLocationResponseMessage := func(id int64, uri string, start, end protocol.Position) protocol.ResponseMessage {
+			msg, err := newLocationResponseMessage(id, uri, start, end)
+			assert.NoError(t, err)
+			return msg
+		}
 		type TestCase struct {
 			Desc       string
 			SourceCode string
 			Pos        protocol.Position
-			Want       func() protocol.ResponseMessage
+			Want       protocol.ResponseMessage
 		}
 		testCases := []TestCase{
 			{
@@ -36,16 +43,12 @@ void main() {
     Integer result = Add(1, 2);
 }`,
 				Pos: protocol.Position{Line: 5, Character: 21},
-				Want: func() protocol.ResponseMessage {
-					msg, err := newLocationResponseMessage(
-						1,
-						"file:///foo.4dm",
-						protocol.Position{Line: 0, Character: 8},
-						protocol.Position{Line: 0, Character: 11},
-					)
-					assert.NoError(t, err)
-					return msg
-				},
+				Want: mustNewLocationResponseMessage(
+					1,
+					"file:///foo.4dm",
+					protocol.Position{Line: 0, Character: 8},
+					protocol.Position{Line: 0, Character: 11},
+				),
 			},
 			{
 				Desc: "func parameter identifier",
@@ -57,16 +60,12 @@ void main() {
     Integer result = Add(1, 2);
 }`,
 				Pos: protocol.Position{Line: 1, Character: 11},
-				Want: func() protocol.ResponseMessage {
-					msg, err := newLocationResponseMessage(
-						1,
-						"file:///foo.4dm",
-						protocol.Position{Line: 0, Character: 20},
-						protocol.Position{Line: 0, Character: 26},
-					)
-					assert.NoError(t, err)
-					return msg
-				},
+				Want: mustNewLocationResponseMessage(
+					1,
+					"file:///foo.4dm",
+					protocol.Position{Line: 0, Character: 20},
+					protocol.Position{Line: 0, Character: 26},
+				),
 			},
 			{
 				Desc: "func parameter identifier",
@@ -78,16 +77,12 @@ void main() {
     Integer result = Add(1, 2);
 }`,
 				Pos: protocol.Position{Line: 1, Character: 11},
-				Want: func() protocol.ResponseMessage {
-					msg, err := newLocationResponseMessage(
-						1,
-						"file:///foo.4dm",
-						protocol.Position{Line: 0, Character: 20},
-						protocol.Position{Line: 0, Character: 26},
-					)
-					assert.NoError(t, err)
-					return msg
-				},
+				Want: mustNewLocationResponseMessage(
+					1,
+					"file:///foo.4dm",
+					protocol.Position{Line: 0, Character: 20},
+					protocol.Position{Line: 0, Character: 26},
+				),
 			},
 			{
 				Desc: "binary expression local variable",
@@ -100,16 +95,12 @@ void main() {
     Integer result = Add_one(1);
 }`,
 				Pos: protocol.Position{Line: 2, Character: 11},
-				Want: func() protocol.ResponseMessage {
-					msg, err := newLocationResponseMessage(
-						1,
-						"file:///foo.4dm",
-						protocol.Position{Line: 1, Character: 12},
-						protocol.Position{Line: 1, Character: 18},
-					)
-					assert.NoError(t, err)
-					return msg
-				},
+				Want: mustNewLocationResponseMessage(
+					1,
+					"file:///foo.4dm",
+					protocol.Position{Line: 1, Character: 12},
+					protocol.Position{Line: 1, Character: 18},
+				),
 			},
 		}
 		for _, testCase := range testCases {
@@ -134,9 +125,9 @@ void main() {
 
 				got, err := getReponseMessage(out.Reader)
 				assert.NoError(err)
-				assert.Equal(testCase.Want().ID, got.ID)
-				assert.Equal(testCase.Want().Error, got.Error)
-				assert.Equal(string(testCase.Want().Result), string(got.Result))
+				assert.Equal(testCase.Want.ID, got.ID)
+				assert.Equal(testCase.Want.Error, got.Error)
+				assert.Equal(string(testCase.Want.Result), string(got.Result))
 
 			})
 		}
