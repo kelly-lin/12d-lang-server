@@ -19,134 +19,127 @@ import (
 
 func TestServer(t *testing.T) {
 	t.Run("textDocument/definition", func(t *testing.T) {
-		t.Run("func identifier", func(t *testing.T) {
-			defer goleak.VerifyNone(t)
-			assert := assert.New(t)
-			logger, err := newLogger()
-			assert.NoError(err)
-			in, out, cleanUp := startServer(logger)
-			defer cleanUp()
-
-			var id int64 = 1
-			uri := "file:///foo.4dm"
-			text := `Integer Add(Integer augend, Integer addend) {
+		type TestCase struct {
+			Desc       string
+			SourceCode string
+			Pos        protocol.Position
+			Want       func() protocol.ResponseMessage
+		}
+		testCases := []TestCase{
+			{
+				Desc: "func identifier",
+				SourceCode: `Integer Add(Integer augend, Integer addend) {
     return augend + addend;
 }
 
 void main() {
     Integer result = Add(1, 2);
-}`
-			didOpenMsgBytes, err := newDidOpenRequestMessageBytes(id, uri, text)
-			assert.NoError(err)
-			_, err = in.Writer.Write([]byte(server.ToProtocolMessage(didOpenMsgBytes)))
-			assert.NoError(err)
-
-			position := protocol.Position{Line: 5, Character: 21}
-			definitionMsgBytes, err := newDefinitionRequestMessageBytes(id, uri, position)
-			assert.NoError(err)
-			_, err = in.Writer.Write([]byte(server.ToProtocolMessage(definitionMsgBytes)))
-			assert.NoError(err)
-
-			got, err := getReponseMessage(out.Reader)
-			assert.NoError(err)
-			want, err := newLocationResponseMessage(
-				id,
-				uri,
-				protocol.Position{Line: 0, Character: 8},
-				protocol.Position{Line: 0, Character: 11},
-			)
-			assert.NoError(err)
-			assert.Equal(want, got)
-		})
-	})
-
-	t.Run("func parameter identifier", func(t *testing.T) {
-		defer goleak.VerifyNone(t)
-		assert := assert.New(t)
-		logger, err := newLogger()
-		assert.NoError(err)
-		in, out, cleanUp := startServer(logger)
-		defer cleanUp()
-
-		var id int64 = 1
-		uri := "file:///foo.4dm"
-		text := `Integer Add(Integer augend, Integer addend) {
+}`,
+				Pos: protocol.Position{Line: 5, Character: 21},
+				Want: func() protocol.ResponseMessage {
+					msg, err := newLocationResponseMessage(
+						1,
+						"file:///foo.4dm",
+						protocol.Position{Line: 0, Character: 8},
+						protocol.Position{Line: 0, Character: 11},
+					)
+					assert.NoError(t, err)
+					return msg
+				},
+			},
+			{
+				Desc: "func parameter identifier",
+				SourceCode: `Integer Add(Integer augend, Integer addend) {
     return augend + addend;
 }
 
 void main() {
     Integer result = Add(1, 2);
-}`
-		didOpenMsgBytes, err := newDidOpenRequestMessageBytes(id, uri, text)
-		assert.NoError(err)
-		_, err = in.Writer.Write([]byte(server.ToProtocolMessage(didOpenMsgBytes)))
-		assert.NoError(err)
+}`,
+				Pos: protocol.Position{Line: 1, Character: 11},
+				Want: func() protocol.ResponseMessage {
+					msg, err := newLocationResponseMessage(
+						1,
+						"file:///foo.4dm",
+						protocol.Position{Line: 0, Character: 20},
+						protocol.Position{Line: 0, Character: 26},
+					)
+					assert.NoError(t, err)
+					return msg
+				},
+			},
+			{
+				Desc: "func parameter identifier",
+				SourceCode: `Integer Add(Integer augend, Integer addend) {
+    return augend + addend;
+}
 
-		// This is refers to the augend variable in the return statement.
-		position := protocol.Position{Line: 1, Character: 11}
-		definitionMsgBytes, err := newDefinitionRequestMessageBytes(id, uri, position)
-		assert.NoError(err)
-		_, err = in.Writer.Write([]byte(server.ToProtocolMessage(definitionMsgBytes)))
-		assert.NoError(err)
-
-		got, err := getReponseMessage(out.Reader)
-		assert.NoError(err)
-		want, err := newLocationResponseMessage(
-			id,
-			uri,
-			// This is refers to the augend parameter.
-			protocol.Position{Line: 0, Character: 20},
-			protocol.Position{Line: 0, Character: 26},
-		)
-		assert.NoError(err)
-		assert.Equal(want.ID, got.ID)
-		assert.Equal(want.Error, got.Error)
-		assert.Equal(string(want.Result), string(got.Result))
-	})
-
-	t.Run("local variable", func(t *testing.T) {
-		defer goleak.VerifyNone(t)
-		assert := assert.New(t)
-		logger, err := newLogger()
-		assert.NoError(err)
-		in, out, cleanUp := startServer(logger)
-		defer cleanUp()
-
-		var id int64 = 1
-		uri := "file:///foo.4dm"
-		text := `Integer Add_one(Integer addend) {
+void main() {
+    Integer result = Add(1, 2);
+}`,
+				Pos: protocol.Position{Line: 1, Character: 11},
+				Want: func() protocol.ResponseMessage {
+					msg, err := newLocationResponseMessage(
+						1,
+						"file:///foo.4dm",
+						protocol.Position{Line: 0, Character: 20},
+						protocol.Position{Line: 0, Character: 26},
+					)
+					assert.NoError(t, err)
+					return msg
+				},
+			},
+			{
+				Desc: "local variable",
+				SourceCode: `Integer Add_one(Integer addend) {
     Integer augend = 1;
     return augend + addend;
 }
 
 void main() {
-    Integer result = AddOne(1);
-}`
-		didOpenMsgBytes, err := newDidOpenRequestMessageBytes(id, uri, text)
-		assert.NoError(err)
-		_, err = in.Writer.Write([]byte(server.ToProtocolMessage(didOpenMsgBytes)))
-		assert.NoError(err)
+    Integer result = Add_one(1);
+}`,
+				Pos: protocol.Position{Line: 2, Character: 11},
+				Want: func() protocol.ResponseMessage {
+					msg, err := newLocationResponseMessage(
+						1,
+						"file:///foo.4dm",
+						protocol.Position{Line: 1, Character: 12},
+						protocol.Position{Line: 1, Character: 18},
+					)
+					assert.NoError(t, err)
+					return msg
+				},
+			},
+		}
+		for _, testCase := range testCases {
+			t.Run(testCase.Desc, func(t *testing.T) {
+				defer goleak.VerifyNone(t)
+				assert := assert.New(t)
+				logger, err := newLogger()
+				assert.NoError(err)
+				in, out, cleanUp := startServer(logger)
+				defer cleanUp()
 
-		// This is refers to the augend variable in the return statement.
-		position := protocol.Position{Line: 2, Character: 11}
-		definitionMsgBytes, err := newDefinitionRequestMessageBytes(id, uri, position)
-		assert.NoError(err)
-		_, err = in.Writer.Write([]byte(server.ToProtocolMessage(definitionMsgBytes)))
-		assert.NoError(err)
+				var id int64 = 1
+				didOpenMsgBytes, err := newDidOpenRequestMessageBytes(id, "file:///foo.4dm", testCase.SourceCode)
+				assert.NoError(err)
+				_, err = in.Writer.Write([]byte(server.ToProtocolMessage(didOpenMsgBytes)))
+				assert.NoError(err)
 
-		got, err := getReponseMessage(out.Reader)
-		assert.NoError(err)
-		want, err := newLocationResponseMessage(
-			id,
-			uri,
-			// This is refers to the augend local variable.
-			protocol.Position{Line: 1, Character: 12},
-			protocol.Position{Line: 1, Character: 18},
-		)
-		assert.NoError(err)
-		assert.Equal(want.ID, got.ID)
-		assert.Equal(want.Error, got.Error)
-		assert.Equal(string(want.Result), string(got.Result))
+				definitionMsgBytes, err := newDefinitionRequestMessageBytes(id, "file:///foo.4dm", testCase.Pos)
+				assert.NoError(err)
+				_, err = in.Writer.Write([]byte(server.ToProtocolMessage(definitionMsgBytes)))
+				assert.NoError(err)
+
+				got, err := getReponseMessage(out.Reader)
+				assert.NoError(err)
+				assert.Equal(testCase.Want().ID, got.ID)
+				assert.Equal(testCase.Want().Error, got.Error)
+				assert.Equal(string(testCase.Want().Result), string(got.Result))
+
+			})
+		}
 	})
 }
 
