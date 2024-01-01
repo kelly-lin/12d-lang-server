@@ -135,6 +135,20 @@ void main() {
 					protocol.Position{Line: 1, Character: 13},
 				),
 			},
+			{
+				Desc: "declaration without initialisation",
+				SourceCode: `void Validate_source_box(Source_Box source_box) {
+    Dynamic_Element elts;
+    Validate(source_box, elts);
+}`,
+				Pos: protocol.Position{Line: 2, Character: 25},
+				Want: mustNewLocationResponseMessage(
+					1,
+					"file:///foo.4dm",
+					protocol.Position{Line: 1, Character: 20},
+					protocol.Position{Line: 1, Character: 24},
+				),
+			},
 		}
 		for _, testCase := range testCases {
 			t.Run(testCase.Desc, func(t *testing.T) {
