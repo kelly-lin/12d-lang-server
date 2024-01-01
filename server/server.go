@@ -290,21 +290,23 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 				len(protocol.NullResult),
 				nil
 		}
-		identifier := identifierNode.Content([]byte(sourceCode))
 		if err != nil {
-			return protocol.ResponseMessage{}, 0, err
+			return protocol.ResponseMessage{
+					ID:     msg.ID,
+					Result: json.RawMessage(protocol.NullResult),
+				},
+				len(protocol.NullResult),
+				err
 		}
+		identifier := identifierNode.Content([]byte(sourceCode))
 		locRange, err := FindDefinition(identifierNode, identifier, sourceCode)
-		if errors.Is(err, parser.ErrNoDefinition) {
+		if err != nil {
 			return protocol.ResponseMessage{
 					ID:     msg.ID,
 					Result: json.RawMessage(protocol.NullResult),
 				},
 				len(protocol.NullResult),
 				nil
-		}
-		if err != nil {
-			return protocol.ResponseMessage{}, 0, err
 		}
 		location := protocol.Location{
 			URI:   params.TextDocument.URI,
@@ -340,7 +342,7 @@ func FindDefinition(identifierNode *sitter.Node, identifier string, sourceCode s
 		locRange, err := parser.FindFuncDefinition(identifier, []byte(sourceCode))
 		return locRange, err
 
-	case "binary_expression":
+	default:
 		currentNode := identifierNode
 		for currentNode.Parent() != nil {
 			currentNode = currentNode.Parent()
@@ -356,26 +358,21 @@ func FindDefinition(identifierNode *sitter.Node, identifier string, sourceCode s
 						nil
 				}
 			}
-			if currentNode.Type() == "compound_statement" {
-				for i := 0; i < int(currentNode.ChildCount()); i++ {
-					currentChildNode := currentNode.Child(i)
-					if currentChildNode.Type() == "declaration" {
-						identifierDeclarationNode := currentChildNode.ChildByFieldName("declarator").ChildByFieldName("declarator")
-						if identifierDeclarationNode.Content([]byte(sourceCode)) == identifier {
-							return parser.Range{
-									Start: parser.Point{Row: identifierDeclarationNode.StartPoint().Row, Column: identifierDeclarationNode.StartPoint().Column},
-									End:   parser.Point{Row: identifierDeclarationNode.EndPoint().Row, Column: identifierDeclarationNode.EndPoint().Column},
-								},
-								nil
-						}
+			for i := 0; i < int(currentNode.ChildCount()); i++ {
+				currentChildNode := currentNode.Child(i)
+				if currentChildNode.Type() == "declaration" {
+					identifierDeclarationNode := currentChildNode.ChildByFieldName("declarator").ChildByFieldName("declarator")
+					if identifierDeclarationNode.Content([]byte(sourceCode)) == identifier {
+						return parser.Range{
+								Start: parser.Point{Row: identifierDeclarationNode.StartPoint().Row, Column: identifierDeclarationNode.StartPoint().Column},
+								End:   parser.Point{Row: identifierDeclarationNode.EndPoint().Row, Column: identifierDeclarationNode.EndPoint().Column},
+							},
+							nil
 					}
 				}
 			}
 		}
 		return parser.Range{}, errors.New("parent function definition not found")
-
-	default:
-		return parser.Range{}, errors.New("unhandled expression type")
 	}
 }
 

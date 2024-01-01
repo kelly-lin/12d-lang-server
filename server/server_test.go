@@ -54,10 +54,6 @@ void main() {
 				Desc: "func parameter identifier",
 				SourceCode: `Integer Add(Integer augend, Integer addend) {
     return augend + addend;
-}
-
-void main() {
-    Integer result = Add(1, 2);
 }`,
 				Pos: protocol.Position{Line: 1, Character: 11},
 				Want: mustNewLocationResponseMessage(
@@ -71,10 +67,6 @@ void main() {
 				Desc: "func parameter identifier",
 				SourceCode: `Integer Add(Integer augend, Integer addend) {
     return augend + addend;
-}
-
-void main() {
-    Integer result = Add(1, 2);
 }`,
 				Pos: protocol.Position{Line: 1, Character: 11},
 				Want: mustNewLocationResponseMessage(
@@ -89,10 +81,6 @@ void main() {
 				SourceCode: `Integer Add_one(Integer addend) {
     Integer augend = 1;
     return augend + addend;
-}
-
-void main() {
-    Integer result = Add_one(1);
 }`,
 				Pos: protocol.Position{Line: 2, Character: 11},
 				Want: mustNewLocationResponseMessage(
@@ -100,6 +88,51 @@ void main() {
 					"file:///foo.4dm",
 					protocol.Position{Line: 1, Character: 12},
 					protocol.Position{Line: 1, Character: 18},
+				),
+			},
+			{
+				Desc: "local variable",
+				SourceCode: `Integer One() {
+    Integer result = 1;
+    return result;
+}`,
+				Pos: protocol.Position{Line: 2, Character: 11},
+				Want: mustNewLocationResponseMessage(
+					1,
+					"file:///foo.4dm",
+					protocol.Position{Line: 1, Character: 12},
+					protocol.Position{Line: 1, Character: 18},
+				),
+			},
+			{
+				Desc: "local variable inside for loop",
+				SourceCode: `Integer Looper() {
+    for (Integer i = 1; i <= 10; i++) {
+        Integer j = i;
+    }
+}`,
+				Pos: protocol.Position{Line: 2, Character: 20},
+				Want: mustNewLocationResponseMessage(
+					1,
+					"file:///foo.4dm",
+					protocol.Position{Line: 1, Character: 17},
+					protocol.Position{Line: 1, Character: 18},
+				),
+			},
+			{
+				Desc: "local variable outside for loop",
+				SourceCode: `Integer Looper() {
+    Integer k = 1;
+    for (Integer i = 1; i <= 10; i++) {
+        Integer j = k;
+    }
+}`,
+				Pos: protocol.Position{Line: 3, Character: 20},
+				Want: mustNewLocationResponseMessage(
+					1,
+					"file:///foo.4dm",
+					protocol.Position{Line: 1, Character: 12},
+					protocol.Position{Line: 1, Character: 13},
 				),
 			},
 		}
