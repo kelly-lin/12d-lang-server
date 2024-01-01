@@ -360,16 +360,17 @@ func FindDefinition(identifierNode *sitter.Node, identifier string, sourceCode s
 			}
 			for i := 0; i < int(currentNode.ChildCount()); i++ {
 				currentChildNode := currentNode.Child(i)
-				if currentChildNode.Type() == "declaration" {
-					identifierDeclarationNode := currentChildNode.ChildByFieldName("declarator").ChildByFieldName("declarator")
-					if identifierDeclarationNode == nil {
-						identifierDeclarationNode = currentChildNode.ChildByFieldName("declarator")
-						return parser.Range{
-								Start: parser.Point{Row: identifierDeclarationNode.StartPoint().Row, Column: identifierDeclarationNode.StartPoint().Column},
-								End:   parser.Point{Row: identifierDeclarationNode.EndPoint().Row, Column: identifierDeclarationNode.EndPoint().Column},
-							},
-							nil
-					} else if identifierDeclarationNode.Content([]byte(sourceCode)) == identifier {
+				if currentChildNode.Type() != "declaration" {
+					continue
+				}
+				declaratorNode := currentChildNode.ChildByFieldName("declarator")
+				if declaratorNode == nil {
+					continue
+				}
+				// Uninitialized variable declaration.
+				if declaratorNode.Type() == "identifier" {
+					identifierDeclarationNode := currentChildNode.ChildByFieldName("declarator")
+					if identifierDeclarationNode.Content([]byte(sourceCode)) == identifier {
 						return parser.Range{
 								Start: parser.Point{Row: identifierDeclarationNode.StartPoint().Row, Column: identifierDeclarationNode.StartPoint().Column},
 								End:   parser.Point{Row: identifierDeclarationNode.EndPoint().Row, Column: identifierDeclarationNode.EndPoint().Column},
@@ -377,6 +378,19 @@ func FindDefinition(identifierNode *sitter.Node, identifier string, sourceCode s
 							nil
 					}
 				}
+				// Initialized variable declaration.
+				identifierDeclarationNode := currentChildNode.ChildByFieldName("declarator").ChildByFieldName("declarator")
+				if identifierDeclarationNode == nil {
+					continue
+				}
+				if identifierDeclarationNode.Content([]byte(sourceCode)) == identifier {
+					return parser.Range{
+							Start: parser.Point{Row: identifierDeclarationNode.StartPoint().Row, Column: identifierDeclarationNode.StartPoint().Column},
+							End:   parser.Point{Row: identifierDeclarationNode.EndPoint().Row, Column: identifierDeclarationNode.EndPoint().Column},
+						},
+						nil
+				}
+
 			}
 		}
 		return parser.Range{}, errors.New("parent function definition not found")
