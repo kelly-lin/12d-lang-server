@@ -26,7 +26,7 @@ language server binary `12dls` in the current directory.
 
 Run automated tests by executing `make test`.
 
-## Design Descisions
+## Design Decisions
 
 - Currently the language server does not support services across multiple files.
   This means that it will only analyse and provide services for the current file.
