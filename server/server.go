@@ -384,96 +384,68 @@ func FindDefinition(identifierNode *sitter.Node, identifier string, sourceCode s
 				}
 				if currentChildNode.Type() == "compound_statement" {
 					for i := 0; i < int(currentChildNode.ChildCount()); i++ {
-						if currentChildNode.Child(i).Type() != "declaration" {
+						locRange, err := FindDeclaration(currentChildNode.Child(i), identifier, sourceCode)
+						if err != nil {
 							continue
 						}
-						declaratorNode := currentChildNode.Child(i).ChildByFieldName("declarator")
-						if declaratorNode == nil {
-							continue
-						}
-						// Uninitialized variable declaration.
-						if declaratorNode.Type() == "identifier" {
-							identifierDeclarationNode := currentChildNode.Child(i).ChildByFieldName("declarator")
-							if identifierDeclarationNode.Content([]byte(sourceCode)) == identifier {
-								return parser.Range{
-										Start: parser.Point{
-											Row:    identifierDeclarationNode.StartPoint().Row,
-											Column: identifierDeclarationNode.StartPoint().Column,
-										},
-										End: parser.Point{
-											Row:    identifierDeclarationNode.EndPoint().Row,
-											Column: identifierDeclarationNode.EndPoint().Column,
-										},
-									},
-									nil
-							}
-						}
-						// Initialized variable declaration.
-						identifierDeclarationNode := currentChildNode.Child(i).ChildByFieldName("declarator").ChildByFieldName("declarator")
-						if identifierDeclarationNode == nil {
-							continue
-						}
-						if identifierDeclarationNode.Content([]byte(sourceCode)) == identifier {
-							return parser.Range{
-									Start: parser.Point{
-										Row:    identifierDeclarationNode.StartPoint().Row,
-										Column: identifierDeclarationNode.StartPoint().Column,
-									},
-									End: parser.Point{
-										Row:    identifierDeclarationNode.EndPoint().Row,
-										Column: identifierDeclarationNode.EndPoint().Column,
-									},
-								},
-								nil
-						}
+						return locRange, nil
 					}
 				}
-				if currentChildNode.Type() != "declaration" {
+				locRange, err := FindDeclaration(currentChildNode, identifier, sourceCode)
+				if err != nil {
 					continue
 				}
-				declaratorNode := currentChildNode.ChildByFieldName("declarator")
-				if declaratorNode == nil {
-					continue
-				}
-				// Uninitialized variable declaration.
-				if declaratorNode.Type() == "identifier" {
-					identifierDeclarationNode := currentChildNode.ChildByFieldName("declarator")
-					if identifierDeclarationNode.Content([]byte(sourceCode)) == identifier {
-						return parser.Range{
-								Start: parser.Point{
-									Row:    identifierDeclarationNode.StartPoint().Row,
-									Column: identifierDeclarationNode.StartPoint().Column,
-								},
-								End: parser.Point{
-									Row:    identifierDeclarationNode.EndPoint().Row,
-									Column: identifierDeclarationNode.EndPoint().Column,
-								},
-							},
-							nil
-					}
-				}
-				// Initialized variable declaration.
-				identifierDeclarationNode := currentChildNode.ChildByFieldName("declarator").ChildByFieldName("declarator")
-				if identifierDeclarationNode == nil {
-					continue
-				}
-				if identifierDeclarationNode.Content([]byte(sourceCode)) == identifier {
-					return parser.Range{
-							Start: parser.Point{
-								Row:    identifierDeclarationNode.StartPoint().Row,
-								Column: identifierDeclarationNode.StartPoint().Column,
-							},
-							End: parser.Point{
-								Row:    identifierDeclarationNode.EndPoint().Row,
-								Column: identifierDeclarationNode.EndPoint().Column,
-							},
-						},
-						nil
-				}
+				return locRange, nil
 			}
 		}
 		return parser.Range{}, errors.New("parent function definition not found")
 	}
+}
+
+func FindDeclaration(node *sitter.Node, identifier string, sourceCode string) (parser.Range, error) {
+	if node.Type() != "declaration" {
+		return parser.Range{}, errors.New("node is not a declaration node")
+	}
+	declaratorNode := node.ChildByFieldName("declarator")
+	if declaratorNode == nil {
+		return parser.Range{}, errors.New("node does not have a declarator child node")
+	}
+	// Uninitialized variable declaration.
+	if declaratorNode.Type() == "identifier" {
+		identifierDeclarationNode := node.ChildByFieldName("declarator")
+		if identifierDeclarationNode.Content([]byte(sourceCode)) == identifier {
+			return parser.Range{
+					Start: parser.Point{
+						Row:    identifierDeclarationNode.StartPoint().Row,
+						Column: identifierDeclarationNode.StartPoint().Column,
+					},
+					End: parser.Point{
+						Row:    identifierDeclarationNode.EndPoint().Row,
+						Column: identifierDeclarationNode.EndPoint().Column,
+					},
+				},
+				nil
+		}
+	}
+	// Initialized variable declaration.
+	identifierDeclarationNode := node.ChildByFieldName("declarator").ChildByFieldName("declarator")
+	if identifierDeclarationNode == nil {
+		return parser.Range{}, errors.New("declarator child node does not have a declarator child node")
+	}
+	if identifierDeclarationNode.Content([]byte(sourceCode)) == identifier {
+		return parser.Range{
+				Start: parser.Point{
+					Row:    identifierDeclarationNode.StartPoint().Row,
+					Column: identifierDeclarationNode.StartPoint().Column,
+				},
+				End: parser.Point{
+					Row:    identifierDeclarationNode.EndPoint().Row,
+					Column: identifierDeclarationNode.EndPoint().Column,
+				},
+			},
+			nil
+	}
+	return parser.Range{}, errors.New("declaration not found")
 }
 
 // Converts parser range into protocol range.
