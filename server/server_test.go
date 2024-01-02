@@ -148,6 +148,21 @@ void main() {
 					protocol.Position{Line: 0, Character: 13},
 				),
 			},
+			{
+				Desc: "global scope",
+				SourceCode: `{
+    Integer AREA_CODE = 10;
+}
+
+void main() {
+    Integer result = AREA_CODE + 1;
+}`,
+				Pos: protocol.Position{Line: 5, Character: 21},
+				Want: mustNewLocationResponseMessage(
+					protocol.Position{Line: 1, Character: 12},
+					protocol.Position{Line: 1, Character: 21},
+				),
+			},
 		}
 		for _, testCase := range testCases {
 			t.Run(testCase.Desc, func(t *testing.T) {

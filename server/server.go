@@ -382,6 +382,52 @@ func FindDefinition(identifierNode *sitter.Node, identifier string, sourceCode s
 							nil
 					}
 				}
+				if currentChildNode.Type() == "compound_statement" {
+					for i := 0; i < int(currentChildNode.ChildCount()); i++ {
+						if currentChildNode.Child(i).Type() != "declaration" {
+							continue
+						}
+						declaratorNode := currentChildNode.Child(i).ChildByFieldName("declarator")
+						if declaratorNode == nil {
+							continue
+						}
+						// Uninitialized variable declaration.
+						if declaratorNode.Type() == "identifier" {
+							identifierDeclarationNode := currentChildNode.Child(i).ChildByFieldName("declarator")
+							if identifierDeclarationNode.Content([]byte(sourceCode)) == identifier {
+								return parser.Range{
+										Start: parser.Point{
+											Row:    identifierDeclarationNode.StartPoint().Row,
+											Column: identifierDeclarationNode.StartPoint().Column,
+										},
+										End: parser.Point{
+											Row:    identifierDeclarationNode.EndPoint().Row,
+											Column: identifierDeclarationNode.EndPoint().Column,
+										},
+									},
+									nil
+							}
+						}
+						// Initialized variable declaration.
+						identifierDeclarationNode := currentChildNode.Child(i).ChildByFieldName("declarator").ChildByFieldName("declarator")
+						if identifierDeclarationNode == nil {
+							continue
+						}
+						if identifierDeclarationNode.Content([]byte(sourceCode)) == identifier {
+							return parser.Range{
+									Start: parser.Point{
+										Row:    identifierDeclarationNode.StartPoint().Row,
+										Column: identifierDeclarationNode.StartPoint().Column,
+									},
+									End: parser.Point{
+										Row:    identifierDeclarationNode.EndPoint().Row,
+										Column: identifierDeclarationNode.EndPoint().Column,
+									},
+								},
+								nil
+						}
+					}
+				}
 				if currentChildNode.Type() != "declaration" {
 					continue
 				}
@@ -424,7 +470,6 @@ func FindDefinition(identifierNode *sitter.Node, identifier string, sourceCode s
 						},
 						nil
 				}
-
 			}
 		}
 		return parser.Range{}, errors.New("parent function definition not found")
