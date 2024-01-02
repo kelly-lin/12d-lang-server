@@ -37,6 +37,11 @@ Run automated tests by executing `make test`.
 
 You can help the project by contributing in the following ways:
 
+### Report a bug
+
+Report a bug providing sample source code and a detailed description of the bug
+as a github issue.
+
 ### Patching documentation
 
 Since we get the 12dpl library documentation by parsing the 12d macro manual,
