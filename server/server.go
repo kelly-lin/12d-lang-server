@@ -331,7 +331,7 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 	}
 }
 
-// Find the definition of the node reprepsenting by idenitifier node and
+// Find the definition of the node reprepsenting by identifier node and
 // identifier. The identifier node is the target for the definition.
 func FindDefinition(identifierNode *sitter.Node, identifier string, sourceCode string) (parser.Range, error) {
 	switch identifierNode.Parent().Type() {
@@ -360,6 +360,17 @@ func FindDefinition(identifierNode *sitter.Node, identifier string, sourceCode s
 			}
 			for i := 0; i < int(currentNode.ChildCount()); i++ {
 				currentChildNode := currentNode.Child(i)
+				if currentChildNode.Type() == "preproc_def" {
+					identifierDeclarationNode := currentChildNode.ChildByFieldName("name")
+					if identifierDeclarationNode != nil && identifierDeclarationNode.Content([]byte(sourceCode)) == identifier {
+						return parser.Range{
+								Start: parser.Point{Row: identifierDeclarationNode.StartPoint().Row, Column: identifierDeclarationNode.StartPoint().Column},
+								End:   parser.Point{Row: identifierDeclarationNode.EndPoint().Row, Column: identifierDeclarationNode.EndPoint().Column},
+							},
+							nil
+					}
+				}
+
 				if currentChildNode.Type() != "declaration" {
 					continue
 				}

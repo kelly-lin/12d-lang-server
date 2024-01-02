@@ -21,8 +21,8 @@ func TestServer(t *testing.T) {
 	t.Run("textDocument/definition", func(t *testing.T) {
 		// Helper returns the response message and fails if the test if the
 		// response message could not be created.
-		mustNewLocationResponseMessage := func(id int64, uri string, start, end protocol.Position) protocol.ResponseMessage {
-			msg, err := newLocationResponseMessage(id, uri, start, end)
+		mustNewLocationResponseMessage := func(start, end protocol.Position) protocol.ResponseMessage {
+			msg, err := newLocationResponseMessage(1, "file:///foo.4dm", start, end)
 			assert.NoError(t, err)
 			return msg
 		}
@@ -44,8 +44,6 @@ void main() {
 }`,
 				Pos: protocol.Position{Line: 5, Character: 21},
 				Want: mustNewLocationResponseMessage(
-					1,
-					"file:///foo.4dm",
 					protocol.Position{Line: 0, Character: 8},
 					protocol.Position{Line: 0, Character: 11},
 				),
@@ -57,8 +55,6 @@ void main() {
 }`,
 				Pos: protocol.Position{Line: 1, Character: 11},
 				Want: mustNewLocationResponseMessage(
-					1,
-					"file:///foo.4dm",
 					protocol.Position{Line: 0, Character: 20},
 					protocol.Position{Line: 0, Character: 26},
 				),
@@ -70,8 +66,6 @@ void main() {
 }`,
 				Pos: protocol.Position{Line: 1, Character: 11},
 				Want: mustNewLocationResponseMessage(
-					1,
-					"file:///foo.4dm",
 					protocol.Position{Line: 0, Character: 20},
 					protocol.Position{Line: 0, Character: 26},
 				),
@@ -84,8 +78,6 @@ void main() {
 }`,
 				Pos: protocol.Position{Line: 2, Character: 11},
 				Want: mustNewLocationResponseMessage(
-					1,
-					"file:///foo.4dm",
 					protocol.Position{Line: 1, Character: 12},
 					protocol.Position{Line: 1, Character: 18},
 				),
@@ -98,8 +90,6 @@ void main() {
 }`,
 				Pos: protocol.Position{Line: 2, Character: 11},
 				Want: mustNewLocationResponseMessage(
-					1,
-					"file:///foo.4dm",
 					protocol.Position{Line: 1, Character: 12},
 					protocol.Position{Line: 1, Character: 18},
 				),
@@ -113,8 +103,6 @@ void main() {
 }`,
 				Pos: protocol.Position{Line: 2, Character: 20},
 				Want: mustNewLocationResponseMessage(
-					1,
-					"file:///foo.4dm",
 					protocol.Position{Line: 1, Character: 17},
 					protocol.Position{Line: 1, Character: 18},
 				),
@@ -129,8 +117,6 @@ void main() {
 }`,
 				Pos: protocol.Position{Line: 3, Character: 20},
 				Want: mustNewLocationResponseMessage(
-					1,
-					"file:///foo.4dm",
 					protocol.Position{Line: 1, Character: 12},
 					protocol.Position{Line: 1, Character: 13},
 				),
@@ -143,10 +129,23 @@ void main() {
 }`,
 				Pos: protocol.Position{Line: 2, Character: 25},
 				Want: mustNewLocationResponseMessage(
-					1,
-					"file:///foo.4dm",
 					protocol.Position{Line: 1, Character: 20},
 					protocol.Position{Line: 1, Character: 24},
+				),
+			},
+			{
+				Desc: "preproc definition",
+				SourceCode: `#define DEBUG 1
+
+void main() {
+    if (DEBUG) {
+        Print("debug");
+    }
+}`,
+				Pos: protocol.Position{Line: 3, Character: 8},
+				Want: mustNewLocationResponseMessage(
+					protocol.Position{Line: 0, Character: 8},
+					protocol.Position{Line: 0, Character: 13},
 				),
 			},
 		}
