@@ -122,6 +122,20 @@ void main() {
 				),
 			},
 			{
+				Desc: "local variable inside for loop",
+				SourceCode: `Integer Looper() {
+    for (Integer i = 1; i <= 10; i++) {
+        Integer k = 1;
+        Integer j = k;
+    }
+}`,
+				Pos: protocol.Position{Line: 3, Character: 20},
+				Want: mustNewLocationResponseMessage(
+					protocol.Position{Line: 2, Character: 16},
+					protocol.Position{Line: 2, Character: 17},
+				),
+			},
+			{
 				Desc: "declaration without initialisation",
 				SourceCode: `void Validate_source_box(Source_Box source_box) {
     Dynamic_Element elts;
