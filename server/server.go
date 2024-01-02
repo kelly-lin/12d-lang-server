@@ -352,8 +352,14 @@ func FindDefinition(identifierNode *sitter.Node, identifier string, sourceCode s
 				colStart := uint32(paramsNode.StartPoint().Column)
 				if idx := strings.Index(paramsText, identifier); idx != -1 {
 					return parser.Range{
-							Start: parser.Point{Row: paramsNode.StartPoint().Row, Column: colStart + uint32(idx)},
-							End:   parser.Point{Row: paramsNode.StartPoint().Row, Column: colStart + uint32(idx) + uint32(len(identifier))},
+							Start: parser.Point{
+								Row:    paramsNode.StartPoint().Row,
+								Column: colStart + uint32(idx),
+							},
+							End: parser.Point{
+								Row:    paramsNode.StartPoint().Row,
+								Column: colStart + uint32(idx) + uint32(len(identifier)),
+							},
 						},
 						nil
 				}
@@ -364,13 +370,18 @@ func FindDefinition(identifierNode *sitter.Node, identifier string, sourceCode s
 					identifierDeclarationNode := currentChildNode.ChildByFieldName("name")
 					if identifierDeclarationNode != nil && identifierDeclarationNode.Content([]byte(sourceCode)) == identifier {
 						return parser.Range{
-								Start: parser.Point{Row: identifierDeclarationNode.StartPoint().Row, Column: identifierDeclarationNode.StartPoint().Column},
-								End:   parser.Point{Row: identifierDeclarationNode.EndPoint().Row, Column: identifierDeclarationNode.EndPoint().Column},
+								Start: parser.Point{
+									Row:    identifierDeclarationNode.StartPoint().Row,
+									Column: identifierDeclarationNode.StartPoint().Column,
+								},
+								End: parser.Point{
+									Row:    identifierDeclarationNode.EndPoint().Row,
+									Column: identifierDeclarationNode.EndPoint().Column,
+								},
 							},
 							nil
 					}
 				}
-
 				if currentChildNode.Type() != "declaration" {
 					continue
 				}
@@ -383,8 +394,14 @@ func FindDefinition(identifierNode *sitter.Node, identifier string, sourceCode s
 					identifierDeclarationNode := currentChildNode.ChildByFieldName("declarator")
 					if identifierDeclarationNode.Content([]byte(sourceCode)) == identifier {
 						return parser.Range{
-								Start: parser.Point{Row: identifierDeclarationNode.StartPoint().Row, Column: identifierDeclarationNode.StartPoint().Column},
-								End:   parser.Point{Row: identifierDeclarationNode.EndPoint().Row, Column: identifierDeclarationNode.EndPoint().Column},
+								Start: parser.Point{
+									Row:    identifierDeclarationNode.StartPoint().Row,
+									Column: identifierDeclarationNode.StartPoint().Column,
+								},
+								End: parser.Point{
+									Row:    identifierDeclarationNode.EndPoint().Row,
+									Column: identifierDeclarationNode.EndPoint().Column,
+								},
 							},
 							nil
 					}
@@ -396,8 +413,14 @@ func FindDefinition(identifierNode *sitter.Node, identifier string, sourceCode s
 				}
 				if identifierDeclarationNode.Content([]byte(sourceCode)) == identifier {
 					return parser.Range{
-							Start: parser.Point{Row: identifierDeclarationNode.StartPoint().Row, Column: identifierDeclarationNode.StartPoint().Column},
-							End:   parser.Point{Row: identifierDeclarationNode.EndPoint().Row, Column: identifierDeclarationNode.EndPoint().Column},
+							Start: parser.Point{
+								Row:    identifierDeclarationNode.StartPoint().Row,
+								Column: identifierDeclarationNode.StartPoint().Column,
+							},
+							End: parser.Point{
+								Row:    identifierDeclarationNode.EndPoint().Row,
+								Column: identifierDeclarationNode.EndPoint().Column,
+							},
 						},
 						nil
 				}
