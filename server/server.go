@@ -69,7 +69,6 @@ func (s *Server) Serve(rd io.Reader, w io.Writer) error {
 		content, numBytes, err := s.handleMessage(msg)
 		if err != nil {
 			s.logger(fmt.Sprintf("[ERROR] could not handle message: %s\n", err))
-			continue
 		}
 		if numBytes == 0 {
 			s.logger("no bytes to reply, not responding")
@@ -199,17 +198,30 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 		}
 		rootNode, ok := s.nodes[params.TextDocument.URI]
 		if !ok {
-			return protocol.ResponseMessage{}, 0, errors.New("source node not found")
+			return protocol.ResponseMessage{
+					ID:     msg.ID,
+					Result: json.RawMessage(protocol.NullResult),
+				},
+				len(protocol.NullResult),
+				errors.New("source node not found")
 		}
 		sourceCode, ok := s.documents[params.TextDocument.URI]
-		// TODO: handle this error properly, should we be sending an error code
-		// back to the client?
 		if !ok {
-			return protocol.ResponseMessage{}, 0, errors.New("source code not found")
+			return protocol.ResponseMessage{
+					ID:     msg.ID,
+					Result: json.RawMessage(protocol.NullResult),
+				},
+				len(protocol.NullResult),
+				errors.New("source code not found")
 		}
 		identifierNode, err := parser.FindIdentifierNode(rootNode, params.Position.Line, params.Position.Character)
 		if err != nil {
-			return protocol.ResponseMessage{}, 0, err
+			return protocol.ResponseMessage{
+					ID:     msg.ID,
+					Result: json.RawMessage(protocol.NullResult),
+				},
+				len(protocol.NullResult),
+				err
 		}
 		identifier := identifierNode.Content([]byte(sourceCode))
 		if errors.Is(err, parser.ErrNoDefinition) {
@@ -221,7 +233,12 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 				nil
 		}
 		if err != nil {
-			return protocol.ResponseMessage{}, 0, err
+			return protocol.ResponseMessage{
+					ID:     msg.ID,
+					Result: json.RawMessage(protocol.NullResult),
+				},
+				len(protocol.NullResult),
+				err
 		}
 		libItems, ok := lang.Lib[identifier]
 		if !ok || len(libItems) == 0 {
@@ -235,7 +252,12 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 		result := protocol.Hover{Contents: libItems}
 		resultBytes, err := json.Marshal(result)
 		if err != nil {
-			return protocol.ResponseMessage{}, 0, err
+			return protocol.ResponseMessage{
+					ID:     msg.ID,
+					Result: json.RawMessage(protocol.NullResult),
+				},
+				len(protocol.NullResult),
+				err
 		}
 		return protocol.ResponseMessage{
 				ID:     msg.ID,
