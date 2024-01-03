@@ -260,12 +260,9 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 		if params.TextDocument.LanguageID != "12dpl" {
 			return protocol.ResponseMessage{}, 0, fmt.Errorf("unhandled language %s, expected 12dpl", params.TextDocument.LanguageID)
 		}
-		s.documents[params.TextDocument.URI] = params.TextDocument.Text
-		rootNode, err := sitter.ParseCtx(context.Background(), []byte(params.TextDocument.Text), parser.GetLanguage())
-		if err != nil {
+		if err := s.updateDocument(params.TextDocument.URI, params.TextDocument.Text); err != nil {
 			return protocol.ResponseMessage{}, 0, err
 		}
-		s.nodes[params.TextDocument.URI] = rootNode
 		return protocol.ResponseMessage{}, 0, nil
 
 	case "textDocument/didChange":
@@ -274,12 +271,9 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 			return protocol.ResponseMessage{}, 0, err
 		}
 		// The server currently only supports a full document sync.
-		s.documents[params.TextDocument.URI] = params.ContentChanges[len(params.ContentChanges)-1].Text
-		rootNode, err := sitter.ParseCtx(context.Background(), []byte(params.ContentChanges[len(params.ContentChanges)-1].Text), parser.GetLanguage())
-		if err != nil {
+		if err := s.updateDocument(params.TextDocument.URI, params.ContentChanges[len(params.ContentChanges)-1].Text); err != nil {
 			return protocol.ResponseMessage{}, 0, err
 		}
-		s.nodes[params.TextDocument.URI] = rootNode
 		return protocol.ResponseMessage{}, 0, nil
 
 	case "textDocument/definition":
@@ -343,6 +337,18 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 	default:
 		return protocol.ResponseMessage{}, 0, ErrUnhandledMethod
 	}
+}
+
+// Update the document stored on the server identified by the uri with provided
+// content.
+func (s *Server) updateDocument(uri string, content string) error {
+	s.documents[uri] = content
+	rootNode, err := sitter.ParseCtx(context.Background(), []byte(content), parser.GetLanguage())
+	if err != nil {
+		return err
+	}
+	s.nodes[uri] = rootNode
+	return nil
 }
 
 // Find the definition of the node reprepsenting by identifier node and
