@@ -205,3 +205,17 @@ type Range struct {
 	Start Position `json:"start"`
 	End   Position `json:"end"`
 }
+
+type DidChangeTextDocumentParams struct {
+	TextDocument   VersionedTextDocumentIdentifier  `json:"textDocument"`
+	ContentChanges []TextDocumentContentChangeEvent `json:"contentChanges"`
+}
+
+type VersionedTextDocumentIdentifier struct {
+	Version int `json:"version"`
+	TextDocumentIdentifier
+}
+
+type TextDocumentContentChangeEvent struct {
+	Text string `json:"text"`
+}

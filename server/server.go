@@ -268,6 +268,20 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 		s.nodes[params.TextDocument.URI] = rootNode
 		return protocol.ResponseMessage{}, 0, nil
 
+	case "textDocument/didChange":
+		var params protocol.DidChangeTextDocumentParams
+		if err := json.Unmarshal(msg.Params, &params); err != nil {
+			return protocol.ResponseMessage{}, 0, err
+		}
+		// The server currently only supports a full document sync.
+		s.documents[params.TextDocument.URI] = params.ContentChanges[len(params.ContentChanges)-1].Text
+		rootNode, err := sitter.ParseCtx(context.Background(), []byte(params.ContentChanges[len(params.ContentChanges)-1].Text), parser.GetLanguage())
+		if err != nil {
+			return protocol.ResponseMessage{}, 0, err
+		}
+		s.nodes[params.TextDocument.URI] = rootNode
+		return protocol.ResponseMessage{}, 0, nil
+
 	case "textDocument/definition":
 		var params protocol.DefinitionParams
 		if err := json.Unmarshal(msg.Params, &params); err != nil {

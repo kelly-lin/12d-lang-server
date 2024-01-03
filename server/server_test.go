@@ -18,14 +18,15 @@ import (
 )
 
 func TestServer(t *testing.T) {
+	mustNewLocationResponseMessage := func(start, end protocol.Position) protocol.ResponseMessage {
+		msg, err := newLocationResponseMessage(1, "file:///foo.4dm", start, end)
+		assert.NoError(t, err)
+		return msg
+	}
+
 	t.Run("textDocument/definition", func(t *testing.T) {
 		// Helper returns the response message and fails if the test if the
 		// response message could not be created.
-		mustNewLocationResponseMessage := func(start, end protocol.Position) protocol.ResponseMessage {
-			msg, err := newLocationResponseMessage(1, "file:///foo.4dm", start, end)
-			assert.NoError(t, err)
-			return msg
-		}
 		type TestCase struct {
 			Desc       string
 			SourceCode string
@@ -203,9 +204,76 @@ void main() {
 				assert.Equal(testCase.Want.ID, got.ID)
 				assert.Equal(testCase.Want.Error, got.Error)
 				assert.Equal(string(testCase.Want.Result), string(got.Result))
-
 			})
 		}
+	})
+
+	// This is essentially a go to definition test but the source gets updated]
+	// after the initial did open request.
+	t.Run("textDocument/didChange", func(t *testing.T) {
+		defer goleak.VerifyNone(t)
+		assert := assert.New(t)
+		logger, err := newLogger()
+		assert.NoError(err)
+		in, out, cleanUp := startServer(logger)
+		defer cleanUp()
+
+		sourceCodeOnOpen := `void main() {
+    Add(1, 1);
+}`
+		var openRequestID int64 = 1
+		didOpenMsgBytes, err := newDidOpenRequestMessageBytes(openRequestID, "file:///foo.4dm", sourceCodeOnOpen)
+		assert.NoError(err)
+		_, err = in.Writer.Write([]byte(server.ToProtocolMessage(didOpenMsgBytes)))
+		assert.NoError(err)
+
+		pos1 := protocol.Position{Line: 1, Character: 4}
+		var defintionRequestID1 int64 = 2
+		definitionMsg1Bytes, err := newDefinitionRequestMessageBytes(defintionRequestID1, "file:///foo.4dm", pos1)
+		assert.NoError(err)
+		_, err = in.Writer.Write([]byte(server.ToProtocolMessage(definitionMsg1Bytes)))
+		assert.NoError(err)
+
+		// We should receive a no definition result here since the did open
+		// request source code does not yet have the function defined.
+		got, err := getReponseMessage(out.Reader)
+		assert.NoError(err)
+		wantOnOpen := protocol.ResponseMessage{ID: defintionRequestID1, Result: []byte("null"), Error: nil}
+		assert.Equal(wantOnOpen.ID, got.ID)
+		assert.Equal(wantOnOpen.Error, got.Error)
+		assert.Equal(string(wantOnOpen.Result), string(got.Result))
+
+		// Source code got updated.
+		sourceCodeOnChange := `Integer Add(Integer addend, Integer augend) {
+    return addend, augend;
+}
+
+void main() {
+    Add(1, 1);
+}`
+		var onChangeID int64 = 3
+		didChangeMsgBytes, err := newDidChangeRequestMessageBytes(onChangeID, "file:///foo.4dm", sourceCodeOnChange)
+		assert.NoError(err)
+		_, err = in.Writer.Write([]byte(server.ToProtocolMessage(didChangeMsgBytes)))
+		assert.NoError(err)
+
+		var definitionRequestID2 int64 = 1
+		pos2 := protocol.Position{Line: 5, Character: 4}
+		definitionMsg2Bytes, err := newDefinitionRequestMessageBytes(definitionRequestID2, "file:///foo.4dm", pos2)
+		assert.NoError(err)
+		_, err = in.Writer.Write([]byte(server.ToProtocolMessage(definitionMsg2Bytes)))
+		assert.NoError(err)
+
+		// The new source code now has the definition for the function.
+		got, err = getReponseMessage(out.Reader)
+		assert.NoError(err)
+		want := mustNewLocationResponseMessage(
+			protocol.Position{Line: 0, Character: 8},
+			protocol.Position{Line: 0, Character: 11},
+		)
+		assert.Equal(want.ID, got.ID)
+		assert.Equal(want.Error, got.Error)
+		assert.Equal(string(want.Result), string(got.Result))
 	})
 }
 
@@ -260,6 +328,37 @@ func newDidOpenRequestMessageBytes(id int64, uri, text string) ([]byte, error) {
 		return nil, err
 	}
 	return didOpenMsgBytes, nil
+}
+
+func newDidChangeRequestMessageBytes(id int64, uri, text string) ([]byte, error) {
+	didChangeParams := protocol.DidChangeTextDocumentParams{
+		TextDocument: protocol.VersionedTextDocumentIdentifier{
+			Version: 1,
+			TextDocumentIdentifier: protocol.TextDocumentIdentifier{
+				URI: uri,
+			},
+		},
+		ContentChanges: []protocol.TextDocumentContentChangeEvent{
+			{
+				Text: text,
+			},
+		},
+	}
+	didChangeParamsBytes, err := json.Marshal(didChangeParams)
+	if err != nil {
+		return nil, err
+	}
+	didChangeMsg := protocol.RequestMessage{
+		JSONRPC: "2.0",
+		ID:      id,
+		Method:  "textDocument/didChange",
+		Params:  json.RawMessage(didChangeParamsBytes),
+	}
+	didChangeMsgBytes, err := json.Marshal(didChangeMsg)
+	if err != nil {
+		return nil, err
+	}
+	return didChangeMsgBytes, nil
 }
 
 // Creates a new protocol response message with definition location and returns
