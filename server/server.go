@@ -198,64 +198,43 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 		}
 		rootNode, ok := s.nodes[params.TextDocument.URI]
 		if !ok {
-			return protocol.ResponseMessage{
-					ID:     msg.ID,
-					Result: json.RawMessage(protocol.NullResult),
-				},
+			return newNullResponseMessage(msg.ID),
 				len(protocol.NullResult),
 				errors.New("source node not found")
 		}
 		sourceCode, ok := s.documents[params.TextDocument.URI]
 		if !ok {
-			return protocol.ResponseMessage{
-					ID:     msg.ID,
-					Result: json.RawMessage(protocol.NullResult),
-				},
+			return newNullResponseMessage(msg.ID),
 				len(protocol.NullResult),
 				errors.New("source code not found")
 		}
 		identifierNode, err := parser.FindIdentifierNode(rootNode, params.Position.Line, params.Position.Character)
 		if err != nil {
-			return protocol.ResponseMessage{
-					ID:     msg.ID,
-					Result: json.RawMessage(protocol.NullResult),
-				},
+			return newNullResponseMessage(msg.ID),
 				len(protocol.NullResult),
 				err
 		}
 		identifier := identifierNode.Content([]byte(sourceCode))
 		if errors.Is(err, parser.ErrNoDefinition) {
-			return protocol.ResponseMessage{
-					ID:     msg.ID,
-					Result: json.RawMessage(protocol.NullResult),
-				},
+			return newNullResponseMessage(msg.ID),
 				len(protocol.NullResult),
 				nil
 		}
 		if err != nil {
-			return protocol.ResponseMessage{
-					ID:     msg.ID,
-					Result: json.RawMessage(protocol.NullResult),
-				},
+			return newNullResponseMessage(msg.ID),
 				len(protocol.NullResult),
 				err
 		}
 		libItems, ok := lang.Lib[identifier]
 		if !ok || len(libItems) == 0 {
-			return protocol.ResponseMessage{
-					ID:     msg.ID,
-					Result: protocol.NullResult,
-				},
+			return newNullResponseMessage(msg.ID),
 				len(protocol.NullResult),
 				nil
 		}
 		result := protocol.Hover{Contents: libItems}
 		resultBytes, err := json.Marshal(result)
 		if err != nil {
-			return protocol.ResponseMessage{
-					ID:     msg.ID,
-					Result: json.RawMessage(protocol.NullResult),
-				},
+			return newNullResponseMessage(msg.ID),
 				len(protocol.NullResult),
 				err
 		}
@@ -267,10 +246,7 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 			nil
 
 	case "shutdown":
-		return protocol.ResponseMessage{
-				ID:     msg.ID,
-				Result: protocol.NullResult,
-			},
+		return newNullResponseMessage(msg.ID),
 			len(protocol.NullResult),
 			nil
 
@@ -313,28 +289,19 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 		}
 		identifierNode, err := parser.FindIdentifierNode(rootNode, params.Position.Line, params.Position.Character)
 		if errors.Is(err, parser.ErrNoDefinition) {
-			return protocol.ResponseMessage{
-					ID:     msg.ID,
-					Result: json.RawMessage(protocol.NullResult),
-				},
+			return newNullResponseMessage(msg.ID),
 				len(protocol.NullResult),
 				nil
 		}
 		if err != nil {
-			return protocol.ResponseMessage{
-					ID:     msg.ID,
-					Result: json.RawMessage(protocol.NullResult),
-				},
+			return newNullResponseMessage(msg.ID),
 				len(protocol.NullResult),
 				err
 		}
 		identifier := identifierNode.Content([]byte(sourceCode))
 		locRange, err := FindDefinition(identifierNode, identifier, sourceCode)
 		if err != nil {
-			return protocol.ResponseMessage{
-					ID:     msg.ID,
-					Result: json.RawMessage(protocol.NullResult),
-				},
+			return newNullResponseMessage(msg.ID),
 				len(protocol.NullResult),
 				nil
 		}
@@ -525,4 +492,11 @@ func newServerCapabilities() protocol.ServerCapabilities {
 		TextDocumentSync:   &textDocumentSyncKind,
 	}
 	return result
+}
+
+func newNullResponseMessage(id int64) protocol.ResponseMessage {
+	return protocol.ResponseMessage{
+		ID:     id,
+		Result: json.RawMessage(protocol.NullResult),
+	}
 }
