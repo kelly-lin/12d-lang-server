@@ -8,7 +8,7 @@ Language server for the 12d programming language (12dPL) conforming to the
 1. [Dependencies](#dependencies)
 2. [Building](#building)
 3. [Testing](#testing)
-4. [Design Descisions](#design-descisions)
+4. [Design Decisions](#design-decisions)
 5. [Contributing](#contributing)
 
 ## Dependencies
