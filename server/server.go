@@ -368,20 +368,22 @@ func FindDefinition(identifierNode *sitter.Node, identifier string, sourceCode s
 			currentNode = currentNode.Parent()
 			if currentNode.Type() == "function_definition" {
 				paramsNode := currentNode.ChildByFieldName("declarator").ChildByFieldName("parameters")
-				paramsText := paramsNode.Content([]byte(sourceCode))
-				colStart := uint32(paramsNode.StartPoint().Column)
-				if idx := strings.Index(paramsText, identifier); idx != -1 {
-					return parser.Range{
-							Start: parser.Point{
-								Row:    paramsNode.StartPoint().Row,
-								Column: colStart + uint32(idx),
+				for i := 0; i < int(paramsNode.ChildCount()); i++ {
+					paramNode := paramsNode.Child(i)
+					paramIdentifierNode := paramNode.ChildByFieldName("declarator")
+					if paramIdentifierNode != nil && paramIdentifierNode.Content([]byte(sourceCode)) == identifier {
+						return parser.Range{
+								Start: parser.Point{
+									Row:    paramIdentifierNode.StartPoint().Row,
+									Column: paramIdentifierNode.StartPoint().Column,
+								},
+								End: parser.Point{
+									Row:    paramIdentifierNode.EndPoint().Row,
+									Column: paramIdentifierNode.EndPoint().Column,
+								},
 							},
-							End: parser.Point{
-								Row:    paramsNode.StartPoint().Row,
-								Column: colStart + uint32(idx) + uint32(len(identifier)),
-							},
-						},
-						nil
+							nil
+					}
 				}
 			}
 			for i := 0; i < int(currentNode.ChildCount()); i++ {

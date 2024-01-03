@@ -61,14 +61,17 @@ void main() {
 				),
 			},
 			{
-				Desc: "func parameter identifier",
-				SourceCode: `Integer Add(Integer augend, Integer addend) {
+				Desc: "func parameter identifier in multiline parameter list",
+				SourceCode: `Integer Add(
+    Integer augend,
+    Integer addend
+) {
     return augend + addend;
 }`,
-				Pos: protocol.Position{Line: 1, Character: 11},
+				Pos: protocol.Position{Line: 4, Character: 11},
 				Want: mustNewLocationResponseMessage(
-					protocol.Position{Line: 0, Character: 20},
-					protocol.Position{Line: 0, Character: 26},
+					protocol.Position{Line: 1, Character: 12},
+					protocol.Position{Line: 1, Character: 18},
 				),
 			},
 			{
