@@ -276,42 +276,57 @@ void main() {
 	})
 
 	t.Run("textDocument/hover", func(t *testing.T) {
-		defer goleak.VerifyNone(t)
-		assert := assert.New(t)
-		logger, err := newLogger()
-		assert.NoError(err)
-		in, out, cleanUp := startServer(logger)
-		defer cleanUp()
-
-		sourceCode := `void main() {
+		type TestCase struct {
+			Desc       string
+			SourceCode string
+			Position   protocol.Position
+			Pattern    string
+		}
+		testCases := []TestCase{
+			{
+				Desc: "all local declarations",
+				SourceCode: `void main() {
     Dynamic_Element elts;
     Integer i = 1;
     Element elt;
     Set_item(elts, i, elt);
-}`
-		var openRequestID int64 = 1
-		didOpenMsgBytes, err := newDidOpenRequestMessageBytes(openRequestID, "file:///foo.4dm", sourceCode)
-		assert.NoError(err)
-		_, err = in.Writer.Write([]byte(server.ToProtocolMessage(didOpenMsgBytes)))
-		assert.NoError(err)
+}`,
+				Position: protocol.Position{Line: 4, Character: 4},
+				Pattern:  `\(Dynamic_Element\s*&+\w+,\s*Integer\s*\w+,\s*Element\s*\w+\)`,
+			},
+		}
+		for _, testCase := range testCases {
+			t.Run(testCase.Desc, func(t *testing.T) {
+				defer goleak.VerifyNone(t)
+				assert := assert.New(t)
+				logger, err := newLogger()
+				assert.NoError(err)
+				in, out, cleanUp := startServer(logger)
+				defer cleanUp()
 
-		pos := protocol.Position{Line: 4, Character: 4}
-		var hoverRequestID int64 = 2
-		hoverMsgBytes, err := newHoverRequestMessageBytes(hoverRequestID, "file:///foo.4dm", pos)
-		assert.NoError(err)
-		_, err = in.Writer.Write([]byte(server.ToProtocolMessage(hoverMsgBytes)))
-		assert.NoError(err)
+				var openRequestID int64 = 1
+				didOpenMsgBytes, err := newDidOpenRequestMessageBytes(openRequestID, "file:///foo.4dm", testCase.SourceCode)
+				assert.NoError(err)
+				_, err = in.Writer.Write([]byte(server.ToProtocolMessage(didOpenMsgBytes)))
+				assert.NoError(err)
 
-		got, err := getReponseMessage(out.Reader)
-		assert.NoError(err)
-		var gotHoverResult protocol.Hover
-		err = json.Unmarshal(got.Result, &gotHoverResult)
-		assert.NoError(err)
-		assert.Len(gotHoverResult.Contents, 1)
-		pattern := `\(Dynamic_Element\s*&+\w+,\s*Integer\s*\w+,\s*Element\s*\w+\)`
-		matched, err := regexp.MatchString(pattern, gotHoverResult.Contents[0])
-		assert.NoError(err)
-		assert.True(matched, fmt.Sprintf("expected lib item doc to match signature pattern %s but did not", pattern))
+				var hoverRequestID int64 = 2
+				hoverMsgBytes, err := newHoverRequestMessageBytes(hoverRequestID, "file:///foo.4dm", testCase.Position)
+				assert.NoError(err)
+				_, err = in.Writer.Write([]byte(server.ToProtocolMessage(hoverMsgBytes)))
+				assert.NoError(err)
+
+				got, err := getReponseMessage(out.Reader)
+				assert.NoError(err)
+				var gotHoverResult protocol.Hover
+				err = json.Unmarshal(got.Result, &gotHoverResult)
+				assert.NoError(err)
+				assert.Len(gotHoverResult.Contents, 1)
+				matched, err := regexp.MatchString(testCase.Pattern, gotHoverResult.Contents[0])
+				assert.NoError(err)
+				assert.True(matched, fmt.Sprintf("expected lib item doc to match signature pattern %s but did not", testCase.Pattern))
+			})
+		}
 	})
 }
 
