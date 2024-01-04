@@ -59,14 +59,16 @@ Contribute to the project directly by fixing bugs and opening a pull request.
 
 ### TODO
 
+- [ ] Script to vendor [Tree Sitter parser](https://github.com/kelly-lin/tree-sitter-12dpl).
+
 - [ ] Support reference type func parameters.
 
-    ```12dpl
-    Integer Foo(Integer &bar) {}
-    ```
+  ```12dpl
+  Integer Foo(Integer &bar) {}
+  ```
 
 - [ ] Support multiple single line declaration.
 
-    ```12dpl
-    Integer foo, bar = 1;
-    ```
+  ```12dpl
+  Integer foo, bar = 1;
+  ```
