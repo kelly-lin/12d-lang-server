@@ -40,7 +40,7 @@ You can help the project by contributing in the following ways:
 ### Report a bug
 
 Report a bug providing sample source code and a detailed description of the bug
-as a github issue.
+as a [Github issue](https://github.com/kelly-lin/12d-lang-server/issues).
 
 ### Patching documentation
 
