@@ -19,7 +19,7 @@ Integer Foo() {}`)
 			Start: parser.Point{Row: 1, Column: 8},
 			End:   parser.Point{Row: 1, Column: 11},
 		}
-		got, err := parser.FindFuncDefinition("Foo", sourceCode)
+		got, _, err := parser.FindFuncDefinition("Foo", sourceCode)
 		assert.NoError(err)
 		assert.Equal(want, got)
 	})
@@ -32,7 +32,7 @@ Integer Foo() {}`)
 			Start: parser.Point{Row: 0, Column: 8},
 			End:   parser.Point{Row: 0, Column: 11},
 		}
-		got, err := parser.FindFuncDefinition("Foo", sourceCode)
+		got, _, err := parser.FindFuncDefinition("Foo", sourceCode)
 		assert.NoError(err)
 		assert.Equal(want, got)
 	})
@@ -41,7 +41,7 @@ Integer Foo() {}`)
 		assert := assert.New(t)
 		sourceCode := []byte(`void main() {}`)
 		want := parser.Range{}
-		got, err := parser.FindFuncDefinition("Foo", sourceCode)
+		got, _, err := parser.FindFuncDefinition("Foo", sourceCode)
 		assert.Equal(want, got)
 		assert.EqualError(err, parser.ErrNoDefinition.Error())
 	})

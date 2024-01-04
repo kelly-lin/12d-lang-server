@@ -194,49 +194,69 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 	case "textDocument/hover":
 		var params protocol.HoverParams
 		if err := json.Unmarshal(msg.Params, &params); err != nil {
-			return protocol.ResponseMessage{}, 0, err
+			return newNullResponseMessage(msg.ID), len(protocol.NullResult), err
 		}
 		rootNode, ok := s.nodes[params.TextDocument.URI]
 		if !ok {
-			return newNullResponseMessage(msg.ID),
-				len(protocol.NullResult),
-				errors.New("source node not found")
+			return newNullResponseMessage(msg.ID), len(protocol.NullResult), errors.New("source node not found")
 		}
 		sourceCode, ok := s.documents[params.TextDocument.URI]
 		if !ok {
-			return newNullResponseMessage(msg.ID),
-				len(protocol.NullResult),
-				errors.New("source code not found")
+			return newNullResponseMessage(msg.ID), len(protocol.NullResult), errors.New("source code not found")
 		}
 		identifierNode, err := parser.FindIdentifierNode(rootNode, params.Position.Line, params.Position.Character)
 		if err != nil {
-			return newNullResponseMessage(msg.ID),
-				len(protocol.NullResult),
-				err
+			return newNullResponseMessage(msg.ID), len(protocol.NullResult), err
 		}
 		identifier := identifierNode.Content([]byte(sourceCode))
 		if errors.Is(err, parser.ErrNoDefinition) {
-			return newNullResponseMessage(msg.ID),
-				len(protocol.NullResult),
-				nil
+			return newNullResponseMessage(msg.ID), len(protocol.NullResult), nil
 		}
 		if err != nil {
-			return newNullResponseMessage(msg.ID),
-				len(protocol.NullResult),
-				err
+			return newNullResponseMessage(msg.ID), len(protocol.NullResult), err
 		}
 		libItems, ok := lang.Lib[identifier]
 		if !ok || len(libItems) == 0 {
-			return newNullResponseMessage(msg.ID),
-				len(protocol.NullResult),
-				nil
+			return newNullResponseMessage(msg.ID), len(protocol.NullResult), nil
 		}
-		result := protocol.Hover{Contents: libItems}
+		var contents []string
+		for _, item := range libItems {
+			if identifierNode.Parent().Type() == "call_expression" {
+				argsNode := identifierNode.Parent().ChildByFieldName("arguments")
+				if argsNode == nil {
+					continue
+				}
+				var types []string
+				for i := 0; i < int(argsNode.ChildCount()); i++ {
+					if argIdentifierNode := argsNode.Child(i); argIdentifierNode != nil {
+						_, node, err := FindDefinition(argIdentifierNode, argIdentifierNode.Content([]byte(sourceCode)), sourceCode)
+						if err != nil {
+							continue
+						}
+						if node.ChildByFieldName("type") != nil {
+							types = append(types, node.ChildByFieldName("type").Content([]byte(sourceCode)))
+						}
+					}
+				}
+				pattern := ""
+				for idx, t := range types {
+					if idx == 0 {
+						pattern = fmt.Sprintf(`%s\s*&?\w+`, t)
+						continue
+					}
+					pattern = fmt.Sprintf(`%s,\s*%s\s*&?\w+`, pattern, t)
+				}
+				if matched, _ := regexp.MatchString(pattern, item); matched {
+					contents = append(contents, item)
+				}
+				continue
+			}
+			contents = append(contents, item)
+		}
+		result := protocol.Hover{Contents: contents}
 		resultBytes, err := json.Marshal(result)
 		if err != nil {
-			return newNullResponseMessage(msg.ID),
-				len(protocol.NullResult),
-				err
+			return newNullResponseMessage(msg.ID), len(protocol.NullResult), err
 		}
 		return protocol.ResponseMessage{
 				ID:     msg.ID,
@@ -246,9 +266,7 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 			nil
 
 	case "shutdown":
-		return newNullResponseMessage(msg.ID),
-			len(protocol.NullResult),
-			nil
+		return newNullResponseMessage(msg.ID), len(protocol.NullResult), nil
 
 	case "textDocument/didOpen":
 		var params protocol.DidOpenTextDocumentParams
@@ -299,7 +317,7 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 				err
 		}
 		identifier := identifierNode.Content([]byte(sourceCode))
-		locRange, err := FindDefinition(identifierNode, identifier, sourceCode)
+		locRange, _, err := FindDefinition(identifierNode, identifier, sourceCode)
 		if err != nil {
 			return newNullResponseMessage(msg.ID),
 				len(protocol.NullResult),
@@ -342,14 +360,14 @@ func (s *Server) updateDocument(uri string, content string) error {
 
 // Find the definition of the node reprepsenting by identifier node and
 // identifier. The identifier node is the target for the definition.
-func FindDefinition(identifierNode *sitter.Node, identifier string, sourceCode string) (parser.Range, error) {
+func FindDefinition(identifierNode *sitter.Node, identifier string, sourceCode string) (parser.Range, *sitter.Node, error) {
 	switch identifierNode.Parent().Type() {
 	case "call_expression":
 		// Is this byte slice conversion expensive? If it is, we might need to
 		// find a way so that we do not have to do the conversion. Ideally we
 		// should just need to parse the source code once and cache it.
-		locRange, err := parser.FindFuncDefinition(identifier, []byte(sourceCode))
-		return locRange, err
+		locRange, node, err := parser.FindFuncDefinition(identifier, []byte(sourceCode))
+		return locRange, node, err
 
 	default:
 		currentNode := identifierNode
@@ -371,6 +389,7 @@ func FindDefinition(identifierNode *sitter.Node, identifier string, sourceCode s
 									Column: paramIdentifierNode.EndPoint().Column,
 								},
 							},
+							paramIdentifierNode,
 							nil
 					}
 				}
@@ -390,30 +409,34 @@ func FindDefinition(identifierNode *sitter.Node, identifier string, sourceCode s
 									Column: identifierDeclarationNode.EndPoint().Column,
 								},
 							},
+							identifierDeclarationNode,
 							nil
 					}
 				}
 				if currentChildNode.Type() == "compound_statement" {
 					for i := 0; i < int(currentChildNode.ChildCount()); i++ {
-						locRange, err := FindDeclaration(currentChildNode.Child(i), identifier, sourceCode)
+						locRange, err := GetDeclarationRange(currentChildNode.Child(i), identifier, sourceCode)
 						if err != nil {
 							continue
 						}
-						return locRange, nil
+						return locRange, currentChildNode.Child(i), nil
 					}
 				}
-				locRange, err := FindDeclaration(currentChildNode, identifier, sourceCode)
+				locRange, err := GetDeclarationRange(currentChildNode, identifier, sourceCode)
 				if err != nil {
 					continue
 				}
-				return locRange, nil
+				return locRange, currentChildNode, nil
 			}
 		}
-		return parser.Range{}, errors.New("parent function definition not found")
+		return parser.Range{}, nil, errors.New("parent function definition not found")
 	}
 }
 
-func FindDeclaration(node *sitter.Node, identifier string, sourceCode string) (parser.Range, error) {
+// Finds the declaration of the identifier inside of the node and returns the
+// range. If the the node is not the declaration of the identifier an error will
+// be returned.
+func GetDeclarationRange(node *sitter.Node, identifier string, sourceCode string) (parser.Range, error) {
 	if node.Type() != "declaration" {
 		return parser.Range{}, errors.New("node is not a declaration node")
 	}

@@ -27,10 +27,10 @@ type Range struct {
 // Find the definition of the function with the provided identifier inside
 // source and returns the range if it was found. If the definition was not found
 // then error ErrNoDefinition will be returned.
-func FindFuncDefinition(identifier string, source []byte) (Range, error) {
+func FindFuncDefinition(identifier string, source []byte) (Range, *sitter.Node, error) {
 	n, err := sitter.ParseCtx(context.Background(), source, GetLanguage())
 	if err != nil {
-		return Range{}, err
+		return Range{}, nil, err
 	}
 
 	pattern := fmt.Sprintf(`(
@@ -42,12 +42,13 @@ func FindFuncDefinition(identifier string, source []byte) (Range, error) {
 )`, identifier)
 	q, err := sitter.NewQuery([]byte(pattern), GetLanguage())
 	if err != nil {
-		return Range{}, err
+		return Range{}, nil, err
 	}
 
 	qc := sitter.NewQueryCursor()
 	qc.Exec(q, n)
 	var result Range
+	var node *sitter.Node
 	found := false
 	for {
 		m, ok := qc.NextMatch()
@@ -63,6 +64,9 @@ func FindFuncDefinition(identifier string, source []byte) (Range, error) {
 			end := c.Node.EndPoint()
 			result.End.Row = end.Row
 			result.End.Column = end.Column
+
+			node = c.Node
+
 			found = true
 			break
 		}
@@ -71,9 +75,9 @@ func FindFuncDefinition(identifier string, source []byte) (Range, error) {
 		}
 	}
 	if !found {
-		return Range{}, ErrNoDefinition
+		return Range{}, nil, ErrNoDefinition
 	}
-	return result, nil
+	return result, node, nil
 }
 
 type Stack struct {

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
 	"testing"
@@ -204,9 +205,7 @@ void main() {
 
 				got, err := getReponseMessage(out.Reader)
 				assert.NoError(err)
-				assert.Equal(testCase.Want.ID, got.ID)
-				assert.Equal(testCase.Want.Error, got.Error)
-				assert.Equal(string(testCase.Want.Result), string(got.Result))
+				assertResponseMessageEqual(t, testCase.Want, got)
 			})
 		}
 	})
@@ -214,6 +213,7 @@ void main() {
 	// This is essentially a go to definition test but the source gets updated]
 	// after the initial did open request.
 	t.Run("textDocument/didChange", func(t *testing.T) {
+		// TODO: clean up this test.
 		defer goleak.VerifyNone(t)
 		assert := assert.New(t)
 		logger, err := newLogger()
@@ -242,9 +242,7 @@ void main() {
 		got, err := getReponseMessage(out.Reader)
 		assert.NoError(err)
 		wantOnOpen := protocol.ResponseMessage{ID: defintionRequestID1, Result: []byte("null"), Error: nil}
-		assert.Equal(wantOnOpen.ID, got.ID)
-		assert.Equal(wantOnOpen.Error, got.Error)
-		assert.Equal(string(wantOnOpen.Result), string(got.Result))
+		assertResponseMessageEqual(t, wantOnOpen, got)
 
 		// Source code got updated.
 		sourceCodeOnChange := `Integer Add(Integer addend, Integer augend) {
@@ -274,10 +272,54 @@ void main() {
 			protocol.Position{Line: 0, Character: 8},
 			protocol.Position{Line: 0, Character: 11},
 		)
-		assert.Equal(want.ID, got.ID)
-		assert.Equal(want.Error, got.Error)
-		assert.Equal(string(want.Result), string(got.Result))
+		assertResponseMessageEqual(t, want, got)
 	})
+
+	t.Run("textDocument/hover", func(t *testing.T) {
+		defer goleak.VerifyNone(t)
+		assert := assert.New(t)
+		logger, err := newLogger()
+		assert.NoError(err)
+		in, out, cleanUp := startServer(logger)
+		defer cleanUp()
+
+		sourceCode := `void main() {
+    Dynamic_Element elts;
+    Integer i = 1;
+    Element elt;
+    Set_item(elts, i, elt);
+}`
+		var openRequestID int64 = 1
+		didOpenMsgBytes, err := newDidOpenRequestMessageBytes(openRequestID, "file:///foo.4dm", sourceCode)
+		assert.NoError(err)
+		_, err = in.Writer.Write([]byte(server.ToProtocolMessage(didOpenMsgBytes)))
+		assert.NoError(err)
+
+		pos := protocol.Position{Line: 4, Character: 4}
+		var hoverRequestID int64 = 2
+		hoverMsgBytes, err := newHoverRequestMessageBytes(hoverRequestID, "file:///foo.4dm", pos)
+		assert.NoError(err)
+		_, err = in.Writer.Write([]byte(server.ToProtocolMessage(hoverMsgBytes)))
+		assert.NoError(err)
+
+		got, err := getReponseMessage(out.Reader)
+		assert.NoError(err)
+		var gotHoverResult protocol.Hover
+		err = json.Unmarshal(got.Result, &gotHoverResult)
+		assert.NoError(err)
+		assert.Len(gotHoverResult.Contents, 1)
+		pattern := `\(Dynamic_Element\s*&+\w+,\s*Integer\s*\w+,\s*Element\s*\w+\)`
+		matched, err := regexp.MatchString(pattern, gotHoverResult.Contents[0])
+		assert.NoError(err)
+		assert.True(matched, fmt.Sprintf("expected lib item doc to match signature pattern %s but did not", pattern))
+	})
+}
+
+func assertResponseMessageEqual(t *testing.T, want, got protocol.ResponseMessage) {
+	t.Helper()
+	assert.Equal(t, want.ID, got.ID)
+	assert.Equal(t, want.Error, got.Error)
+	assert.Equal(t, string(want.Result), string(got.Result))
 }
 
 // Creates a new protocol request message with definition params and returns the
@@ -306,6 +348,32 @@ func newDefinitionRequestMessageBytes(id int64, uri string, position protocol.Po
 		return nil, err
 	}
 	return definitionMsgBytes, nil
+}
+
+func newHoverRequestMessageBytes(id int64, uri string, position protocol.Position) ([]byte, error) {
+	hoverParams := protocol.HoverParams{
+		TextDocumentPositionParams: protocol.TextDocumentPositionParams{
+			TextDocument: protocol.TextDocumentIdentifier{
+				URI: uri,
+			},
+			Position: position,
+		},
+	}
+	hoverParamsBytes, err := json.Marshal(hoverParams)
+	if err != nil {
+		return nil, err
+	}
+	hoverMsg := protocol.RequestMessage{
+		JSONRPC: "2.0",
+		ID:      id,
+		Method:  "textDocument/hover",
+		Params:  json.RawMessage(hoverParamsBytes),
+	}
+	hoverMsgBytes, err := json.Marshal(hoverMsg)
+	if err != nil {
+		return nil, err
+	}
+	return hoverMsgBytes, nil
 }
 
 func newDidOpenRequestMessageBytes(id int64, uri, text string) ([]byte, error) {
