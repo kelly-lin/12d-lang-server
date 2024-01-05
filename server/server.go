@@ -232,7 +232,6 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 					if argIdentifierNode := argsNode.Child(i); argIdentifierNode != nil {
 						if argIdentifierNode.Type() == "identifier" {
 							_, node, err := FindDefinition(argIdentifierNode, argIdentifierNode.Content([]byte(sourceCode)), sourceCode)
-							fmt.Println(node.Content([]byte(sourceCode)))
 							if err != nil {
 								continue
 							}
