@@ -285,7 +285,7 @@ void main() {
 		}
 		testCases := []TestCase{
 			{
-				Desc: "all local declarations",
+				Desc: "all local declarations args",
 				SourceCode: `void main() {
     Dynamic_Element elts;
     Integer i = 1;
@@ -296,12 +296,21 @@ void main() {
 				Pattern:  `Set_item\(Dynamic_Element\s*&?\w+,\s*Integer\s*\w+,\s*Element\s*&?\w+\)`,
 			},
 			{
-				Desc: "inline literals",
+				Desc: "inline literals args",
 				SourceCode: `void main() {
     Named_Tick_Box clean_tick_box = Create_named_tick_box("Clean", 0, "cmd_clean");
 }`,
 				Position: protocol.Position{Line: 1, Character: 36},
 				Pattern:  `Create_named_tick_box\(Text\s*&?\w+,\s*Integer\s*&?\w+,\s*Text\s*&?\w+\)`,
+			},
+			{
+				Desc: "preproc defs args",
+				SourceCode: `#define ALL_WIDGETS_OWN_HEIGHT 2
+void main() {
+    Vertical_Group group = Create_vertical_group(ALL_WIDGETS_OWN_HEIGHT);
+}`,
+				Position: protocol.Position{Line: 2, Character: 27},
+				Pattern:  `Create_vertical_group\(Integer\s*&?\w+\)`,
 			},
 		}
 		for _, testCase := range testCases {

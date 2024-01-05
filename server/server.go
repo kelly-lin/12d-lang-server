@@ -232,8 +232,17 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 					if argIdentifierNode := argsNode.Child(i); argIdentifierNode != nil {
 						if argIdentifierNode.Type() == "identifier" {
 							_, node, err := FindDefinition(argIdentifierNode, argIdentifierNode.Content([]byte(sourceCode)), sourceCode)
+							fmt.Println(node.Content([]byte(sourceCode)))
 							if err != nil {
 								continue
+							}
+							if node.Parent().Type() == "preproc_def" && node.Parent().ChildByFieldName("value").Child(0) != nil {
+								if node.Parent().ChildByFieldName("value").Child(0).Type() == "string_literal" {
+									types = append(types, "Text")
+								}
+								if node.Parent().ChildByFieldName("value").Child(0).Type() == "number_literal" {
+									types = append(types, "Integer")
+								}
 							}
 							if node.ChildByFieldName("type") != nil {
 								types = append(types, node.ChildByFieldName("type").Content([]byte(sourceCode)))
