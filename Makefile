@@ -34,3 +34,7 @@ genlib:
 .PHONY:
 genpatch:
 	@./doc/4dm/mk_patch.py ./doc/4dm/generated.json  ./doc/4dm/patch.json
+
+.PHONY:
+vendorparser:
+	@./scripts/vendor_parser.sh ./parser
