@@ -30,20 +30,18 @@ if [ -z "$commit_hash" ]; then
 	exit 1
 fi
 
-if ! parser_c_content=$(curl -f 'https://raw.githubusercontent.com/kelly-lin/tree-sitter-12dpl/main/src/parser.c'); then
+if ! parser_c_content=$(curl -fs 'https://raw.githubusercontent.com/kelly-lin/tree-sitter-12dpl/main/src/parser.c'); then
 	echo 'could not fetch parser.c'
 	exit 1
 fi
 
-if ! parser_h_content=$(curl -f 'https://raw.githubusercontent.com/kelly-lin/tree-sitter-12dpl/main/src/tree_sitter/parser.h'); then
+if ! parser_h_content=$(curl -fs 'https://raw.githubusercontent.com/kelly-lin/tree-sitter-12dpl/main/src/tree_sitter/parser.h'); then
 	echo 'could not fetch parser.h'
 	exit 1
 fi
 
 printf '// Vendored commit %s
-
 %s' "$commit_hash" "$(printf "%s" "$parser_c_content" | sed 's|^#include <tree_sitter/parser.h>$|#include "parser.h"|')" >"$1/parser.c"
 
 printf '// Vendored commit %s
-
 %s' "$commit_hash" "$parser_h_content" >"$1/parser.h"
