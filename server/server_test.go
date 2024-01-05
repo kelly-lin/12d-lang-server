@@ -16,6 +16,7 @@ import (
 	"github.com/kelly-lin/12d-lang-server/protocol"
 	"github.com/kelly-lin/12d-lang-server/server"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestServer(t *testing.T) {
@@ -292,7 +293,15 @@ void main() {
     Set_item(elts, i, elt);
 }`,
 				Position: protocol.Position{Line: 4, Character: 4},
-				Pattern:  `\(Dynamic_Element\s*&+\w+,\s*Integer\s*\w+,\s*Element\s*\w+\)`,
+				Pattern:  `Set_item\(Dynamic_Element\s*&?\w+,\s*Integer\s*\w+,\s*Element\s*&?\w+\)`,
+			},
+			{
+				Desc: "inline literals",
+				SourceCode: `void main() {
+    Named_Tick_Box clean_tick_box = Create_named_tick_box("Clean", 0, "cmd_clean");
+}`,
+				Position: protocol.Position{Line: 1, Character: 36},
+				Pattern:  `Create_named_tick_box\(Text\s*&?\w+,\s*Integer\s*&?\w+,\s*Text\s*&?\w+\)`,
 			},
 		}
 		for _, testCase := range testCases {
@@ -318,10 +327,12 @@ void main() {
 
 				got, err := getReponseMessage(out.Reader)
 				assert.NoError(err)
+
+				// TODO: refactor this test, the error message is not great.
 				var gotHoverResult protocol.Hover
 				err = json.Unmarshal(got.Result, &gotHoverResult)
 				assert.NoError(err)
-				assert.Len(gotHoverResult.Contents, 1)
+				require.Len(t, gotHoverResult.Contents, 1)
 				matched, err := regexp.MatchString(testCase.Pattern, gotHoverResult.Contents[0])
 				assert.NoError(err)
 				assert.True(matched, fmt.Sprintf("expected lib item doc to match signature pattern %s but did not", testCase.Pattern))

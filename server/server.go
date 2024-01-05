@@ -226,15 +226,24 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 				if argsNode == nil {
 					continue
 				}
+				funcIdentifier := identifierNode.Content([]byte(sourceCode))
 				var types []string
 				for i := 0; i < int(argsNode.ChildCount()); i++ {
 					if argIdentifierNode := argsNode.Child(i); argIdentifierNode != nil {
-						_, node, err := FindDefinition(argIdentifierNode, argIdentifierNode.Content([]byte(sourceCode)), sourceCode)
-						if err != nil {
-							continue
+						if argIdentifierNode.Type() == "identifier" {
+							_, node, err := FindDefinition(argIdentifierNode, argIdentifierNode.Content([]byte(sourceCode)), sourceCode)
+							if err != nil {
+								continue
+							}
+							if node.ChildByFieldName("type") != nil {
+								types = append(types, node.ChildByFieldName("type").Content([]byte(sourceCode)))
+							}
 						}
-						if node.ChildByFieldName("type") != nil {
-							types = append(types, node.ChildByFieldName("type").Content([]byte(sourceCode)))
+						if argIdentifierNode.Type() == "string_literal" {
+							types = append(types, "Text")
+						}
+						if argIdentifierNode.Type() == "number_literal" {
+							types = append(types, "Integer")
 						}
 					}
 				}
@@ -246,6 +255,7 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 					}
 					pattern = fmt.Sprintf(`%s,\s*%s\s*&?\w+`, pattern, t)
 				}
+				pattern = fmt.Sprintf(`%s\(%s\)`, funcIdentifier, pattern)
 				if matched, _ := regexp.MatchString(pattern, item); matched {
 					contents = append(contents, item)
 				}
