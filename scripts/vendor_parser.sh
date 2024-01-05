@@ -42,7 +42,7 @@ fi
 
 printf '// Vendored commit %s
 
-%s' "$commit_hash" "$(echo "$parser_c_content" | sed 's|^#include <tree_sitter/parser.h>$|#include "parser.h"|')" >"$1/parser.c"
+%s' "$commit_hash" "$(printf "%s" "$parser_c_content" | sed 's|^#include <tree_sitter/parser.h>$|#include "parser.h"|')" >"$1/parser.c"
 
 printf '// Vendored commit %s
 
