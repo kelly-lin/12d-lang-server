@@ -1,5 +1,4 @@
 // Vendored commit e753e409b41c92b770a0327775384cc9d47cbf5e
-
 #include "parser.h"
 
 #if defined(__GNUC__) || defined(__clang__)
