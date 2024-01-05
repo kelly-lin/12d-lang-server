@@ -312,6 +312,17 @@ void main() {
 				Position: protocol.Position{Line: 2, Character: 27},
 				Pattern:  `Create_vertical_group\(Integer\s*&?\w+\)`,
 			},
+			{
+				Desc: "local declaration, string and number literal preproc defs",
+				SourceCode: `#define ATT_NUM 1
+#define ATT_NAME "name"
+void main() {
+	Attributes atts;
+    Attribute_exists(atts, ATT_NAME, ATT_NUM);
+}`,
+				Position: protocol.Position{Line: 4, Character: 4},
+				Pattern:  `Attribute_exists\(Attributes\s*&?\w+,\s*Text\s*&?\w+,\s*Integer\s*&?\w+\)`,
+			},
 		}
 		for _, testCase := range testCases {
 			t.Run(testCase.Desc, func(t *testing.T) {
@@ -344,7 +355,7 @@ void main() {
 				require.Len(t, gotHoverResult.Contents, 1)
 				matched, err := regexp.MatchString(testCase.Pattern, gotHoverResult.Contents[0])
 				assert.NoError(err)
-				assert.True(matched, fmt.Sprintf("expected lib item doc to match signature pattern %s but did not", testCase.Pattern))
+				assert.True(matched, fmt.Sprintf("expected lib item doc to match signature pattern %s but did not: %s", testCase.Pattern, gotHoverResult.Contents[0]))
 			})
 		}
 	})
