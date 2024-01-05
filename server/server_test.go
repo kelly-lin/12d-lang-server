@@ -277,6 +277,20 @@ void main() {
 	})
 
 	t.Run("textDocument/hover", func(t *testing.T) {
+		createFuncSignaturePattern := func(name string, types []string) string {
+			result := ""
+			for idx, t := range types {
+				if idx == 0 {
+					result = fmt.Sprintf(`%s\s*&?\w+`, t)
+					continue
+				}
+				result = fmt.Sprintf(`%s,\s*%s\s*&?\w+`, result, t)
+			}
+			if result != "" {
+				result = fmt.Sprintf(`%s\(%s\)`, name, result)
+			}
+			return result
+		}
 		type TestCase struct {
 			Desc       string
 			SourceCode string
@@ -293,7 +307,7 @@ void main() {
     Set_item(elts, i, elt);
 }`,
 				Position: protocol.Position{Line: 4, Character: 4},
-				Pattern:  `Set_item\(Dynamic_Element\s*&?\w+,\s*Integer\s*\w+,\s*Element\s*&?\w+\)`,
+				Pattern:  createFuncSignaturePattern("Set_item", []string{"Dynamic_Element", "Integer", "Element"}),
 			},
 			{
 				Desc: "inline literals args",
@@ -301,7 +315,7 @@ void main() {
     Named_Tick_Box clean_tick_box = Create_named_tick_box("Clean", 0, "cmd_clean");
 }`,
 				Position: protocol.Position{Line: 1, Character: 36},
-				Pattern:  `Create_named_tick_box\(Text\s*&?\w+,\s*Integer\s*&?\w+,\s*Text\s*&?\w+\)`,
+				Pattern:  createFuncSignaturePattern("Create_named_tick_box", []string{"Text", "Integer", "Text"}),
 			},
 			{
 				Desc: "preproc defs args",
@@ -310,7 +324,7 @@ void main() {
     Vertical_Group group = Create_vertical_group(ALL_WIDGETS_OWN_HEIGHT);
 }`,
 				Position: protocol.Position{Line: 2, Character: 27},
-				Pattern:  `Create_vertical_group\(Integer\s*&?\w+\)`,
+				Pattern:  createFuncSignaturePattern("Create_vertical_group", []string{"Integer"}),
 			},
 			{
 				Desc: "local declaration, string and number literal preproc defs",
@@ -321,7 +335,7 @@ void main() {
     Attribute_exists(atts, ATT_NAME, ATT_NUM);
 }`,
 				Position: protocol.Position{Line: 4, Character: 4},
-				Pattern:  `Attribute_exists\(Attributes\s*&?\w+,\s*Text\s*&?\w+,\s*Integer\s*&?\w+\)`,
+				Pattern:  createFuncSignaturePattern("Attribute_exists", []string{"Attributes", "Text", "Integer"}),
 			},
 		}
 		for _, testCase := range testCases {
