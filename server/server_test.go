@@ -316,6 +316,13 @@ void main() {
 	})
 
 	t.Run("textDocument/hover", func(t *testing.T) {
+		type TestCase struct {
+			Desc       string
+			SourceCode string
+			Position   protocol.Position
+			Pattern    string
+		}
+
 		t.Run("library funcs", func(t *testing.T) {
 			createFuncSignaturePattern := func(name string, types []string) string {
 				result := ""
@@ -330,12 +337,6 @@ void main() {
 					result = fmt.Sprintf(`%s\(%s\)`, name, result)
 				}
 				return result
-			}
-			type TestCase struct {
-				Desc       string
-				SourceCode string
-				Position   protocol.Position
-				Pattern    string
 			}
 			testCases := []TestCase{
 				{
@@ -410,6 +411,51 @@ void main() {
 					matched, err := regexp.MatchString(testCase.Pattern, gotHoverResult.Contents[0])
 					assert.NoError(err)
 					assert.True(matched, fmt.Sprintf("expected lib item doc to match signature pattern %s but did not: %s", testCase.Pattern, gotHoverResult.Contents[0]))
+				})
+			}
+		})
+
+		t.Run("declarations", func(t *testing.T) {
+			testCases := []TestCase{
+				{
+					Desc: "local var",
+					SourceCode: `Integer AddOne(Integer addend) {
+    Integer augend = 1;
+    return addend, augend;
+}`,
+					Position: protocol.Position{Line: 2, Character: 19},
+					Pattern:  "```12dpl\nInteger augend\n```",
+				},
+			}
+			for _, testCase := range testCases {
+				t.Run(testCase.Desc, func(t *testing.T) {
+					defer goleak.VerifyNone(t)
+					assert := assert.New(t)
+					logger, err := newLogger()
+					assert.NoError(err)
+					in, out, cleanUp := startServer(logger)
+					defer cleanUp()
+
+					var openRequestID int64 = 1
+					didOpenMsgBytes, err := newDidOpenRequestMessageBytes(openRequestID, "file:///foo.4dm", testCase.SourceCode)
+					assert.NoError(err)
+					_, err = in.Writer.Write([]byte(server.ToProtocolMessage(didOpenMsgBytes)))
+					assert.NoError(err)
+
+					var hoverRequestID int64 = 2
+					hoverMsgBytes, err := newHoverRequestMessageBytes(hoverRequestID, "file:///foo.4dm", testCase.Position)
+					assert.NoError(err)
+					_, err = in.Writer.Write([]byte(server.ToProtocolMessage(hoverMsgBytes)))
+					assert.NoError(err)
+
+					got, err := getReponseMessage(out.Reader)
+					assert.NoError(err)
+
+					var gotHoverResult protocol.Hover
+					err = json.Unmarshal(got.Result, &gotHoverResult)
+					assert.NoError(err)
+					require.Len(t, gotHoverResult.Contents, 1)
+					assert.Equal(testCase.Pattern, gotHoverResult.Contents[0])
 				})
 			}
 		})

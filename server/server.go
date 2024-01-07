@@ -215,13 +215,13 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 		if err != nil {
 			return newNullResponseMessage(msg.ID), len(protocol.NullResult), err
 		}
-		libItems, ok := lang.Lib[identifier]
-		if !ok || len(libItems) == 0 {
-			return newNullResponseMessage(msg.ID), len(protocol.NullResult), nil
-		}
 		var contents []string
-		for _, item := range libItems {
-			if identifierNode.Parent().Type() == "call_expression" {
+		if identifierNode.Parent().Type() == "call_expression" {
+			libItems, ok := lang.Lib[identifier]
+			if !ok || len(libItems) == 0 {
+				return newNullResponseMessage(msg.ID), len(protocol.NullResult), nil
+			}
+			for _, item := range libItems {
 				argsNode := identifierNode.Parent().ChildByFieldName("arguments")
 				if argsNode == nil {
 					continue
@@ -231,7 +231,7 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 				for i := 0; i < int(argsNode.ChildCount()); i++ {
 					if argIdentifierNode := argsNode.Child(i); argIdentifierNode != nil {
 						if argIdentifierNode.Type() == "identifier" {
-							_, node, err := FindDefinition(argIdentifierNode, argIdentifierNode.Content([]byte(sourceCode)), sourceCode)
+							_, node, err := findDefinition(argIdentifierNode, argIdentifierNode.Content([]byte(sourceCode)), sourceCode)
 							if err != nil {
 								continue
 							}
@@ -269,7 +269,12 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 				}
 				continue
 			}
-			contents = append(contents, item)
+		} else {
+			if _, node, err := findDefinition(identifierNode, identifier, sourceCode); err == nil {
+				typeNode := node.ChildByFieldName("type")
+				identifierNode := node.ChildByFieldName("declarator").ChildByFieldName("declarator")
+				contents = append(contents, protocol.CreateDocMarkdownString(fmt.Sprintf("%s %s", typeNode.Content([]byte(sourceCode)), identifierNode.Content([]byte(sourceCode))), ""))
+			}
 		}
 		result := protocol.Hover{Contents: contents}
 		resultBytes, err := json.Marshal(result)
@@ -335,7 +340,7 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 				err
 		}
 		identifier := identifierNode.Content([]byte(sourceCode))
-		locRange, _, err := FindDefinition(identifierNode, identifier, sourceCode)
+		locRange, _, err := findDefinition(identifierNode, identifier, sourceCode)
 		if err != nil {
 			return newNullResponseMessage(msg.ID),
 				len(protocol.NullResult),
@@ -378,7 +383,7 @@ func (s *Server) updateDocument(uri string, content string) error {
 
 // Find the definition of the node reprepsenting by identifier node and
 // identifier. The identifier node is the target for the definition.
-func FindDefinition(identifierNode *sitter.Node, identifier string, sourceCode string) (parser.Range, *sitter.Node, error) {
+func findDefinition(identifierNode *sitter.Node, identifier string, sourceCode string) (parser.Range, *sitter.Node, error) {
 	switch identifierNode.Parent().Type() {
 	case "call_expression":
 		// Is this byte slice conversion expensive? If it is, we might need to
