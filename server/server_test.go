@@ -77,6 +77,17 @@ void main() {
 				),
 			},
 			{
+				Desc: "func pointer parameter",
+				SourceCode: `void SetABC(Dynamic_Text &dt) {
+    Set_item(dt, 1, "abc");
+}`,
+				Pos: protocol.Position{Line: 1, Character: 13},
+				Want: mustNewLocationResponseMessage(
+					protocol.Position{Line: 0, Character: 26},
+					protocol.Position{Line: 0, Character: 28},
+				),
+			},
+			{
 				Desc: "binary expression local variable",
 				SourceCode: `Integer Add_one(Integer addend) {
     Integer augend = 1;

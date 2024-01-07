@@ -395,19 +395,42 @@ func FindDefinition(identifierNode *sitter.Node, identifier string, sourceCode s
 				paramsNode := currentNode.ChildByFieldName("declarator").ChildByFieldName("parameters")
 				for i := 0; i < int(paramsNode.ChildCount()); i++ {
 					paramNode := paramsNode.Child(i)
-					paramIdentifierNode := paramNode.ChildByFieldName("declarator")
-					if paramIdentifierNode != nil && paramIdentifierNode.Content([]byte(sourceCode)) == identifier {
+					paramDeclaratorNode := paramNode.ChildByFieldName("declarator")
+					if paramDeclaratorNode == nil {
+						continue
+					}
+					if paramDeclaratorNode.Type() == "pointer_declarator" {
+						identifierNode := paramDeclaratorNode.ChildByFieldName("declarator")
+						if identifierNode != nil {
+							if identifierNode.Content([]byte(sourceCode)) == identifier {
+								return parser.Range{
+										Start: parser.Point{
+											Row:    identifierNode.StartPoint().Row,
+											Column: identifierNode.StartPoint().Column,
+										},
+										End: parser.Point{
+											Row:    identifierNode.EndPoint().Row,
+											Column: identifierNode.EndPoint().Column,
+										},
+									},
+									paramDeclaratorNode,
+									nil
+							}
+						}
+					}
+					if paramDeclaratorNode.Type() == "identifier" &&
+						paramDeclaratorNode.Content([]byte(sourceCode)) == identifier {
 						return parser.Range{
 								Start: parser.Point{
-									Row:    paramIdentifierNode.StartPoint().Row,
-									Column: paramIdentifierNode.StartPoint().Column,
+									Row:    paramDeclaratorNode.StartPoint().Row,
+									Column: paramDeclaratorNode.StartPoint().Column,
 								},
 								End: parser.Point{
-									Row:    paramIdentifierNode.EndPoint().Row,
-									Column: paramIdentifierNode.EndPoint().Column,
+									Row:    paramDeclaratorNode.EndPoint().Row,
+									Column: paramDeclaratorNode.EndPoint().Column,
 								},
 							},
-							paramIdentifierNode,
+							paramDeclaratorNode,
 							nil
 					}
 				}
@@ -452,8 +475,8 @@ func FindDefinition(identifierNode *sitter.Node, identifier string, sourceCode s
 }
 
 // Finds the declaration of the identifier inside of the node and returns the
-// range. If the the node is not the declaration of the identifier an error will
-// be returned.
+// range. If the declaration node of the identifier cannot be found, an error
+// will be returned.
 func getDeclarationRange(node *sitter.Node, identifier string, sourceCode string) (parser.Range, error) {
 	if node.Type() != "declaration" {
 		return parser.Range{}, errors.New("node is not a declaration node")

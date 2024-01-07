@@ -1,5 +1,5 @@
-// Vendored commit e753e409b41c92b770a0327775384cc9d47cbf5e
-#include "parser.h"
+// Vendored commit 36e0cd414f491a0393f01c6d37ef179bb936e8d0
+#include "./parser.h"
 
 #if defined(__GNUC__) || defined(__clang__)
 #pragma GCC diagnostic push
@@ -10596,7 +10596,7 @@ static const TSParseActionEntry ts_parse_actions[] = {
   [515] = {.entry = {.count = 1, .reusable = true}}, REDUCE(sym__type_specifier, 1),
   [517] = {.entry = {.count = 1, .reusable = true}}, REDUCE(sym_parameter_declaration, 2, .production_id = 17),
   [519] = {.entry = {.count = 1, .reusable = true}}, REDUCE(sym__declaration_specifiers, 1, .production_id = 2),
-  [521] = {.entry = {.count = 1, .reusable = true}}, REDUCE(sym_pointer_declarator, 2),
+  [521] = {.entry = {.count = 1, .reusable = true}}, REDUCE(sym_pointer_declarator, 2, .production_id = 20),
   [523] = {.entry = {.count = 1, .reusable = true}}, SHIFT(160),
   [525] = {.entry = {.count = 1, .reusable = true}}, REDUCE(sym_preproc_arg, 1),
   [527] = {.entry = {.count = 1, .reusable = true}}, SHIFT(5),
