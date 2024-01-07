@@ -316,101 +316,103 @@ void main() {
 	})
 
 	t.Run("textDocument/hover", func(t *testing.T) {
-		createFuncSignaturePattern := func(name string, types []string) string {
-			result := ""
-			for idx, t := range types {
-				if idx == 0 {
-					result = fmt.Sprintf(`%s\s*&?\w+`, t)
-					continue
+		t.Run("library funcs", func(t *testing.T) {
+			createFuncSignaturePattern := func(name string, types []string) string {
+				result := ""
+				for idx, t := range types {
+					if idx == 0 {
+						result = fmt.Sprintf(`%s\s*&?\w+`, t)
+						continue
+					}
+					result = fmt.Sprintf(`%s,\s*%s\s*&?\w+`, result, t)
 				}
-				result = fmt.Sprintf(`%s,\s*%s\s*&?\w+`, result, t)
+				if result != "" {
+					result = fmt.Sprintf(`%s\(%s\)`, name, result)
+				}
+				return result
 			}
-			if result != "" {
-				result = fmt.Sprintf(`%s\(%s\)`, name, result)
+			type TestCase struct {
+				Desc       string
+				SourceCode string
+				Position   protocol.Position
+				Pattern    string
 			}
-			return result
-		}
-		type TestCase struct {
-			Desc       string
-			SourceCode string
-			Position   protocol.Position
-			Pattern    string
-		}
-		testCases := []TestCase{
-			{
-				Desc: "all local declarations args",
-				SourceCode: `void main() {
+			testCases := []TestCase{
+				{
+					Desc: "all local declarations args",
+					SourceCode: `void main() {
     Dynamic_Element elts;
     Integer i = 1;
     Element elt;
     Set_item(elts, i, elt);
 }`,
-				Position: protocol.Position{Line: 4, Character: 4},
-				Pattern:  createFuncSignaturePattern("Set_item", []string{"Dynamic_Element", "Integer", "Element"}),
-			},
-			{
-				Desc: "inline literals args",
-				SourceCode: `void main() {
+					Position: protocol.Position{Line: 4, Character: 4},
+					Pattern:  createFuncSignaturePattern("Set_item", []string{"Dynamic_Element", "Integer", "Element"}),
+				},
+				{
+					Desc: "inline literals args",
+					SourceCode: `void main() {
     Named_Tick_Box clean_tick_box = Create_named_tick_box("Clean", 0, "cmd_clean");
 }`,
-				Position: protocol.Position{Line: 1, Character: 36},
-				Pattern:  createFuncSignaturePattern("Create_named_tick_box", []string{"Text", "Integer", "Text"}),
-			},
-			{
-				Desc: "preproc defs args",
-				SourceCode: `#define ALL_WIDGETS_OWN_HEIGHT 2
+					Position: protocol.Position{Line: 1, Character: 36},
+					Pattern:  createFuncSignaturePattern("Create_named_tick_box", []string{"Text", "Integer", "Text"}),
+				},
+				{
+					Desc: "preproc defs args",
+					SourceCode: `#define ALL_WIDGETS_OWN_HEIGHT 2
 void main() {
     Vertical_Group group = Create_vertical_group(ALL_WIDGETS_OWN_HEIGHT);
 }`,
-				Position: protocol.Position{Line: 2, Character: 27},
-				Pattern:  createFuncSignaturePattern("Create_vertical_group", []string{"Integer"}),
-			},
-			{
-				Desc: "local declaration, string and number literal preproc defs",
-				SourceCode: `#define ATT_NUM 1
+					Position: protocol.Position{Line: 2, Character: 27},
+					Pattern:  createFuncSignaturePattern("Create_vertical_group", []string{"Integer"}),
+				},
+				{
+					Desc: "local declaration, string and number literal preproc defs",
+					SourceCode: `#define ATT_NUM 1
 #define ATT_NAME "name"
 void main() {
 	Attributes atts;
     Attribute_exists(atts, ATT_NAME, ATT_NUM);
 }`,
-				Position: protocol.Position{Line: 4, Character: 4},
-				Pattern:  createFuncSignaturePattern("Attribute_exists", []string{"Attributes", "Text", "Integer"}),
-			},
-		}
-		for _, testCase := range testCases {
-			t.Run(testCase.Desc, func(t *testing.T) {
-				defer goleak.VerifyNone(t)
-				assert := assert.New(t)
-				logger, err := newLogger()
-				assert.NoError(err)
-				in, out, cleanUp := startServer(logger)
-				defer cleanUp()
+					Position: protocol.Position{Line: 4, Character: 4},
+					Pattern:  createFuncSignaturePattern("Attribute_exists", []string{"Attributes", "Text", "Integer"}),
+				},
+			}
+			for _, testCase := range testCases {
+				t.Run(testCase.Desc, func(t *testing.T) {
+					defer goleak.VerifyNone(t)
+					assert := assert.New(t)
+					logger, err := newLogger()
+					assert.NoError(err)
+					in, out, cleanUp := startServer(logger)
+					defer cleanUp()
 
-				var openRequestID int64 = 1
-				didOpenMsgBytes, err := newDidOpenRequestMessageBytes(openRequestID, "file:///foo.4dm", testCase.SourceCode)
-				assert.NoError(err)
-				_, err = in.Writer.Write([]byte(server.ToProtocolMessage(didOpenMsgBytes)))
-				assert.NoError(err)
+					var openRequestID int64 = 1
+					didOpenMsgBytes, err := newDidOpenRequestMessageBytes(openRequestID, "file:///foo.4dm", testCase.SourceCode)
+					assert.NoError(err)
+					_, err = in.Writer.Write([]byte(server.ToProtocolMessage(didOpenMsgBytes)))
+					assert.NoError(err)
 
-				var hoverRequestID int64 = 2
-				hoverMsgBytes, err := newHoverRequestMessageBytes(hoverRequestID, "file:///foo.4dm", testCase.Position)
-				assert.NoError(err)
-				_, err = in.Writer.Write([]byte(server.ToProtocolMessage(hoverMsgBytes)))
-				assert.NoError(err)
+					var hoverRequestID int64 = 2
+					hoverMsgBytes, err := newHoverRequestMessageBytes(hoverRequestID, "file:///foo.4dm", testCase.Position)
+					assert.NoError(err)
+					_, err = in.Writer.Write([]byte(server.ToProtocolMessage(hoverMsgBytes)))
+					assert.NoError(err)
 
-				got, err := getReponseMessage(out.Reader)
-				assert.NoError(err)
+					got, err := getReponseMessage(out.Reader)
+					assert.NoError(err)
 
-				// TODO: refactor this test, the error message is not great.
-				var gotHoverResult protocol.Hover
-				err = json.Unmarshal(got.Result, &gotHoverResult)
-				assert.NoError(err)
-				require.Len(t, gotHoverResult.Contents, 1)
-				matched, err := regexp.MatchString(testCase.Pattern, gotHoverResult.Contents[0])
-				assert.NoError(err)
-				assert.True(matched, fmt.Sprintf("expected lib item doc to match signature pattern %s but did not: %s", testCase.Pattern, gotHoverResult.Contents[0]))
-			})
-		}
+					// TODO: refactor this test, the error message is not great.
+					var gotHoverResult protocol.Hover
+					err = json.Unmarshal(got.Result, &gotHoverResult)
+					assert.NoError(err)
+					require.Len(t, gotHoverResult.Contents, 1)
+					matched, err := regexp.MatchString(testCase.Pattern, gotHoverResult.Contents[0])
+					assert.NoError(err)
+					assert.True(matched, fmt.Sprintf("expected lib item doc to match signature pattern %s but did not: %s", testCase.Pattern, gotHoverResult.Contents[0]))
+				})
+			}
+		})
 	})
 }
 
