@@ -183,6 +183,34 @@ void main() {
 					protocol.Position{Line: 1, Character: 21},
 				),
 			},
+			{
+				Desc: "multiple declaration - first var with initialisation",
+				SourceCode: `void main() {
+    Real x = 1, y;
+    Point pt;
+    Set_x(pt, x);
+    Set_y(pt, y);
+}`,
+				Pos: protocol.Position{Line: 3, Character: 14},
+				Want: mustNewLocationResponseMessage(
+					protocol.Position{Line: 1, Character: 9},
+					protocol.Position{Line: 1, Character: 10},
+				),
+			},
+			{
+				Desc: "multiple declaration - second var without initialisation",
+				SourceCode: `void main() {
+    Real x = 1, y;
+    Point pt;
+    Set_x(pt, x);
+    Set_y(pt, y);
+}`,
+				Pos: protocol.Position{Line: 4, Character: 14},
+				Want: mustNewLocationResponseMessage(
+					protocol.Position{Line: 1, Character: 16},
+					protocol.Position{Line: 1, Character: 17},
+				),
+			},
 		}
 		for _, testCase := range testCases {
 			t.Run(testCase.Desc, func(t *testing.T) {

@@ -433,14 +433,14 @@ func FindDefinition(identifierNode *sitter.Node, identifier string, sourceCode s
 				}
 				if currentChildNode.Type() == "compound_statement" {
 					for i := 0; i < int(currentChildNode.ChildCount()); i++ {
-						locRange, err := GetDeclarationRange(currentChildNode.Child(i), identifier, sourceCode)
+						locRange, err := getDeclarationRange(currentChildNode.Child(i), identifier, sourceCode)
 						if err != nil {
 							continue
 						}
 						return locRange, currentChildNode.Child(i), nil
 					}
 				}
-				locRange, err := GetDeclarationRange(currentChildNode, identifier, sourceCode)
+				locRange, err := getDeclarationRange(currentChildNode, identifier, sourceCode)
 				if err != nil {
 					continue
 				}
@@ -454,48 +454,49 @@ func FindDefinition(identifierNode *sitter.Node, identifier string, sourceCode s
 // Finds the declaration of the identifier inside of the node and returns the
 // range. If the the node is not the declaration of the identifier an error will
 // be returned.
-func GetDeclarationRange(node *sitter.Node, identifier string, sourceCode string) (parser.Range, error) {
+func getDeclarationRange(node *sitter.Node, identifier string, sourceCode string) (parser.Range, error) {
 	if node.Type() != "declaration" {
 		return parser.Range{}, errors.New("node is not a declaration node")
 	}
-	declaratorNode := node.ChildByFieldName("declarator")
-	if declaratorNode == nil {
-		return parser.Range{}, errors.New("node does not have a declarator child node")
-	}
-	// Uninitialized variable declaration.
-	if declaratorNode.Type() == "identifier" {
-		identifierDeclarationNode := node.ChildByFieldName("declarator")
-		if identifierDeclarationNode.Content([]byte(sourceCode)) == identifier {
-			return parser.Range{
-					Start: parser.Point{
-						Row:    identifierDeclarationNode.StartPoint().Row,
-						Column: identifierDeclarationNode.StartPoint().Column,
+	for i := 0; i < int(node.ChildCount()); i++ {
+		declaratorNode := node.Child(i)
+		// Uninitialized variable declaration.
+		if declaratorNode.Type() == "identifier" {
+			identifierDeclarationNode := declaratorNode
+			if identifierDeclarationNode.Content([]byte(sourceCode)) == identifier {
+				return parser.Range{
+						Start: parser.Point{
+							Row:    identifierDeclarationNode.StartPoint().Row,
+							Column: identifierDeclarationNode.StartPoint().Column,
+						},
+						End: parser.Point{
+							Row:    identifierDeclarationNode.EndPoint().Row,
+							Column: identifierDeclarationNode.EndPoint().Column,
+						},
 					},
-					End: parser.Point{
-						Row:    identifierDeclarationNode.EndPoint().Row,
-						Column: identifierDeclarationNode.EndPoint().Column,
-					},
-				},
-				nil
+					nil
+			}
 		}
-	}
-	// Initialized variable declaration.
-	identifierDeclarationNode := node.ChildByFieldName("declarator").ChildByFieldName("declarator")
-	if identifierDeclarationNode == nil {
-		return parser.Range{}, errors.New("declarator child node does not have a declarator child node")
-	}
-	if identifierDeclarationNode.Content([]byte(sourceCode)) == identifier {
-		return parser.Range{
-				Start: parser.Point{
-					Row:    identifierDeclarationNode.StartPoint().Row,
-					Column: identifierDeclarationNode.StartPoint().Column,
-				},
-				End: parser.Point{
-					Row:    identifierDeclarationNode.EndPoint().Row,
-					Column: identifierDeclarationNode.EndPoint().Column,
-				},
-			},
-			nil
+		// Initialized variable declaration.
+		if declaratorNode.Type() == "init_declarator" {
+			identifierDeclarationNode := declaratorNode.ChildByFieldName("declarator")
+			if identifierDeclarationNode == nil {
+				return parser.Range{}, errors.New("declarator child node does not have a declarator child node")
+			}
+			if identifierDeclarationNode.Content([]byte(sourceCode)) == identifier {
+				return parser.Range{
+						Start: parser.Point{
+							Row:    identifierDeclarationNode.StartPoint().Row,
+							Column: identifierDeclarationNode.StartPoint().Column,
+						},
+						End: parser.Point{
+							Row:    identifierDeclarationNode.EndPoint().Row,
+							Column: identifierDeclarationNode.EndPoint().Column,
+						},
+					},
+					nil
+			}
+		}
 	}
 	return parser.Range{}, errors.New("declaration not found")
 }
