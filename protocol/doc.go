@@ -12,7 +12,7 @@ func CreateDocMarkdownString(signature, desc string) string {
 		return desc
 	}
 	if desc == "" {
-		return fmt.Sprintf("```12dpl\\n%s\\n```", signature)
+		return fmt.Sprintf("```12dpl\n%s\n```", signature)
 	}
 	// If we use description directly we will be using the unescaped version
 	// we read in from the JSON file. This is problematic because we are
@@ -20,5 +20,5 @@ func CreateDocMarkdownString(signature, desc string) string {
 	// we are creating generated code with unescaped characters, such as quotes.
 	// We are marshalling description again to get the escaped version.
 	encodedDesc, _ := json.Marshal(desc)
-	return fmt.Sprintf("```12dpl\\n%s\\n```\\n---\\n%s", signature, encodedDesc[1:len(encodedDesc)-1])
+	return fmt.Sprintf("```12dpl\n%s\n```\n---\n%s", signature, encodedDesc[1:len(encodedDesc)-1])
 }

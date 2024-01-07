@@ -48,7 +48,9 @@ func main() {
 			matches := re.FindStringSubmatch(name)
 			if len(matches) > 1 {
 				funcName := matches[1]
-				agg[funcName] = append(agg[funcName], protocol.CreateDocMarkdownString(name, api.Desc))
+				docString := protocol.CreateDocMarkdownString(name, api.Desc)
+				santizedDocString, _ := json.Marshal(docString)
+				agg[funcName] = append(agg[funcName], string(santizedDocString))
 			}
 		}
 	}
@@ -60,7 +62,7 @@ var Lib = map[string][]string{
 {{- range $name, $descriptions := .}}
 	"{{$name}}": {
 {{- range $description := $descriptions}}
-		"{{$description}}",
+		{{$description}},
 {{- end}}
 	},
 {{- end}}
