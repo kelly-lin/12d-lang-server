@@ -24,6 +24,22 @@ type Range struct {
 	End   Point
 }
 
+// Create a new parser range using the start and end points of the tree sitter
+// node.
+func NewParserRange(node *sitter.Node) Range {
+	result := Range{
+		Start: Point{
+			Row:    node.StartPoint().Row,
+			Column: node.StartPoint().Column,
+		},
+		End: Point{
+			Row:    node.EndPoint().Row,
+			Column: node.EndPoint().Column,
+		},
+	}
+	return result
+}
+
 // Find the definition of the function with the provided identifier inside
 // source and returns the range if it was found. If the definition was not found
 // then error ErrNoDefinition will be returned.
