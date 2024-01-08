@@ -426,6 +426,14 @@ void main() {
 					Position: protocol.Position{Line: 2, Character: 19},
 					Pattern:  "```12dpl\nInteger augend\n```",
 				},
+				{
+					Desc: "func param",
+					SourceCode: `Integer Identity(Integer id) {
+    return id;
+}`,
+					Position: protocol.Position{Line: 1, Character: 11},
+					Pattern:  "```12dpl\n(Parameter) Integer id\n```",
+				},
 			}
 			for _, testCase := range testCases {
 				t.Run(testCase.Desc, func(t *testing.T) {

@@ -271,9 +271,15 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 			}
 		} else {
 			if _, node, err := findDefinition(identifierNode, identifier, sourceCode); err == nil {
-				typeNode := node.ChildByFieldName("type")
-				identifierNode := node.ChildByFieldName("declarator").ChildByFieldName("declarator")
-				contents = append(contents, protocol.CreateDocMarkdownString(fmt.Sprintf("%s %s", typeNode.Content([]byte(sourceCode)), identifierNode.Content([]byte(sourceCode))), ""))
+				if node.Type() == "declaration" {
+					typeNode := node.ChildByFieldName("type")
+					identifierNode := node.ChildByFieldName("declarator").ChildByFieldName("declarator")
+					contents = append(contents, protocol.CreateDocMarkdownString(fmt.Sprintf("%s %s", typeNode.Content([]byte(sourceCode)), identifierNode.Content([]byte(sourceCode))), ""))
+				} else if node.Type() == "identifier" && node.Parent().Type() == "parameter_declaration" {
+					typeNode := node.Parent().ChildByFieldName("type")
+					identifierNode := node
+					contents = append(contents, protocol.CreateDocMarkdownString(fmt.Sprintf("(Parameter) %s %s", typeNode.Content([]byte(sourceCode)), identifierNode.Content([]byte(sourceCode))), ""))
+				}
 			}
 		}
 		result := protocol.Hover{Contents: contents}
