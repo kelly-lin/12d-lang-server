@@ -544,11 +544,16 @@ func findDeclarationRange(node *sitter.Node, identifier string, sourceCode []byt
 
 // Converts parser range into protocol range.
 func ToProtocolRange(r parser.Range) protocol.Range {
-	var result protocol.Range
-	result.Start.Line = uint(r.Start.Row)
-	result.Start.Character = uint(r.Start.Column)
-	result.End.Line = uint(r.End.Row)
-	result.End.Character = uint(r.End.Column)
+	result := protocol.Range{
+		Start: protocol.Position{
+			Line:      uint(r.Start.Row),
+			Character: uint(r.Start.Column),
+		},
+		End: protocol.Position{
+			Line:      uint(r.End.Row),
+			Character: uint(r.End.Column),
+		},
+	}
 	return result
 }
 
