@@ -137,12 +137,11 @@ func (q *Queue) HasItems() bool {
 	return len(q.items)-q.idx > 0
 }
 
-func debugNode(n *sitter.Node) {
+func DebugNode(n *sitter.Node) {
 	fmt.Printf(
 		"node: %s:%s [%d, %d] - [%d, %d]\n",
 		n.Type(),
-		// n.Content(sourceCode),
-		"",
+		n.String(),
 		n.StartPoint().Row,
 		n.StartPoint().Column,
 		n.EndPoint().Row,
