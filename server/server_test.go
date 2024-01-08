@@ -450,6 +450,9 @@ void main() {
 					Position: protocol.Position{Line: 1, Character: 11},
 					Pattern:  "```12dpl\n(parameter) Integer id\n```",
 				},
+				// TODO:
+				// - Multi var declaration.
+				// - Reference parameter.
 			}
 			for _, testCase := range testCases {
 				t.Run(testCase.Desc, func(t *testing.T) {
