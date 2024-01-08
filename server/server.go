@@ -444,14 +444,14 @@ func findDefinition(identifierNode *sitter.Node, identifier string, sourceCode [
 				}
 				if currentChildNode.Type() == "compound_statement" {
 					for i := 0; i < int(currentChildNode.ChildCount()); i++ {
-						locRange, err := getDeclarationRange(currentChildNode.Child(i), identifier, sourceCode)
+						locRange, err := findDeclarationRange(currentChildNode.Child(i), identifier, sourceCode)
 						if err != nil {
 							continue
 						}
 						return locRange, currentChildNode.Child(i), nil
 					}
 				}
-				locRange, err := getDeclarationRange(currentChildNode, identifier, sourceCode)
+				locRange, err := findDeclarationRange(currentChildNode, identifier, sourceCode)
 				if err != nil {
 					continue
 				}
@@ -490,15 +490,17 @@ func findParameterNode(paramsNode *sitter.Node, identifier string, sourceCode []
 // Finds the declaration of the identifier inside of the node and returns the
 // range. If the declaration node of the identifier cannot be found, an error
 // will be returned.
-func getDeclarationRange(node *sitter.Node, identifier string, sourceCode []byte) (parser.Range, error) {
+func findDeclarationRange(node *sitter.Node, identifier string, sourceCode []byte) (parser.Range, error) {
 	if node.Type() != "declaration" {
 		return parser.Range{}, errors.New("node is not a declaration node")
 	}
+	var identifierDeclarationNode *sitter.Node
 	for i := 0; i < int(node.ChildCount()); i++ {
 		declaratorNode := node.Child(i)
+		switch declaratorNode.Type() {
 		// Uninitialized variable declaration.
-		if declaratorNode.Type() == "identifier" {
-			identifierDeclarationNode := declaratorNode
+		case "identifier":
+			identifierDeclarationNode = declaratorNode
 			if identifierDeclarationNode.Content(sourceCode) == identifier {
 				return parser.Range{
 						Start: parser.Point{
@@ -512,10 +514,10 @@ func getDeclarationRange(node *sitter.Node, identifier string, sourceCode []byte
 					},
 					nil
 			}
-		}
+
 		// Initialized variable declaration.
-		if declaratorNode.Type() == "init_declarator" {
-			identifierDeclarationNode := declaratorNode.ChildByFieldName("declarator")
+		case "init_declarator":
+			identifierDeclarationNode = declaratorNode.ChildByFieldName("declarator")
 			if identifierDeclarationNode == nil {
 				return parser.Range{}, errors.New("declarator child node does not have a declarator child node")
 			}
@@ -532,6 +534,9 @@ func getDeclarationRange(node *sitter.Node, identifier string, sourceCode []byte
 					},
 					nil
 			}
+
+		default:
+			continue
 		}
 	}
 	return parser.Range{}, errors.New("declaration not found")
