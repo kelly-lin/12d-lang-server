@@ -54,9 +54,15 @@ void main() {
 			{
 				Desc: "func parameter identifier",
 				SourceCode: `Integer Add(Integer augend, Integer addend) {
+	Text foo = "\"hello\""
     return augend + addend;
+}
+
+void main() {
+    Integer augend = 1;
+    Integer addend = 1;
 }`,
-				Pos: protocol.Position{Line: 1, Character: 11},
+				Pos: protocol.Position{Line: 2, Character: 11},
 				Want: mustNewLocationResponseMessage(
 					protocol.Position{Line: 0, Character: 20},
 					protocol.Position{Line: 0, Character: 26},
@@ -432,7 +438,7 @@ void main() {
     return id;
 }`,
 					Position: protocol.Position{Line: 1, Character: 11},
-					Pattern:  "```12dpl\n(Parameter) Integer id\n```",
+					Pattern:  "```12dpl\n(parameter) Integer id\n```",
 				},
 			}
 			for _, testCase := range testCases {

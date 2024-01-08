@@ -278,7 +278,7 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 				} else if node.Type() == "identifier" && node.Parent().Type() == "parameter_declaration" {
 					typeNode := node.Parent().ChildByFieldName("type")
 					identifierNode := node
-					contents = append(contents, protocol.CreateDocMarkdownString(fmt.Sprintf("(Parameter) %s %s", typeNode.Content([]byte(sourceCode)), identifierNode.Content([]byte(sourceCode))), ""))
+					contents = append(contents, protocol.CreateDocMarkdownString(fmt.Sprintf("(parameter) %s %s", typeNode.Content([]byte(sourceCode)), identifierNode.Content([]byte(sourceCode))), ""))
 				}
 			}
 		}
