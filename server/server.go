@@ -32,7 +32,7 @@ func NewServer(logger func(msg string)) Server {
 	}
 
 	return Server{
-		documents: make(map[string]string),
+		documents: make(map[string][]byte),
 		logger:    serverLogger,
 		nodes:     make(map[string]*sitter.Node),
 	}
@@ -45,7 +45,7 @@ type Server struct {
 	// Map of file URI and source code.
 	// TODO: should we be storing a []byte instead of a string? If most of our
 	// consumers are expecting []byte, we should change this type.
-	documents map[string]string
+	documents map[string][]byte
 	logger    func(msg string)
 }
 
@@ -208,7 +208,7 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 		if err != nil {
 			return newNullResponseMessage(msg.ID), len(protocol.NullResult), err
 		}
-		identifier := identifierNode.Content([]byte(sourceCode))
+		identifier := identifierNode.Content(sourceCode)
 		if errors.Is(err, parser.ErrNoDefinition) {
 			return newNullResponseMessage(msg.ID), len(protocol.NullResult), nil
 		}
@@ -226,12 +226,12 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 				if argsNode == nil {
 					continue
 				}
-				funcIdentifier := identifierNode.Content([]byte(sourceCode))
+				funcIdentifier := identifierNode.Content(sourceCode)
 				var types []string
 				for i := 0; i < int(argsNode.ChildCount()); i++ {
 					if argIdentifierNode := argsNode.Child(i); argIdentifierNode != nil {
 						if argIdentifierNode.Type() == "identifier" {
-							_, node, err := findDefinition(argIdentifierNode, argIdentifierNode.Content([]byte(sourceCode)), sourceCode)
+							_, node, err := findDefinition(argIdentifierNode, argIdentifierNode.Content(sourceCode), sourceCode)
 							if err != nil {
 								continue
 							}
@@ -244,7 +244,7 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 								}
 							}
 							if node.ChildByFieldName("type") != nil {
-								types = append(types, node.ChildByFieldName("type").Content([]byte(sourceCode)))
+								types = append(types, node.ChildByFieldName("type").Content(sourceCode))
 							}
 						}
 						if argIdentifierNode.Type() == "string_literal" {
@@ -277,11 +277,11 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 					if identifierNode == nil {
 						identifierNode = node.ChildByFieldName("declarator")
 					}
-					contents = append(contents, protocol.CreateDocMarkdownString(fmt.Sprintf("%s %s", typeNode.Content([]byte(sourceCode)), identifierNode.Content([]byte(sourceCode))), ""))
+					contents = append(contents, protocol.CreateDocMarkdownString(fmt.Sprintf("%s %s", typeNode.Content(sourceCode), identifierNode.Content([]byte(sourceCode))), ""))
 				} else if node.Type() == "identifier" && node.Parent().Type() == "parameter_declaration" {
 					typeNode := node.Parent().ChildByFieldName("type")
 					identifierNode := node
-					contents = append(contents, protocol.CreateDocMarkdownString(fmt.Sprintf("(parameter) %s %s", typeNode.Content([]byte(sourceCode)), identifierNode.Content([]byte(sourceCode))), ""))
+					contents = append(contents, protocol.CreateDocMarkdownString(fmt.Sprintf("(parameter) %s %s", typeNode.Content(sourceCode), identifierNode.Content([]byte(sourceCode))), ""))
 				}
 			}
 		}
@@ -348,7 +348,7 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 				len(protocol.NullResult),
 				err
 		}
-		identifier := identifierNode.Content([]byte(sourceCode))
+		identifier := identifierNode.Content(sourceCode)
 		locRange, _, err := findDefinition(identifierNode, identifier, sourceCode)
 		if err != nil {
 			return newNullResponseMessage(msg.ID),
@@ -381,7 +381,7 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 // Update the document stored on the server identified by the uri with provided
 // content.
 func (s *Server) updateDocument(uri string, content string) error {
-	s.documents[uri] = content
+	s.documents[uri] = []byte(content)
 	rootNode, err := sitter.ParseCtx(context.Background(), []byte(content), parser.GetLanguage())
 	if err != nil {
 		return err
@@ -392,13 +392,13 @@ func (s *Server) updateDocument(uri string, content string) error {
 
 // Find the definition of the node reprepsenting by identifier node and
 // identifier. The identifier node is the target for the definition.
-func findDefinition(identifierNode *sitter.Node, identifier string, sourceCode string) (parser.Range, *sitter.Node, error) {
+func findDefinition(identifierNode *sitter.Node, identifier string, sourceCode []byte) (parser.Range, *sitter.Node, error) {
 	switch identifierNode.Parent().Type() {
 	case "call_expression":
 		// Is this byte slice conversion expensive? If it is, we might need to
 		// find a way so that we do not have to do the conversion. Ideally we
 		// should just need to parse the source code once and cache it.
-		locRange, node, err := parser.FindFuncDefinition(identifier, []byte(sourceCode))
+		locRange, node, err := parser.FindFuncDefinition(identifier, sourceCode)
 		return locRange, node, err
 
 	default:
@@ -416,7 +416,7 @@ func findDefinition(identifierNode *sitter.Node, identifier string, sourceCode s
 					if paramDeclaratorNode.Type() == "pointer_declarator" {
 						identifierNode := paramDeclaratorNode.ChildByFieldName("declarator")
 						if identifierNode != nil {
-							if identifierNode.Content([]byte(sourceCode)) == identifier {
+							if identifierNode.Content(sourceCode) == identifier {
 								return parser.Range{
 										Start: parser.Point{
 											Row:    identifierNode.StartPoint().Row,
@@ -433,7 +433,7 @@ func findDefinition(identifierNode *sitter.Node, identifier string, sourceCode s
 						}
 					}
 					if paramDeclaratorNode.Type() == "identifier" &&
-						paramDeclaratorNode.Content([]byte(sourceCode)) == identifier {
+						paramDeclaratorNode.Content(sourceCode) == identifier {
 						return parser.Range{
 								Start: parser.Point{
 									Row:    paramDeclaratorNode.StartPoint().Row,
@@ -453,7 +453,7 @@ func findDefinition(identifierNode *sitter.Node, identifier string, sourceCode s
 				currentChildNode := currentNode.Child(i)
 				if currentChildNode.Type() == "preproc_def" {
 					identifierDeclarationNode := currentChildNode.ChildByFieldName("name")
-					if identifierDeclarationNode != nil && identifierDeclarationNode.Content([]byte(sourceCode)) == identifier {
+					if identifierDeclarationNode != nil && identifierDeclarationNode.Content(sourceCode) == identifier {
 						return parser.Range{
 								Start: parser.Point{
 									Row:    identifierDeclarationNode.StartPoint().Row,
@@ -491,7 +491,7 @@ func findDefinition(identifierNode *sitter.Node, identifier string, sourceCode s
 // Finds the declaration of the identifier inside of the node and returns the
 // range. If the declaration node of the identifier cannot be found, an error
 // will be returned.
-func getDeclarationRange(node *sitter.Node, identifier string, sourceCode string) (parser.Range, error) {
+func getDeclarationRange(node *sitter.Node, identifier string, sourceCode []byte) (parser.Range, error) {
 	if node.Type() != "declaration" {
 		return parser.Range{}, errors.New("node is not a declaration node")
 	}
@@ -500,7 +500,7 @@ func getDeclarationRange(node *sitter.Node, identifier string, sourceCode string
 		// Uninitialized variable declaration.
 		if declaratorNode.Type() == "identifier" {
 			identifierDeclarationNode := declaratorNode
-			if identifierDeclarationNode.Content([]byte(sourceCode)) == identifier {
+			if identifierDeclarationNode.Content(sourceCode) == identifier {
 				return parser.Range{
 						Start: parser.Point{
 							Row:    identifierDeclarationNode.StartPoint().Row,
@@ -520,7 +520,7 @@ func getDeclarationRange(node *sitter.Node, identifier string, sourceCode string
 			if identifierDeclarationNode == nil {
 				return parser.Range{}, errors.New("declarator child node does not have a declarator child node")
 			}
-			if identifierDeclarationNode.Content([]byte(sourceCode)) == identifier {
+			if identifierDeclarationNode.Content(sourceCode) == identifier {
 				return parser.Range{
 						Start: parser.Point{
 							Row:    identifierDeclarationNode.StartPoint().Row,
