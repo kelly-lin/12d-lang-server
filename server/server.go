@@ -221,54 +221,7 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 			if !ok || len(libItems) == 0 {
 				return newNullResponseMessage(msg.ID), len(protocol.NullResult), nil
 			}
-			for _, item := range libItems {
-				argsNode := identifierNode.Parent().ChildByFieldName("arguments")
-				if argsNode == nil {
-					continue
-				}
-				funcIdentifier := identifierNode.Content(sourceCode)
-				var types []string
-				for i := 0; i < int(argsNode.ChildCount()); i++ {
-					if argIdentifierNode := argsNode.Child(i); argIdentifierNode != nil {
-						if argIdentifierNode.Type() == "identifier" {
-							_, node, err := findDefinition(argIdentifierNode, argIdentifierNode.Content(sourceCode), sourceCode)
-							if err != nil {
-								continue
-							}
-							if node.Parent().Type() == "preproc_def" && node.Parent().ChildByFieldName("value").Child(0) != nil {
-								if node.Parent().ChildByFieldName("value").Child(0).Type() == "string_literal" {
-									types = append(types, "Text")
-								}
-								if node.Parent().ChildByFieldName("value").Child(0).Type() == "number_literal" {
-									types = append(types, "Integer")
-								}
-							}
-							if node.ChildByFieldName("type") != nil {
-								types = append(types, node.ChildByFieldName("type").Content(sourceCode))
-							}
-						}
-						if argIdentifierNode.Type() == "string_literal" {
-							types = append(types, "Text")
-						}
-						if argIdentifierNode.Type() == "number_literal" {
-							types = append(types, "Integer")
-						}
-					}
-				}
-				pattern := ""
-				for idx, t := range types {
-					if idx == 0 {
-						pattern = fmt.Sprintf(`%s\s*&?\w+`, t)
-						continue
-					}
-					pattern = fmt.Sprintf(`%s,\s*%s\s*&?\w+`, pattern, t)
-				}
-				pattern = fmt.Sprintf(`%s\(%s\)`, funcIdentifier, pattern)
-				if matched, _ := regexp.MatchString(pattern, item); matched {
-					contents = append(contents, item)
-				}
-				continue
-			}
+			contents = filterLibItems(identifierNode, libItems, sourceCode)
 		} else {
 			if _, node, err := findDefinition(identifierNode, identifier, sourceCode); err == nil {
 				if node.Type() == "declaration" {
@@ -388,6 +341,66 @@ func (s *Server) updateDocument(uri string, content string) error {
 	}
 	s.nodes[uri] = rootNode
 	return nil
+}
+
+// Filters the library items so that it matches argument list described by the
+// function that the identifier node is referring to.
+func filterLibItems(identifierNode *sitter.Node, libItems []string, sourceCode []byte) []string {
+	getArgumentTypes := func(argsNode *sitter.Node) []string {
+		var types []string
+		for i := 0; i < int(argsNode.ChildCount()); i++ {
+			if argIdentifierNode := argsNode.Child(i); argIdentifierNode != nil {
+				if argIdentifierNode.Type() == "identifier" {
+					_, node, err := findDefinition(argIdentifierNode, argIdentifierNode.Content(sourceCode), sourceCode)
+					if err != nil {
+						continue
+					}
+					if node.Parent().Type() == "preproc_def" && node.Parent().ChildByFieldName("value").Child(0) != nil {
+						if node.Parent().ChildByFieldName("value").Child(0).Type() == "string_literal" {
+							types = append(types, "Text")
+						}
+						if node.Parent().ChildByFieldName("value").Child(0).Type() == "number_literal" {
+							types = append(types, "Integer")
+						}
+					}
+					if node.ChildByFieldName("type") != nil {
+						types = append(types, node.ChildByFieldName("type").Content(sourceCode))
+					}
+				}
+				if argIdentifierNode.Type() == "string_literal" {
+					types = append(types, "Text")
+				}
+				if argIdentifierNode.Type() == "number_literal" {
+					types = append(types, "Integer")
+				}
+			}
+		}
+		return types
+	}
+
+	var result []string
+	for _, item := range libItems {
+		argsNode := identifierNode.Parent().ChildByFieldName("arguments")
+		if argsNode == nil {
+			continue
+		}
+		funcIdentifier := identifierNode.Content(sourceCode)
+		types := getArgumentTypes(argsNode)
+		pattern := ""
+		for idx, t := range types {
+			if idx == 0 {
+				pattern = fmt.Sprintf(`%s\s*&?\w+`, t)
+				continue
+			}
+			pattern = fmt.Sprintf(`%s,\s*%s\s*&?\w+`, pattern, t)
+		}
+		pattern = fmt.Sprintf(`%s\(%s\)`, funcIdentifier, pattern)
+		if matched, _ := regexp.MatchString(pattern, item); matched {
+			result = append(result, item)
+		}
+		continue
+	}
+	return result
 }
 
 // Find the definition of the node reprepsenting by identifier node and
