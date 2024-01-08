@@ -230,11 +230,11 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 					if identifierNode == nil {
 						identifierNode = node.ChildByFieldName("declarator")
 					}
-					contents = append(contents, protocol.CreateDocMarkdownString(fmt.Sprintf("%s %s", typeNode.Content(sourceCode), identifierNode.Content([]byte(sourceCode))), ""))
+					contents = append(contents, createHoverDeclarationDocString(typeNode.Content(sourceCode), identifierNode.Content(sourceCode), ""))
 				} else if node.Type() == "identifier" && node.Parent().Type() == "parameter_declaration" {
 					typeNode := node.Parent().ChildByFieldName("type")
 					identifierNode := node
-					contents = append(contents, protocol.CreateDocMarkdownString(fmt.Sprintf("(parameter) %s %s", typeNode.Content(sourceCode), identifierNode.Content([]byte(sourceCode))), ""))
+					contents = append(contents, createHoverDeclarationDocString(typeNode.Content(sourceCode), identifierNode.Content(sourceCode), "parameter"))
 				}
 			}
 		}
@@ -341,6 +341,16 @@ func (s *Server) updateDocument(uri string, content string) error {
 	}
 	s.nodes[uri] = rootNode
 	return nil
+}
+
+// Create the hover documentation docstring from the provided variable type,
+// identifier and prefix. The prefix will be surrounded by "()" if it is
+// provided, otherwise it will be omitted.
+func createHoverDeclarationDocString(varType, identifier, prefix string) string {
+	if prefix != "" {
+		return protocol.CreateDocMarkdownString(fmt.Sprintf("(%s) %s %s", prefix, varType, identifier), "")
+	}
+	return protocol.CreateDocMarkdownString(fmt.Sprintf("%s %s", varType, identifier), "")
 }
 
 // Filters the library items so that it matches argument list described by the
