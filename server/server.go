@@ -274,6 +274,9 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 				if node.Type() == "declaration" {
 					typeNode := node.ChildByFieldName("type")
 					identifierNode := node.ChildByFieldName("declarator").ChildByFieldName("declarator")
+					if identifierNode == nil {
+						identifierNode = node.ChildByFieldName("declarator")
+					}
 					contents = append(contents, protocol.CreateDocMarkdownString(fmt.Sprintf("%s %s", typeNode.Content([]byte(sourceCode)), identifierNode.Content([]byte(sourceCode))), ""))
 				} else if node.Type() == "identifier" && node.Parent().Type() == "parameter_declaration" {
 					typeNode := node.Parent().ChildByFieldName("type")

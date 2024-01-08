@@ -424,12 +424,22 @@ void main() {
 		t.Run("declarations", func(t *testing.T) {
 			testCases := []TestCase{
 				{
-					Desc: "local var",
+					Desc: "local initialised var",
 					SourceCode: `Integer AddOne(Integer addend) {
     Integer augend = 1;
     return addend, augend;
 }`,
 					Position: protocol.Position{Line: 2, Character: 19},
+					Pattern:  "```12dpl\nInteger augend\n```",
+				},
+				{
+					Desc: "local uninitialised var",
+					SourceCode: `Integer AddOne(Integer addend) {
+    Integer augend;
+	augend = 1;
+    return addend, augend;
+}`,
+					Position: protocol.Position{Line: 3, Character: 19},
 					Pattern:  "```12dpl\nInteger augend\n```",
 				},
 				{
