@@ -407,46 +407,20 @@ func findDefinition(identifierNode *sitter.Node, identifier string, sourceCode [
 			currentNode = currentNode.Parent()
 			if currentNode.Type() == "function_definition" {
 				paramsNode := currentNode.ChildByFieldName("declarator").ChildByFieldName("parameters")
-				for i := 0; i < int(paramsNode.ChildCount()); i++ {
-					paramNode := paramsNode.Child(i)
-					paramDeclaratorNode := paramNode.ChildByFieldName("declarator")
-					if paramDeclaratorNode == nil {
-						continue
-					}
-					if paramDeclaratorNode.Type() == "pointer_declarator" {
-						identifierNode := paramDeclaratorNode.ChildByFieldName("declarator")
-						if identifierNode != nil {
-							if identifierNode.Content(sourceCode) == identifier {
-								return parser.Range{
-										Start: parser.Point{
-											Row:    identifierNode.StartPoint().Row,
-											Column: identifierNode.StartPoint().Column,
-										},
-										End: parser.Point{
-											Row:    identifierNode.EndPoint().Row,
-											Column: identifierNode.EndPoint().Column,
-										},
-									},
-									paramDeclaratorNode,
-									nil
-							}
-						}
-					}
-					if paramDeclaratorNode.Type() == "identifier" &&
-						paramDeclaratorNode.Content(sourceCode) == identifier {
-						return parser.Range{
-								Start: parser.Point{
-									Row:    paramDeclaratorNode.StartPoint().Row,
-									Column: paramDeclaratorNode.StartPoint().Column,
-								},
-								End: parser.Point{
-									Row:    paramDeclaratorNode.EndPoint().Row,
-									Column: paramDeclaratorNode.EndPoint().Column,
-								},
+				if paramNode, err := findParameterNode(paramsNode, identifier, sourceCode); err == nil {
+					return parser.Range{
+							Start: parser.Point{
+								Row:    paramNode.StartPoint().Row,
+								Column: paramNode.StartPoint().Column,
 							},
-							paramDeclaratorNode,
-							nil
-					}
+							End: parser.Point{
+								Row:    paramNode.EndPoint().Row,
+								Column: paramNode.EndPoint().Column,
+							},
+						},
+						paramNode,
+						nil
+
 				}
 			}
 			for i := 0; i < int(currentNode.ChildCount()); i++ {
@@ -486,6 +460,31 @@ func findDefinition(identifierNode *sitter.Node, identifier string, sourceCode [
 		}
 		return parser.Range{}, nil, errors.New("parent function definition not found")
 	}
+}
+
+// Find the parameter node with the provided identifier name in the parameters
+// node. Returns an error if the node with the identifier cannot be found.
+func findParameterNode(paramsNode *sitter.Node, identifier string, sourceCode []byte) (*sitter.Node, error) {
+	for i := 0; i < int(paramsNode.ChildCount()); i++ {
+		paramNode := paramsNode.Child(i)
+		paramDeclaratorNode := paramNode.ChildByFieldName("declarator")
+		if paramDeclaratorNode == nil {
+			continue
+		}
+		if paramDeclaratorNode.Type() == "pointer_declarator" {
+			identifierNode := paramDeclaratorNode.ChildByFieldName("declarator")
+			if identifierNode != nil {
+				if identifierNode.Content(sourceCode) == identifier {
+					return identifierNode, nil
+				}
+			}
+		}
+		if paramDeclaratorNode.Type() == "identifier" &&
+			paramDeclaratorNode.Content(sourceCode) == identifier {
+			return paramDeclaratorNode, nil
+		}
+	}
+	return nil, errors.New("parameter node not found")
 }
 
 // Finds the declaration of the identifier inside of the node and returns the
