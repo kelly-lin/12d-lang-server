@@ -384,6 +384,16 @@ void main() {
 					Position: protocol.Position{Line: 4, Character: 4},
 					Pattern:  createFuncSignaturePattern("Attribute_exists", []string{"Attributes", "Text", "Integer"}),
 				},
+				{
+					Desc: "func param args",
+					SourceCode: `void GetFirstItem(Dynamic_Text items) {
+    Text result = "";
+    Get_item(items, 1, result);
+    return result;
+}`,
+					Position: protocol.Position{Line: 2, Character: 4},
+					Pattern:  createFuncSignaturePattern("Get_item", []string{"Dynamic_Text", "Integer", "Text"}),
+				},
 			}
 			for _, testCase := range testCases {
 				t.Run(testCase.Desc, func(t *testing.T) {

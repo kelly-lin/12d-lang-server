@@ -382,6 +382,9 @@ func filterLibItems(identifierNode *sitter.Node, libItems []string, sourceCode [
 						types = append(types, "Integer")
 					}
 				}
+				if node.Parent().Type() == "parameter_declaration" && node.Parent().ChildByFieldName("type") != nil {
+					types = append(types, node.Parent().ChildByFieldName("type").Content(sourceCode))
+				}
 				if node.Parent().Type() == "declaration" && node.Parent().ChildByFieldName("type") != nil {
 					types = append(types, node.Parent().ChildByFieldName("type").Content(sourceCode))
 				} else if node.Parent().Parent().Type() == "declaration" && node.Parent().Parent().ChildByFieldName("type") != nil {
