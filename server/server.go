@@ -226,10 +226,14 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 			if _, node, err := findDefinition(identifierNode, identifier, sourceCode); err == nil && node.Type() == "identifier" {
 				if nodeType, err := getDefinitionType(node, sourceCode); err == nil {
 					prefix := ""
+					identifier := node.Content(sourceCode)
 					if isParameterDeclaration(node) {
 						prefix = "parameter"
+						if node.Parent().Type() == "pointer_declarator" {
+							identifier = node.Parent().Content(sourceCode)
+						}
 					}
-					contents = append(contents, createHoverDeclarationDocString(nodeType, node.Content(sourceCode), prefix))
+					contents = append(contents, createHoverDeclarationDocString(nodeType, identifier, prefix))
 				}
 			}
 		}

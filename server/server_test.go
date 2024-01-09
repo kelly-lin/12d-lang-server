@@ -496,7 +496,7 @@ void main() {
     return items;
 }`,
 					Position: protocol.Position{Line: 1, Character: 11},
-					Pattern:  "```12dpl\n(parameter) Dynamic_Text items\n```",
+					Pattern:  "```12dpl\n(parameter) Dynamic_Text &items\n```",
 				},
 				// TODO: user defined funcs.
 			}
