@@ -225,25 +225,13 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 		} else {
 			if _, node, err := findDefinition(identifierNode, identifier, sourceCode); err == nil {
 				if node.Type() == "identifier" {
-					if node.Parent().Type() == "declaration" && node.Parent().ChildByFieldName("type") != nil {
-						typeNode := node.Parent().ChildByFieldName("type")
-						identifierNode := node
-						contents = append(contents, createHoverDeclarationDocString(typeNode.Content(sourceCode), identifierNode.Content(sourceCode), ""))
-					}
-					if node.Parent().Type() == "init_declarator" && node.Parent().Parent().ChildByFieldName("type") != nil {
-						typeNode := node.Parent().Parent().ChildByFieldName("type")
-						identifierNode := node
-						contents = append(contents, createHoverDeclarationDocString(typeNode.Content(sourceCode), identifierNode.Content(sourceCode), ""))
-					}
-					if node.Parent().Type() == "parameter_declaration" {
-						typeNode := node.Parent().ChildByFieldName("type")
-						identifierNode := node
-						contents = append(contents, createHoverDeclarationDocString(typeNode.Content(sourceCode), identifierNode.Content(sourceCode), "parameter"))
-					}
-					if node.Parent().Type() == "pointer_declarator" && node.Parent().Parent().ChildByFieldName("type") != nil {
-						typeNode := node.Parent().Parent().ChildByFieldName("type")
-						identifierNode := node
-						contents = append(contents, createHoverDeclarationDocString(typeNode.Content(sourceCode), identifierNode.Content(sourceCode), "parameter"))
+					nodeType, err := getDefinitionType(node, sourceCode)
+					if err == nil {
+						prefix := ""
+						if isParameterDeclaration(node) {
+							prefix = "parameter"
+						}
+						contents = append(contents, createHoverDeclarationDocString(nodeType, node.Content(sourceCode), prefix))
 					}
 				}
 			}
@@ -353,6 +341,46 @@ func (s *Server) updateDocument(uri string, content string) error {
 	return nil
 }
 
+// Gets the defintion type of the provided identifer node. For example, a node
+// which represents: "Integer One = 1;" where node has content "One", will
+// return "Integer".
+func getDefinitionType(node *sitter.Node, sourceCode []byte) (string, error) {
+	var typeNode *sitter.Node
+	if node.Parent().Type() == "preproc_def" && node.Parent().ChildByFieldName("value").Child(0) != nil {
+		if node.Parent().ChildByFieldName("value").Child(0).Type() == "string_literal" {
+			return "Text", nil
+		}
+		if node.Parent().ChildByFieldName("value").Child(0).Type() == "number_literal" {
+			return "Integer", nil
+		}
+	}
+	if node.Parent().Type() == "declaration" && node.Parent().ChildByFieldName("type") != nil {
+		typeNode = node.Parent().ChildByFieldName("type")
+	}
+	if node.Parent().Type() == "init_declarator" && node.Parent().Parent().ChildByFieldName("type") != nil {
+		typeNode = node.Parent().Parent().ChildByFieldName("type")
+	}
+	if node.Parent().Type() == "parameter_declaration" {
+		typeNode = node.Parent().ChildByFieldName("type")
+	}
+	if node.Parent().Type() == "pointer_declarator" && node.Parent().Parent().ChildByFieldName("type") != nil {
+		typeNode = node.Parent().Parent().ChildByFieldName("type")
+	}
+	if typeNode == nil {
+		return "", errors.New("definition type not found for node")
+	}
+	return typeNode.Content(sourceCode), nil
+}
+
+// Returns true if the identifer node provided is a parameter declaration, i.e.
+// is part of a parameter list. For example, for the source code
+// "Integer AddOne(Integer num) { Integer augend = 1; return num + augend; }",
+// where the identifer node is the node which represents "num", returns true and
+// the identifer node which represents "augend" returns false.
+func isParameterDeclaration(node *sitter.Node) bool {
+	return node.Parent().Type() == "pointer_declarator" || node.Parent().Type() == "parameter_declaration"
+}
+
 // Create the hover documentation docstring from the provided variable type,
 // identifier and prefix. The prefix will be surrounded by "()" if it is
 // provided, otherwise it will be omitted.
@@ -379,25 +407,11 @@ func filterLibItems(identifierNode *sitter.Node, libItems []string, sourceCode [
 				if err != nil {
 					continue
 				}
-				if node.Parent().Type() == "preproc_def" && node.Parent().ChildByFieldName("value").Child(0) != nil {
-					if node.Parent().ChildByFieldName("value").Child(0).Type() == "string_literal" {
-						types = append(types, "Text")
-					}
-					if node.Parent().ChildByFieldName("value").Child(0).Type() == "number_literal" {
-						types = append(types, "Integer")
-					}
+				nodeType, err := getDefinitionType(node, sourceCode)
+				if err != nil {
+					continue
 				}
-				if node.Parent().Type() == "parameter_declaration" && node.Parent().ChildByFieldName("type") != nil {
-					types = append(types, node.Parent().ChildByFieldName("type").Content(sourceCode))
-				}
-				if node.Parent().Type() == "pointer_declarator" && node.Parent().Parent().ChildByFieldName("type") != nil {
-					types = append(types, node.Parent().Parent().ChildByFieldName("type").Content(sourceCode))
-				}
-				if node.Parent().Type() == "declaration" && node.Parent().ChildByFieldName("type") != nil {
-					types = append(types, node.Parent().ChildByFieldName("type").Content(sourceCode))
-				} else if node.Parent().Parent().Type() == "declaration" && node.Parent().Parent().ChildByFieldName("type") != nil {
-					types = append(types, node.Parent().Parent().ChildByFieldName("type").Content(sourceCode))
-				}
+				types = append(types, nodeType)
 
 			case "string_literal":
 				types = append(types, "Text")
