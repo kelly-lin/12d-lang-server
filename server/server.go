@@ -240,6 +240,11 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 						identifierNode := node
 						contents = append(contents, createHoverDeclarationDocString(typeNode.Content(sourceCode), identifierNode.Content(sourceCode), "parameter"))
 					}
+					if node.Parent().Type() == "pointer_declarator" && node.Parent().Parent().ChildByFieldName("type") != nil {
+						typeNode := node.Parent().Parent().ChildByFieldName("type")
+						identifierNode := node
+						contents = append(contents, createHoverDeclarationDocString(typeNode.Content(sourceCode), identifierNode.Content(sourceCode), "parameter"))
+					}
 				}
 			}
 		}

@@ -406,7 +406,6 @@ void main() {
 				},
 				// TODO:
 				// - Overloaded funcs with Colour_Message_Box and Message_Box
-				// - Hover over reference param.
 			}
 			for _, testCase := range testCases {
 				t.Run(testCase.Desc, func(t *testing.T) {
@@ -491,8 +490,15 @@ void main() {
 					Position: protocol.Position{Line: 2, Character: 15},
 					Pattern:  "```12dpl\nInteger b\n```",
 				},
-				// TODO:
-				// - Reference parameter.
+				{
+					Desc: "reference param hover in local scope",
+					SourceCode: `void Identity(Dynamic_Text &items) {
+    return items;
+}`,
+					Position: protocol.Position{Line: 1, Character: 11},
+					Pattern:  "```12dpl\n(parameter) Dynamic_Text items\n```",
+				},
+				// TODO: user defined funcs.
 			}
 			for _, testCase := range testCases {
 				t.Run(testCase.Desc, func(t *testing.T) {
