@@ -223,16 +223,13 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 			}
 			contents = filterLibItems(identifierNode, libItems, sourceCode)
 		} else {
-			if _, node, err := findDefinition(identifierNode, identifier, sourceCode); err == nil {
-				if node.Type() == "identifier" {
-					nodeType, err := getDefinitionType(node, sourceCode)
-					if err == nil {
-						prefix := ""
-						if isParameterDeclaration(node) {
-							prefix = "parameter"
-						}
-						contents = append(contents, createHoverDeclarationDocString(nodeType, node.Content(sourceCode), prefix))
+			if _, node, err := findDefinition(identifierNode, identifier, sourceCode); err == nil && node.Type() == "identifier" {
+				if nodeType, err := getDefinitionType(node, sourceCode); err == nil {
+					prefix := ""
+					if isParameterDeclaration(node) {
+						prefix = "parameter"
 					}
+					contents = append(contents, createHoverDeclarationDocString(nodeType, node.Content(sourceCode), prefix))
 				}
 			}
 		}
