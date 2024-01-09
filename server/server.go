@@ -224,17 +224,22 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 			contents = filterLibItems(identifierNode, libItems, sourceCode)
 		} else {
 			if _, node, err := findDefinition(identifierNode, identifier, sourceCode); err == nil {
-				if node.Type() == "declaration" {
-					typeNode := node.ChildByFieldName("type")
-					identifierNode := node.ChildByFieldName("declarator").ChildByFieldName("declarator")
-					if identifierNode == nil {
-						identifierNode = node.ChildByFieldName("declarator")
+				if node.Type() == "identifier" {
+					if node.Parent().Type() == "declaration" && node.Parent().ChildByFieldName("type") != nil {
+						typeNode := node.Parent().ChildByFieldName("type")
+						identifierNode := node
+						contents = append(contents, createHoverDeclarationDocString(typeNode.Content(sourceCode), identifierNode.Content(sourceCode), ""))
 					}
-					contents = append(contents, createHoverDeclarationDocString(typeNode.Content(sourceCode), identifierNode.Content(sourceCode), ""))
-				} else if node.Type() == "identifier" && node.Parent().Type() == "parameter_declaration" {
-					typeNode := node.Parent().ChildByFieldName("type")
-					identifierNode := node
-					contents = append(contents, createHoverDeclarationDocString(typeNode.Content(sourceCode), identifierNode.Content(sourceCode), "parameter"))
+					if node.Parent().Type() == "init_declarator" && node.Parent().Parent().ChildByFieldName("type") != nil {
+						typeNode := node.Parent().Parent().ChildByFieldName("type")
+						identifierNode := node
+						contents = append(contents, createHoverDeclarationDocString(typeNode.Content(sourceCode), identifierNode.Content(sourceCode), ""))
+					}
+					if node.Parent().Type() == "parameter_declaration" {
+						typeNode := node.Parent().ChildByFieldName("type")
+						identifierNode := node
+						contents = append(contents, createHoverDeclarationDocString(typeNode.Content(sourceCode), identifierNode.Content(sourceCode), "parameter"))
+					}
 				}
 			}
 		}
@@ -359,52 +364,57 @@ func filterLibItems(identifierNode *sitter.Node, libItems []string, sourceCode [
 	getArgumentTypes := func(argsNode *sitter.Node) []string {
 		var types []string
 		for i := 0; i < int(argsNode.ChildCount()); i++ {
-			if argIdentifierNode := argsNode.Child(i); argIdentifierNode != nil {
-				if argIdentifierNode.Type() == "identifier" {
-					_, node, err := findDefinition(argIdentifierNode, argIdentifierNode.Content(sourceCode), sourceCode)
-					if err != nil {
-						continue
+			argIdentifierNode := argsNode.Child(i)
+			if argIdentifierNode == nil {
+				continue
+			}
+			switch argIdentifierNode.Type() {
+			case "identifier":
+				_, node, err := findDefinition(argIdentifierNode, argIdentifierNode.Content(sourceCode), sourceCode)
+				if err != nil {
+					continue
+				}
+				if node.Parent().Type() == "preproc_def" && node.Parent().ChildByFieldName("value").Child(0) != nil {
+					if node.Parent().ChildByFieldName("value").Child(0).Type() == "string_literal" {
+						types = append(types, "Text")
 					}
-					if node.Parent().Type() == "preproc_def" && node.Parent().ChildByFieldName("value").Child(0) != nil {
-						if node.Parent().ChildByFieldName("value").Child(0).Type() == "string_literal" {
-							types = append(types, "Text")
-						}
-						if node.Parent().ChildByFieldName("value").Child(0).Type() == "number_literal" {
-							types = append(types, "Integer")
-						}
-					}
-					if node.ChildByFieldName("type") != nil {
-						types = append(types, node.ChildByFieldName("type").Content(sourceCode))
+					if node.Parent().ChildByFieldName("value").Child(0).Type() == "number_literal" {
+						types = append(types, "Integer")
 					}
 				}
-				if argIdentifierNode.Type() == "string_literal" {
-					types = append(types, "Text")
+				if node.Parent().Type() == "declaration" && node.Parent().ChildByFieldName("type") != nil {
+					types = append(types, node.Parent().ChildByFieldName("type").Content(sourceCode))
+				} else if node.Parent().Parent().Type() == "declaration" && node.Parent().Parent().ChildByFieldName("type") != nil {
+					types = append(types, node.Parent().Parent().ChildByFieldName("type").Content(sourceCode))
 				}
-				if argIdentifierNode.Type() == "number_literal" {
-					types = append(types, "Integer")
-				}
+
+			case "string_literal":
+				types = append(types, "Text")
+
+			case "number_literal":
+				types = append(types, "Integer")
 			}
 		}
 		return types
 	}
 
 	var result []string
-	for _, item := range libItems {
-		argsNode := identifierNode.Parent().ChildByFieldName("arguments")
-		if argsNode == nil {
+	argsNode := identifierNode.Parent().ChildByFieldName("arguments")
+	if argsNode == nil {
+		return []string{}
+	}
+	funcIdentifier := identifierNode.Content(sourceCode)
+	types := getArgumentTypes(argsNode)
+	pattern := ""
+	for idx, t := range types {
+		if idx == 0 {
+			pattern = fmt.Sprintf(`%s\s*&?\w+`, t)
 			continue
 		}
-		funcIdentifier := identifierNode.Content(sourceCode)
-		types := getArgumentTypes(argsNode)
-		pattern := ""
-		for idx, t := range types {
-			if idx == 0 {
-				pattern = fmt.Sprintf(`%s\s*&?\w+`, t)
-				continue
-			}
-			pattern = fmt.Sprintf(`%s,\s*%s\s*&?\w+`, pattern, t)
-		}
-		pattern = fmt.Sprintf(`%s\(%s\)`, funcIdentifier, pattern)
+		pattern = fmt.Sprintf(`%s,\s*%s\s*&?\w+`, pattern, t)
+	}
+	pattern = fmt.Sprintf(`%s\(%s\)`, funcIdentifier, pattern)
+	for _, item := range libItems {
 		if matched, _ := regexp.MatchString(pattern, item); matched {
 			result = append(result, item)
 		}
@@ -444,18 +454,18 @@ func findDefinition(identifierNode *sitter.Node, identifier string, sourceCode [
 				}
 				if currentChildNode.Type() == "compound_statement" {
 					for i := 0; i < int(currentChildNode.ChildCount()); i++ {
-						locRange, err := findDeclarationRange(currentChildNode.Child(i), identifier, sourceCode)
+						locRange, n, err := findDeclaration(currentChildNode.Child(i), identifier, sourceCode)
 						if err != nil {
 							continue
 						}
-						return locRange, currentChildNode.Child(i), nil
+						return locRange, n, nil
 					}
 				}
-				locRange, err := findDeclarationRange(currentChildNode, identifier, sourceCode)
+				locRange, n, err := findDeclaration(currentChildNode, identifier, sourceCode)
 				if err != nil {
 					continue
 				}
-				return locRange, currentChildNode, nil
+				return locRange, n, nil
 			}
 		}
 		return parser.Range{}, nil, errors.New("parent function definition not found")
@@ -487,38 +497,51 @@ func findParameterNode(paramsNode *sitter.Node, identifier string, sourceCode []
 	return nil, errors.New("parameter node not found")
 }
 
-// Finds the declaration of the identifier inside of the node and returns the
-// range. If the declaration node of the identifier cannot be found, an error
-// will be returned.
-func findDeclarationRange(node *sitter.Node, identifier string, sourceCode []byte) (parser.Range, error) {
+// Finds the declaration of the identifier inside of the declaration node and
+// returns the range. If the declaration node of the identifier cannot be found,
+// an error will be returned. For example, for a declaration node representing
+// "Integer a = 1, b;":
+//
+// (declaration
+//
+//	type: (primitive_type)
+//	declarator: (init_declarator
+//	  declarator: (identifier)
+//	  value: (number_literal))
+//	declarator: (identifier))
+//
+// If the identifier is of value "a" the range is ([0, 8] - [0, 9]), if "b",
+// ([0, 15] - [0, 16]).
+func findDeclaration(node *sitter.Node, identifier string, sourceCode []byte) (parser.Range, *sitter.Node, error) {
 	if node.Type() != "declaration" {
-		return parser.Range{}, errors.New("node is not a declaration node")
+		return parser.Range{}, nil, errors.New("node is not a declaration node")
 	}
-	for i := 0; i < int(node.ChildCount()); i++ {
-		declaratorNode := node.Child(i)
+	declaratorNode := node.ChildByFieldName("declarator")
+	for declaratorNode != nil {
 		switch declaratorNode.Type() {
 		// Uninitialized variable declaration.
 		case "identifier":
 			identifierDeclarationNode := declaratorNode
 			if identifierDeclarationNode.Content(sourceCode) == identifier {
-				return parser.NewParserRange(identifierDeclarationNode), nil
+				return parser.NewParserRange(identifierDeclarationNode), identifierDeclarationNode, nil
 			}
 
 		// Initialized variable declaration.
 		case "init_declarator":
 			identifierDeclarationNode := declaratorNode.ChildByFieldName("declarator")
 			if identifierDeclarationNode == nil {
-				return parser.Range{}, errors.New("declarator child node does not have a declarator child node")
+				continue
 			}
 			if identifierDeclarationNode.Content(sourceCode) == identifier {
-				return parser.NewParserRange(identifierDeclarationNode), nil
+				return parser.NewParserRange(identifierDeclarationNode), identifierDeclarationNode, nil
 			}
 
 		default:
-			continue
 		}
+
+		declaratorNode = declaratorNode.NextNamedSibling()
 	}
-	return parser.Range{}, errors.New("declaration not found")
+	return parser.Range{}, nil, errors.New("declaration not found")
 }
 
 // Converts parser range into protocol range.

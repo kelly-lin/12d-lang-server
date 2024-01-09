@@ -450,8 +450,25 @@ void main() {
 					Position: protocol.Position{Line: 1, Character: 11},
 					Pattern:  "```12dpl\n(parameter) Integer id\n```",
 				},
+				{
+					Desc: "multiple variable declaration - initialised var",
+					SourceCode: `Integer Two() {
+    Integer a = 1, b;
+    return a + b;
+}`,
+					Position: protocol.Position{Line: 2, Character: 11},
+					Pattern:  "```12dpl\nInteger a\n```",
+				},
+				{
+					Desc: "multiple variable declaration - uninitialised var",
+					SourceCode: `Integer Two() {
+    Integer a = 1, b;
+    return a + b;
+}`,
+					Position: protocol.Position{Line: 2, Character: 15},
+					Pattern:  "```12dpl\nInteger b\n```",
+				},
 				// TODO:
-				// - Multi var declaration.
 				// - Reference parameter.
 			}
 			for _, testCase := range testCases {
