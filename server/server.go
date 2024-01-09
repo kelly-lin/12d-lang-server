@@ -385,6 +385,9 @@ func filterLibItems(identifierNode *sitter.Node, libItems []string, sourceCode [
 				if node.Parent().Type() == "parameter_declaration" && node.Parent().ChildByFieldName("type") != nil {
 					types = append(types, node.Parent().ChildByFieldName("type").Content(sourceCode))
 				}
+				if node.Parent().Type() == "pointer_declarator" && node.Parent().Parent().ChildByFieldName("type") != nil {
+					types = append(types, node.Parent().Parent().ChildByFieldName("type").Content(sourceCode))
+				}
 				if node.Parent().Type() == "declaration" && node.Parent().ChildByFieldName("type") != nil {
 					types = append(types, node.Parent().ChildByFieldName("type").Content(sourceCode))
 				} else if node.Parent().Parent().Type() == "declaration" && node.Parent().Parent().ChildByFieldName("type") != nil {

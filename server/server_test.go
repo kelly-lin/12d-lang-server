@@ -394,6 +394,19 @@ void main() {
 					Position: protocol.Position{Line: 2, Character: 4},
 					Pattern:  createFuncSignaturePattern("Get_item", []string{"Dynamic_Text", "Integer", "Text"}),
 				},
+				{
+					Desc: "func reference param args",
+					SourceCode: `void GetFirstItem(Dynamic_Text &items) {
+    Text result = "";
+    Get_item(items, 1, result);
+    return result;
+}`,
+					Position: protocol.Position{Line: 2, Character: 4},
+					Pattern:  createFuncSignaturePattern("Get_item", []string{"Dynamic_Text", "Integer", "Text"}),
+				},
+				// TODO:
+				// - Overloaded funcs with Colour_Message_Box and Message_Box
+				// - Hover over reference param.
 			}
 			for _, testCase := range testCases {
 				t.Run(testCase.Desc, func(t *testing.T) {
