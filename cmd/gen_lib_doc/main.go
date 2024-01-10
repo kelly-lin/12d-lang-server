@@ -6,7 +6,6 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/kelly-lin/12d-lang-server/protocol"
 	"io"
 	"os"
 	"regexp"
@@ -48,7 +47,7 @@ func main() {
 			matches := re.FindStringSubmatch(name)
 			if len(matches) > 1 {
 				funcName := matches[1]
-				docString := protocol.CreateDocMarkdownString(name, api.Desc)
+				docString := createDocMarkdownString(name, api.Desc)
 				santizedDocString, _ := json.Marshal(docString)
 				agg[funcName] = append(agg[funcName], string(santizedDocString))
 			}
@@ -82,4 +81,22 @@ type ManualItem struct {
 	Names []string `json:"names"`
 	Desc  string   `json:"description"`
 	ID    string   `json:"id"`
+}
+
+// Creates the documentation markdown string from the provided signature as
+// 12dpl code and description as markdown.
+func createDocMarkdownString(signature, desc string) string {
+	if signature == "" {
+		return desc
+	}
+	if desc == "" {
+		return fmt.Sprintf("```12dpl\n%s\n```", signature)
+	}
+	// If we use description directly we will be using the unescaped version
+	// we read in from the JSON file. This is problematic because we are
+	// generating code which requires the escaped version and causes issues when
+	// we are creating generated code with unescaped characters, such as quotes.
+	// We are marshalling description again to get the escaped version.
+	encodedDesc, _ := json.Marshal(desc)
+	return fmt.Sprintf("```12dpl\n%s\n```\n---\n%s", signature, encodedDesc[1:len(encodedDesc)-1])
 }
