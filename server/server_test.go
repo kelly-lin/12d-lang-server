@@ -498,7 +498,14 @@ void main() {
 					Position: protocol.Position{Line: 1, Character: 11},
 					Pattern:  "```12dpl\n(parameter) Dynamic_Text &items\n```",
 				},
-				// TODO: user defined funcs.
+				{
+					Desc: "user defined func",
+					SourceCode: `void Forever(Integer subject) {
+    return Forever(subject);
+}`,
+					Position: protocol.Position{Line: 1, Character: 11},
+					Pattern:  "```12dpl\nvoid Forever(Integer subject)\n```",
+				},
 			}
 			for _, testCase := range testCases {
 				t.Run(testCase.Desc, func(t *testing.T) {

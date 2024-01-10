@@ -217,11 +217,27 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 		}
 		var contents []string
 		if identifierNode.Parent().Type() == "call_expression" {
-			libItems, ok := lang.Lib[identifier]
-			if !ok || len(libItems) == 0 {
-				return newNullResponseMessage(msg.ID), len(protocol.NullResult), nil
+			_, node, err := findDefinition(identifierNode, identifier, sourceCode)
+			if err != nil {
+				// We cannot find the definition, try find it in the library
+				// items.
+				libItems, ok := lang.Lib[identifier]
+				if !ok || len(libItems) == 0 {
+					return newNullResponseMessage(msg.ID), len(protocol.NullResult), nil
+				}
+				contents = filterLibItems(identifierNode, libItems, sourceCode)
+			} else {
+				// We found the definition, get the signature.
+				// TODO: this might cause us issues as we are assuming the
+				// structure of the tree. Might need to refactor this so that we
+				// search for the ancestor "function_definition" node.
+				funcDefNode := node.Parent().Parent()
+				if funcDefNode != nil {
+					typeNode := funcDefNode.ChildByFieldName("type")
+					declaratorNode := funcDefNode.ChildByFieldName("declarator")
+					contents = append(contents, createHoverDeclarationDocString(typeNode.Content(sourceCode), declaratorNode.Content(sourceCode), ""))
+				}
 			}
-			contents = filterLibItems(identifierNode, libItems, sourceCode)
 		} else {
 			if _, node, err := findDefinition(identifierNode, identifier, sourceCode); err == nil && node.Type() == "identifier" {
 				if nodeType, err := getDefinitionType(node, sourceCode); err == nil {
