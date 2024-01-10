@@ -236,16 +236,15 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 					typeNode := funcDefNode.ChildByFieldName("type")
 					declaratorNode := funcDefNode.ChildByFieldName("declarator")
 					docNode := funcDefNode.PrevSibling()
+					desc := ""
 					if docNode != nil && docNode.Type() == "comment" {
-						desc := docNode.Content(sourceCode)
+						desc = docNode.Content(sourceCode)
 						desc = formatDescComment(desc)
+					}
+					if typeNode != nil && declaratorNode != nil {
 						declaration := declaratorNode.Content(sourceCode)
 						declaration = formatFuncDeclaration(declaration)
 						contents = append(contents, createHoverDeclarationDocString(typeNode.Content(sourceCode), declaration, desc, ""))
-					} else {
-						declaration := declaratorNode.Content(sourceCode)
-						declaration = formatFuncDeclaration(declaration)
-						contents = append(contents, createHoverDeclarationDocString(typeNode.Content(sourceCode), declaration, "", ""))
 					}
 				}
 			}
