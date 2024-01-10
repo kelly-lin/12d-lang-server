@@ -499,12 +499,60 @@ void main() {
 					Pattern:  "```12dpl\n(parameter) Dynamic_Text &items\n```",
 				},
 				{
-					Desc: "user defined func",
-					SourceCode: `void Forever(Integer subject) {
+					Desc: "user defined func - no doc",
+					SourceCode: `void Hello() {
+    Print("hello\n");
+}
+
+void Forever(Integer subject) {
     return Forever(subject);
 }`,
-					Position: protocol.Position{Line: 1, Character: 11},
+					Position: protocol.Position{Line: 5, Character: 11},
 					Pattern:  "```12dpl\nvoid Forever(Integer subject)\n```",
+				},
+				{
+					Desc: "user defined func - multi line parameter list",
+					SourceCode: `void SomeFunc(
+    Text a,
+    Integer b
+) {
+    return SomeFunc(a, b);
+}`,
+					Position: protocol.Position{Line: 4, Character: 11},
+					Pattern:  "```12dpl\nvoid SomeFunc(Text a, Integer b)\n```",
+				},
+				{
+					Desc: "user defined func - multi line parameter list with comment",
+					SourceCode: `// This function does nothing.
+void SomeFunc(
+    Text a,
+    Integer b
+) {
+    return SomeFunc(a, b);
+}`,
+					Position: protocol.Position{Line: 5, Character: 11},
+					Pattern:  "```12dpl\nvoid SomeFunc(Text a, Integer b)\n```\n---\nThis function does nothing.",
+				},
+				{
+					Desc: "user defined func - single line doc",
+					SourceCode: `// Loops forever.
+void Forever(Integer subject) {
+    return Forever(subject);
+}`,
+					Position: protocol.Position{Line: 2, Character: 11},
+					Pattern:  "```12dpl\nvoid Forever(Integer subject)\n```\n---\nLoops forever.",
+				},
+				{
+					Desc: "user defined func - multi line doc",
+					SourceCode: `/*
+    Loops forever.
+    subject is an integer.
+*/
+void Forever(Integer subject) {
+    return Forever(subject);
+}`,
+					Position: protocol.Position{Line: 5, Character: 11},
+					Pattern:  "```12dpl\nvoid Forever(Integer subject)\n```\n---\nLoops forever.\nsubject is an integer.",
 				},
 			}
 			for _, testCase := range testCases {

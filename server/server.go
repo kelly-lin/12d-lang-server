@@ -235,7 +235,43 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 				if funcDefNode != nil {
 					typeNode := funcDefNode.ChildByFieldName("type")
 					declaratorNode := funcDefNode.ChildByFieldName("declarator")
-					contents = append(contents, createHoverDeclarationDocString(typeNode.Content(sourceCode), declaratorNode.Content(sourceCode), ""))
+					docNode := funcDefNode.PrevSibling()
+					if docNode != nil && docNode.Type() == "comment" {
+						doc := docNode.Content(sourceCode)
+						doc = strings.TrimPrefix(doc, "/*")
+						doc = strings.TrimSuffix(doc, "*/")
+						descLines := strings.Split(doc, "\n")
+						var newLines []string
+						for _, line := range descLines {
+							newLine := strings.TrimPrefix(line, "//")
+							newLine = strings.TrimSpace(newLine)
+							newLines = append(newLines, newLine)
+						}
+						desc := strings.Join(newLines, "\n")
+						desc = strings.TrimSpace(desc)
+
+						declaration := declaratorNode.Content(sourceCode)
+						declarationLines := strings.Split(declaration, "\n")
+						var newDeclarationLines []string
+						for _, line := range declarationLines {
+							newLine := strings.TrimSpace(line)
+							newDeclarationLines = append(newDeclarationLines, newLine)
+						}
+						declaration = strings.Join(newDeclarationLines, "")
+						declaration = strings.ReplaceAll(declaration, ",", ", ")
+						contents = append(contents, createHoverDeclarationDocString(typeNode.Content(sourceCode), declaration, desc, ""))
+					} else {
+						declaration := declaratorNode.Content(sourceCode)
+						declarationLines := strings.Split(declaration, "\n")
+						var newDeclarationLines []string
+						for _, line := range declarationLines {
+							newLine := strings.TrimSpace(line)
+							newDeclarationLines = append(newDeclarationLines, newLine)
+						}
+						declaration = strings.Join(newDeclarationLines, "")
+						declaration = strings.ReplaceAll(declaration, ",", ", ")
+						contents = append(contents, createHoverDeclarationDocString(typeNode.Content(sourceCode), declaration, "", ""))
+					}
 				}
 			}
 		} else {
@@ -249,7 +285,7 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 							identifier = node.Parent().Content(sourceCode)
 						}
 					}
-					contents = append(contents, createHoverDeclarationDocString(nodeType, identifier, prefix))
+					contents = append(contents, createHoverDeclarationDocString(nodeType, identifier, "", prefix))
 				}
 			}
 		}
@@ -399,13 +435,13 @@ func isParameterDeclaration(node *sitter.Node) bool {
 }
 
 // Create the hover documentation docstring from the provided variable type,
-// identifier and prefix. The prefix will be surrounded by "()" if it is
-// provided, otherwise it will be omitted.
-func createHoverDeclarationDocString(varType, identifier, prefix string) string {
+// identifier, description and prefix. The prefix will be surrounded by "()" if
+// it is provided, otherwise it will be omitted.
+func createHoverDeclarationDocString(varType, identifier, desc, prefix string) string {
 	if prefix != "" {
-		return protocol.CreateDocMarkdownString(fmt.Sprintf("(%s) %s %s", prefix, varType, identifier), "")
+		return protocol.CreateDocMarkdownString(fmt.Sprintf("(%s) %s %s", prefix, varType, identifier), desc)
 	}
-	return protocol.CreateDocMarkdownString(fmt.Sprintf("%s %s", varType, identifier), "")
+	return protocol.CreateDocMarkdownString(fmt.Sprintf("%s %s", varType, identifier), desc)
 }
 
 // Filters the library items so that it matches argument list described by the
