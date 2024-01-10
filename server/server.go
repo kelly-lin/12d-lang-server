@@ -237,39 +237,14 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 					declaratorNode := funcDefNode.ChildByFieldName("declarator")
 					docNode := funcDefNode.PrevSibling()
 					if docNode != nil && docNode.Type() == "comment" {
-						doc := docNode.Content(sourceCode)
-						doc = strings.TrimPrefix(doc, "/*")
-						doc = strings.TrimSuffix(doc, "*/")
-						descLines := strings.Split(doc, "\n")
-						var newLines []string
-						for _, line := range descLines {
-							newLine := strings.TrimPrefix(line, "//")
-							newLine = strings.TrimSpace(newLine)
-							newLines = append(newLines, newLine)
-						}
-						desc := strings.Join(newLines, "\n")
-						desc = strings.TrimSpace(desc)
-
+						desc := docNode.Content(sourceCode)
+						desc = formatDescComment(desc)
 						declaration := declaratorNode.Content(sourceCode)
-						declarationLines := strings.Split(declaration, "\n")
-						var newDeclarationLines []string
-						for _, line := range declarationLines {
-							newLine := strings.TrimSpace(line)
-							newDeclarationLines = append(newDeclarationLines, newLine)
-						}
-						declaration = strings.Join(newDeclarationLines, "")
-						declaration = strings.ReplaceAll(declaration, ",", ", ")
+						declaration = formatFuncDeclaration(declaration)
 						contents = append(contents, createHoverDeclarationDocString(typeNode.Content(sourceCode), declaration, desc, ""))
 					} else {
 						declaration := declaratorNode.Content(sourceCode)
-						declarationLines := strings.Split(declaration, "\n")
-						var newDeclarationLines []string
-						for _, line := range declarationLines {
-							newLine := strings.TrimSpace(line)
-							newDeclarationLines = append(newDeclarationLines, newLine)
-						}
-						declaration = strings.Join(newDeclarationLines, "")
-						declaration = strings.ReplaceAll(declaration, ",", ", ")
+						declaration = formatFuncDeclaration(declaration)
 						contents = append(contents, createHoverDeclarationDocString(typeNode.Content(sourceCode), declaration, "", ""))
 					}
 				}
@@ -392,6 +367,36 @@ func (s *Server) updateDocument(uri string, content string) error {
 	}
 	s.nodes[uri] = rootNode
 	return nil
+}
+
+// Formats the function declaration for display as documentation.
+func formatFuncDeclaration(declaration string) string {
+	declarationLines := strings.Split(declaration, "\n")
+	var newDeclarationLines []string
+	for _, line := range declarationLines {
+		newLine := strings.TrimSpace(line)
+		newDeclarationLines = append(newDeclarationLines, newLine)
+	}
+	result := strings.Join(newDeclarationLines, "")
+	result = strings.ReplaceAll(result, ",", ", ")
+	return result
+}
+
+// Formats the raw text from a comment node for display as documentation. This
+// includes trimming spaces and removing comment characters "//" and "/*" "*/".
+func formatDescComment(desc string) string {
+	result := strings.TrimPrefix(desc, "/*")
+	result = strings.TrimSuffix(result, "*/")
+	descLines := strings.Split(result, "\n")
+	var newLines []string
+	for _, line := range descLines {
+		newLine := strings.TrimPrefix(line, "//")
+		newLine = strings.TrimSpace(newLine)
+		newLines = append(newLines, newLine)
+	}
+	result = strings.Join(newLines, "\n")
+	result = strings.TrimSpace(result)
+	return result
 }
 
 // Gets the defintion type of the provided identifer node. For example, a node
