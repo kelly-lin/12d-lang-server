@@ -233,18 +233,8 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 				// search for the ancestor "function_definition" node.
 				funcDefNode := node.Parent().Parent()
 				if funcDefNode != nil {
-					typeNode := funcDefNode.ChildByFieldName("type")
-					declaratorNode := funcDefNode.ChildByFieldName("declarator")
-					docNode := funcDefNode.PrevSibling()
-					desc := ""
-					if docNode != nil && docNode.Type() == "comment" {
-						desc = docNode.Content(sourceCode)
-						desc = formatDescComment(desc)
-					}
-					if typeNode != nil && declaratorNode != nil {
-						declaration := declaratorNode.Content(sourceCode)
-						declaration = formatFuncDeclaration(declaration)
-						contents = append(contents, createHoverDeclarationDocString(typeNode.Content(sourceCode), declaration, desc, ""))
+					if varType, declaration, desc, err := getFuncDocComponents(funcDefNode, sourceCode); err == nil {
+						contents = append(contents, createHoverDeclarationDocString(varType, declaration, desc, ""))
 					}
 				}
 			}
@@ -262,18 +252,8 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 					if node.Parent().Type() == "function_declarator" {
 						funcDefNode := node.Parent().Parent()
 						if funcDefNode != nil {
-							typeNode := funcDefNode.ChildByFieldName("type")
-							declaratorNode := funcDefNode.ChildByFieldName("declarator")
-							docNode := funcDefNode.PrevSibling()
-							desc := ""
-							if docNode != nil && docNode.Type() == "comment" {
-								desc = docNode.Content(sourceCode)
-								desc = formatDescComment(desc)
-							}
-							if typeNode != nil && declaratorNode != nil {
-								declaration := declaratorNode.Content(sourceCode)
-								declaration = formatFuncDeclaration(declaration)
-								contents = append(contents, createHoverDeclarationDocString(typeNode.Content(sourceCode), declaration, desc, ""))
+							if varType, declaration, desc, err := getFuncDocComponents(funcDefNode, sourceCode); err == nil {
+								contents = append(contents, createHoverDeclarationDocString(varType, declaration, desc, ""))
 							}
 						}
 					} else {
@@ -415,6 +395,31 @@ func formatDescComment(desc string) string {
 	result = strings.Join(newLines, "\n")
 	result = strings.TrimSpace(result)
 	return result
+}
+
+// Gets the type, declaration and description from the function definition node.
+// Returns error if any of the components cannot be found.
+func getFuncDocComponents(funcDefNode *sitter.Node, sourceCode []byte) (string, string, string, error) {
+	typeNode := funcDefNode.ChildByFieldName("type")
+	if typeNode == nil {
+		return "", "", "", errors.New("type node not found")
+	}
+	varType := typeNode.Content(sourceCode)
+
+	declaratorNode := funcDefNode.ChildByFieldName("declarator")
+	if declaratorNode == nil {
+		return "", "", "", errors.New("declarator node not found")
+	}
+	declaration := declaratorNode.Content(sourceCode)
+	declaration = formatFuncDeclaration(declaration)
+
+	desc := ""
+	docNode := funcDefNode.PrevSibling()
+	if docNode != nil && docNode.Type() == "comment" {
+		desc = docNode.Content(sourceCode)
+		desc = formatDescComment(desc)
+	}
+	return varType, declaration, desc, nil
 }
 
 // Gets the definition type of the provided identifier node. For example, a node
