@@ -260,9 +260,25 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 						}
 					}
 					if node.Parent().Type() == "function_declarator" {
-						identifier = node.Parent().Content(sourceCode)
+						funcDefNode := node.Parent().Parent()
+						if funcDefNode != nil {
+							typeNode := funcDefNode.ChildByFieldName("type")
+							declaratorNode := funcDefNode.ChildByFieldName("declarator")
+							docNode := funcDefNode.PrevSibling()
+							desc := ""
+							if docNode != nil && docNode.Type() == "comment" {
+								desc = docNode.Content(sourceCode)
+								desc = formatDescComment(desc)
+							}
+							if typeNode != nil && declaratorNode != nil {
+								declaration := declaratorNode.Content(sourceCode)
+								declaration = formatFuncDeclaration(declaration)
+								contents = append(contents, createHoverDeclarationDocString(typeNode.Content(sourceCode), declaration, desc, ""))
+							}
+						}
+					} else {
+						contents = append(contents, createHoverDeclarationDocString(nodeType, identifier, "", prefix))
 					}
-					contents = append(contents, createHoverDeclarationDocString(nodeType, identifier, "", prefix))
 				}
 			}
 		}
@@ -401,7 +417,7 @@ func formatDescComment(desc string) string {
 	return result
 }
 
-// Gets the defintion type of the provided identifer node. For example, a node
+// Gets the definition type of the provided identifier node. For example, a node
 // which represents: "Integer One = 1;" where node has content "One", will
 // return "Integer".
 func getDefinitionType(node *sitter.Node, sourceCode []byte) (string, error) {
@@ -435,11 +451,11 @@ func getDefinitionType(node *sitter.Node, sourceCode []byte) (string, error) {
 	return typeNode.Content(sourceCode), nil
 }
 
-// Returns true if the identifer node provided is a parameter declaration, i.e.
+// Returns true if the idenitifer node provided is a parameter declaration, i.e.
 // is part of a parameter list. For example, for the source code
 // "Integer AddOne(Integer num) { Integer augend = 1; return num + augend; }",
-// where the identifer node is the node which represents "num", returns true and
-// the identifer node which represents "augend" returns false.
+// where the idenitifer node is the node which represents "num", returns true and
+// the idenitifer node which represents "augend" returns false.
 func isParameterDeclaration(node *sitter.Node) bool {
 	return node.Parent().Type() == "pointer_declarator" || node.Parent().Type() == "parameter_declaration"
 }

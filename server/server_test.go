@@ -562,6 +562,15 @@ void Forever(Integer subject) {
 					Position: protocol.Position{Line: 0, Character: 5},
 					Pattern:  "```12dpl\nvoid Forever(Integer subject)\n```",
 				},
+				{
+					Desc: "user defined func - single line doc - on definition with doc",
+					SourceCode: `// Loops forever.
+void Forever(Integer subject) {
+    return Forever(subject);
+}`,
+					Position: protocol.Position{Line: 1, Character: 5},
+					Pattern:  "```12dpl\nvoid Forever(Integer subject)\n```\n---\nLoops forever.",
+				},
 			}
 			for _, testCase := range testCases {
 				t.Run(testCase.Desc, func(t *testing.T) {
