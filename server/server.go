@@ -340,11 +340,8 @@ func getHoverContents(identifierNode *sitter.Node, identifier string, sourceCode
 			contents = filterLibItems(identifierNode, libItems, sourceCode)
 		} else {
 			// We found the definition, get the signature.
-			// TODO: this might cause us issues as we are assuming the
-			// structure of the tree. Might need to refactor this so that we
-			// search for the ancestor "function_definition" node.
-			funcDefNode := node.Parent().Parent()
-			if funcDefNode != nil {
+			if isFuncDefinition(node) {
+				funcDefNode := node.Parent().Parent()
 				if varType, declaration, desc, err := getFuncDocComponents(funcDefNode, sourceCode); err == nil {
 					contents = append(contents, createHoverDeclarationDocString(varType, declaration, desc, ""))
 				}
@@ -361,12 +358,10 @@ func getHoverContents(identifierNode *sitter.Node, identifier string, sourceCode
 						identifier = node.Parent().Content(sourceCode)
 					}
 				}
-				if node.Parent().Type() == "function_declarator" {
+				if isFuncDefinition(node) {
 					funcDefNode := node.Parent().Parent()
-					if funcDefNode != nil {
-						if varType, declaration, desc, err := getFuncDocComponents(funcDefNode, sourceCode); err == nil {
-							contents = append(contents, createHoverDeclarationDocString(varType, declaration, desc, ""))
-						}
+					if varType, declaration, desc, err := getFuncDocComponents(funcDefNode, sourceCode); err == nil {
+						contents = append(contents, createHoverDeclarationDocString(varType, declaration, desc, ""))
 					}
 				} else {
 					contents = append(contents, createHoverDeclarationDocString(nodeType, identifier, "", prefix))
@@ -430,6 +425,14 @@ func getFuncDocComponents(funcDefNode *sitter.Node, sourceCode []byte) (string, 
 		desc = formatDescComment(desc)
 	}
 	return varType, declaration, desc, nil
+}
+
+// Returns true if the provided identifier node is for a function definition.
+func isFuncDefinition(node *sitter.Node) bool {
+	if funcDefNode := node.Parent().Parent(); funcDefNode != nil && funcDefNode.Type() == "function_definition" {
+		return true
+	}
+	return false
 }
 
 // Gets the definition type of the provided identifier node. For example, a node
