@@ -531,10 +531,11 @@ func filterLibItems(identifierNode *sitter.Node, libItems []string, sourceCode [
 	pattern := ""
 	aliases := map[string]string{
 		"Colour_Message_Box": "Message_Box",
+		"File_Box":           "Widget",
 	}
 	for idx, t := range types {
 		if alias, ok := aliases[t]; ok {
-			t = alias
+			t = fmt.Sprintf("(?:%s|%s)", t, alias)
 		}
 		if idx == 0 {
 			pattern = fmt.Sprintf(`%s\s*&?\w+`, t)

@@ -326,7 +326,7 @@ void main() {
 			Desc       string
 			SourceCode string
 			Position   protocol.Position
-			Pattern    string
+			Pattern    []string
 		}
 
 		t.Run("library funcs", func(t *testing.T) {
@@ -348,30 +348,30 @@ void main() {
 				{
 					Desc: "all local declarations args",
 					SourceCode: `void main() {
-    Dynamic_Element elts;
-    Integer i = 1;
-    Element elt;
-    Set_item(elts, i, elt);
+	Dynamic_Element elts;
+	Integer i = 1;
+	Element elt;
+	Set_item(elts, i, elt);
 }`,
 					Position: protocol.Position{Line: 4, Character: 4},
-					Pattern:  createFuncSignaturePattern("Set_item", []string{"Dynamic_Element", "Integer", "Element"}),
+					Pattern:  []string{createFuncSignaturePattern("Set_item", []string{"Dynamic_Element", "Integer", "Element"})},
 				},
 				{
 					Desc: "inline literals args",
 					SourceCode: `void main() {
-    Named_Tick_Box clean_tick_box = Create_named_tick_box("Clean", 0, "cmd_clean");
+	Named_Tick_Box clean_tick_box = Create_named_tick_box("Clean", 0, "cmd_clean");
 }`,
 					Position: protocol.Position{Line: 1, Character: 36},
-					Pattern:  createFuncSignaturePattern("Create_named_tick_box", []string{"Text", "Integer", "Text"}),
+					Pattern:  []string{createFuncSignaturePattern("Create_named_tick_box", []string{"Text", "Integer", "Text"})},
 				},
 				{
 					Desc: "preproc defs args",
 					SourceCode: `#define ALL_WIDGETS_OWN_HEIGHT 2
 void main() {
-    Vertical_Group group = Create_vertical_group(ALL_WIDGETS_OWN_HEIGHT);
+	Vertical_Group group = Create_vertical_group(ALL_WIDGETS_OWN_HEIGHT);
 }`,
 					Position: protocol.Position{Line: 2, Character: 27},
-					Pattern:  createFuncSignaturePattern("Create_vertical_group", []string{"Integer"}),
+					Pattern:  []string{createFuncSignaturePattern("Create_vertical_group", []string{"Integer"})},
 				},
 				{
 					Desc: "local declaration, string and number literal preproc defs",
@@ -379,39 +379,60 @@ void main() {
 #define ATT_NAME "name"
 void main() {
 	Attributes atts;
-    Attribute_exists(atts, ATT_NAME, ATT_NUM);
+	Attribute_exists(atts, ATT_NAME, ATT_NUM);
 }`,
 					Position: protocol.Position{Line: 4, Character: 4},
-					Pattern:  createFuncSignaturePattern("Attribute_exists", []string{"Attributes", "Text", "Integer"}),
+					Pattern:  []string{createFuncSignaturePattern("Attribute_exists", []string{"Attributes", "Text", "Integer"})},
 				},
 				{
 					Desc: "func param args",
 					SourceCode: `void GetFirstItem(Dynamic_Text items) {
-    Text result = "";
-    Get_item(items, 1, result);
-    return result;
+	Text result = "";
+	Get_item(items, 1, result);
+	return result;
 }`,
 					Position: protocol.Position{Line: 2, Character: 4},
-					Pattern:  createFuncSignaturePattern("Get_item", []string{"Dynamic_Text", "Integer", "Text"}),
+					Pattern:  []string{createFuncSignaturePattern("Get_item", []string{"Dynamic_Text", "Integer", "Text"})},
 				},
 				{
 					Desc: "func reference param args",
 					SourceCode: `void GetFirstItem(Dynamic_Text &items) {
-    Text result = "";
-    Get_item(items, 1, result);
-    return result;
+	Text result = "";
+	Get_item(items, 1, result);
+	return result;
 }`,
 					Position: protocol.Position{Line: 2, Character: 4},
-					Pattern:  createFuncSignaturePattern("Get_item", []string{"Dynamic_Text", "Integer", "Text"}),
+					Pattern:  []string{createFuncSignaturePattern("Get_item", []string{"Dynamic_Text", "Integer", "Text"})},
 				},
 				{
-					Desc: "Colour_Message_Box and Message_Box polymorphism",
+					Desc: "Colour_Message_Box and Message_Box polymorphism - match with Message_Box signature",
 					SourceCode: `void main() {
-    Colour_Message_Box msg_box = Create_colour_message_box("");
-    Create_input_box("Name", msg_box);
+	Colour_Message_Box msg_box = Create_colour_message_box("");
+	Create_input_box("Name", msg_box);
 }`,
 					Position: protocol.Position{Line: 2, Character: 4},
-					Pattern:  createFuncSignaturePattern("Create_input_box", []string{"Text", "Message_Box"}),
+					Pattern:  []string{createFuncSignaturePattern("Create_input_box", []string{"Text", "Message_Box"})},
+				},
+				{
+					Desc: "Colour_Message_Box and Message_Box polymorphism - match with Colour_Message_Box signature",
+					SourceCode: `void main() {
+    Colour_Message_Box msg_box = Create_colour_message_box("");
+    Set_data(msg_box, "hello");
+}`,
+					Position: protocol.Position{Line: 2, Character: 4},
+					Pattern: []string{
+						createFuncSignaturePattern("Set_data", []string{"Colour_Message_Box", "Text"}),
+						createFuncSignaturePattern("Set_data", []string{"Message_Box", "Text"}),
+					},
+				},
+				{
+					Desc: "File box as widget polymorhpism",
+					SourceCode: `void main() {
+	File_Box filebox;
+	Set_width_in_chars(filebox, 10);
+}`,
+					Position: protocol.Position{Line: 2, Character: 4},
+					Pattern:  []string{createFuncSignaturePattern("Set_width_in_chars", []string{"Widget", "Integer"})},
 				},
 				// TODO: Overloads for Widget (Get_id(Widget widget))
 				// TODO: Binary expression hover e.g. Get_subtext(currentAttribute, 1, numOfCharsToSeparator-1);.
@@ -445,10 +466,21 @@ void main() {
 					var gotHoverResult protocol.Hover
 					err = json.Unmarshal(got.Result, &gotHoverResult)
 					assert.NoError(err)
-					require.Len(t, gotHoverResult.Contents, 1)
-					matched, err := regexp.MatchString(testCase.Pattern, gotHoverResult.Contents[0])
-					assert.NoError(err)
-					assert.True(matched, fmt.Sprintf("expected lib item doc to match signature pattern %s but did not: %s", testCase.Pattern, gotHoverResult.Contents[0]))
+					require.Len(t, gotHoverResult.Contents, len(testCase.Pattern))
+					for _, pattern := range testCase.Pattern {
+						found := false
+						c := ""
+						for _, content := range gotHoverResult.Contents {
+							c = content
+							matched, err := regexp.MatchString(pattern, content)
+							assert.NoError(err)
+							if matched {
+								found = true
+								break
+							}
+						}
+						assert.True(found, fmt.Sprintf("expected lib item doc to match signature pattern %s but did not: %s", pattern, c))
+					}
 				})
 			}
 		})
@@ -462,7 +494,7 @@ void main() {
     return addend, augend;
 }`,
 					Position: protocol.Position{Line: 2, Character: 19},
-					Pattern:  "```12dpl\nInteger augend\n```",
+					Pattern:  []string{"```12dpl\nInteger augend\n```"},
 				},
 				{
 					Desc: "local uninitialised var",
@@ -472,7 +504,7 @@ void main() {
     return addend, augend;
 }`,
 					Position: protocol.Position{Line: 3, Character: 19},
-					Pattern:  "```12dpl\nInteger augend\n```",
+					Pattern:  []string{"```12dpl\nInteger augend\n```"},
 				},
 				{
 					Desc: "func param",
@@ -480,7 +512,7 @@ void main() {
     return id;
 }`,
 					Position: protocol.Position{Line: 1, Character: 11},
-					Pattern:  "```12dpl\n(parameter) Integer id\n```",
+					Pattern:  []string{"```12dpl\n(parameter) Integer id\n```"},
 				},
 				{
 					Desc: "multiple variable declaration - initialised var",
@@ -489,7 +521,7 @@ void main() {
     return a + b;
 }`,
 					Position: protocol.Position{Line: 2, Character: 11},
-					Pattern:  "```12dpl\nInteger a\n```",
+					Pattern:  []string{"```12dpl\nInteger a\n```"},
 				},
 				{
 					Desc: "multiple variable declaration - uninitialised var",
@@ -498,7 +530,7 @@ void main() {
     return a + b;
 }`,
 					Position: protocol.Position{Line: 2, Character: 15},
-					Pattern:  "```12dpl\nInteger b\n```",
+					Pattern:  []string{"```12dpl\nInteger b\n```"},
 				},
 				{
 					Desc: "reference param hover in local scope",
@@ -506,7 +538,7 @@ void main() {
     return items;
 }`,
 					Position: protocol.Position{Line: 1, Character: 11},
-					Pattern:  "```12dpl\n(parameter) Dynamic_Text &items\n```",
+					Pattern:  []string{"```12dpl\n(parameter) Dynamic_Text &items\n```"},
 				},
 				{
 					Desc: "user defined func - no doc",
@@ -518,7 +550,7 @@ void Forever(Integer subject) {
     return Forever(subject);
 }`,
 					Position: protocol.Position{Line: 5, Character: 11},
-					Pattern:  "```12dpl\nvoid Forever(Integer subject)\n```",
+					Pattern:  []string{"```12dpl\nvoid Forever(Integer subject)\n```"},
 				},
 				{
 					Desc: "user defined func - multi line parameter list",
@@ -529,7 +561,7 @@ void Forever(Integer subject) {
     return SomeFunc(a, b);
 }`,
 					Position: protocol.Position{Line: 4, Character: 11},
-					Pattern:  "```12dpl\nvoid SomeFunc(Text a, Integer b)\n```",
+					Pattern:  []string{"```12dpl\nvoid SomeFunc(Text a, Integer b)\n```"},
 				},
 				{
 					Desc: "user defined func - multi line parameter list with comment",
@@ -541,7 +573,7 @@ void SomeFunc(
     return SomeFunc(a, b);
 }`,
 					Position: protocol.Position{Line: 5, Character: 11},
-					Pattern:  "```12dpl\nvoid SomeFunc(Text a, Integer b)\n```\n---\nThis function does nothing.",
+					Pattern:  []string{"```12dpl\nvoid SomeFunc(Text a, Integer b)\n```\n---\nThis function does nothing."},
 				},
 				{
 					Desc: "user defined func - single line doc",
@@ -550,7 +582,7 @@ void Forever(Integer subject) {
     return Forever(subject);
 }`,
 					Position: protocol.Position{Line: 2, Character: 11},
-					Pattern:  "```12dpl\nvoid Forever(Integer subject)\n```\n---\nLoops forever.",
+					Pattern:  []string{"```12dpl\nvoid Forever(Integer subject)\n```\n---\nLoops forever."},
 				},
 				{
 					Desc: "user defined func - multi line doc",
@@ -562,7 +594,7 @@ void Forever(Integer subject) {
     return Forever(subject);
 }`,
 					Position: protocol.Position{Line: 5, Character: 11},
-					Pattern:  "```12dpl\nvoid Forever(Integer subject)\n```\n---\nLoops forever.\nsubject is an integer.",
+					Pattern:  []string{"```12dpl\nvoid Forever(Integer subject)\n```\n---\nLoops forever.\nsubject is an integer."},
 				},
 				{
 					Desc: "user defined func - single line doc - on definition",
@@ -570,7 +602,7 @@ void Forever(Integer subject) {
     return Forever(subject);
 }`,
 					Position: protocol.Position{Line: 0, Character: 5},
-					Pattern:  "```12dpl\nvoid Forever(Integer subject)\n```",
+					Pattern:  []string{"```12dpl\nvoid Forever(Integer subject)\n```"},
 				},
 				{
 					Desc: "user defined func - single line doc - on definition with doc",
@@ -579,7 +611,7 @@ void Forever(Integer subject) {
     return Forever(subject);
 }`,
 					Position: protocol.Position{Line: 1, Character: 5},
-					Pattern:  "```12dpl\nvoid Forever(Integer subject)\n```\n---\nLoops forever.",
+					Pattern:  []string{"```12dpl\nvoid Forever(Integer subject)\n```\n---\nLoops forever."},
 				},
 			}
 			for _, testCase := range testCases {
@@ -609,8 +641,17 @@ void Forever(Integer subject) {
 					var gotHoverResult protocol.Hover
 					err = json.Unmarshal(got.Result, &gotHoverResult)
 					assert.NoError(err)
-					require.Len(t, gotHoverResult.Contents, 1)
-					assert.Equal(testCase.Pattern, gotHoverResult.Contents[0])
+					require.Len(t, gotHoverResult.Contents, len(testCase.Pattern))
+					for _, pattern := range testCase.Pattern {
+						found := false
+						for _, content := range gotHoverResult.Contents {
+							if pattern == content {
+								found = true
+								break
+							}
+						}
+						assert.True(found, strconv.Quote(fmt.Sprintf("wanted %s to be in contents %s but was not", pattern, gotHoverResult.Contents)))
+					}
 				})
 			}
 		})
