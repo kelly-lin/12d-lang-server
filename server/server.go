@@ -259,6 +259,9 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 							identifier = node.Parent().Content(sourceCode)
 						}
 					}
+					if node.Parent().Type() == "function_declarator" {
+						identifier = node.Parent().Content(sourceCode)
+					}
 					contents = append(contents, createHoverDeclarationDocString(nodeType, identifier, "", prefix))
 				}
 			}
@@ -423,6 +426,9 @@ func getDefinitionType(node *sitter.Node, sourceCode []byte) (string, error) {
 	if node.Parent().Type() == "pointer_declarator" && node.Parent().Parent().ChildByFieldName("type") != nil {
 		typeNode = node.Parent().Parent().ChildByFieldName("type")
 	}
+	if node.Parent().Type() == "function_declarator" && node.Parent().Parent().ChildByFieldName("type") != nil {
+		typeNode = node.Parent().Parent().ChildByFieldName("type")
+	}
 	if typeNode == nil {
 		return "", errors.New("definition type not found for node")
 	}
@@ -521,6 +527,10 @@ func findDefinition(identifierNode *sitter.Node, identifier string, sourceCode [
 		for currentNode.Parent() != nil {
 			currentNode = currentNode.Parent()
 			if currentNode.Type() == "function_definition" {
+				funcIdentifierMode := currentNode.ChildByFieldName("declarator").ChildByFieldName("declarator")
+				if funcIdentifierMode != nil && funcIdentifierMode.Content(sourceCode) == identifier {
+					return parser.NewParserRange(funcIdentifierMode), funcIdentifierMode, nil
+				}
 				paramsNode := currentNode.ChildByFieldName("declarator").ChildByFieldName("parameters")
 				if paramNode, err := findParameterNode(paramsNode, identifier, sourceCode); err == nil {
 					return parser.NewParserRange(paramNode), paramNode, nil

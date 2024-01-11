@@ -404,8 +404,8 @@ void main() {
 					Position: protocol.Position{Line: 2, Character: 4},
 					Pattern:  createFuncSignaturePattern("Get_item", []string{"Dynamic_Text", "Integer", "Text"}),
 				},
-				// TODO:
-				// - Overloaded funcs with Colour_Message_Box and Message_Box
+				// TODO: Overloaded funcs with Colour_Message_Box and Message_Box
+				// TODO: Overloads for Widget (Get_id(Widget widget))
 			}
 			for _, testCase := range testCases {
 				t.Run(testCase.Desc, func(t *testing.T) {
@@ -553,6 +553,14 @@ void Forever(Integer subject) {
 }`,
 					Position: protocol.Position{Line: 5, Character: 11},
 					Pattern:  "```12dpl\nvoid Forever(Integer subject)\n```\n---\nLoops forever.\nsubject is an integer.",
+				},
+				{
+					Desc: "user defined func - single line doc - on definition",
+					SourceCode: `void Forever(Integer subject) {
+    return Forever(subject);
+}`,
+					Position: protocol.Position{Line: 0, Character: 5},
+					Pattern:  "```12dpl\nvoid Forever(Integer subject)\n```",
 				},
 			}
 			for _, testCase := range testCases {
