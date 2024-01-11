@@ -215,52 +215,9 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 		if err != nil {
 			return newNullResponseMessage(msg.ID), len(protocol.NullResult), err
 		}
-		var contents []string
-		if identifierNode.Parent().Type() == "call_expression" {
-			_, node, err := findDefinition(identifierNode, identifier, sourceCode)
-			if err != nil {
-				// We cannot find the definition, try find it in the library
-				// items.
-				libItems, ok := lang.Lib[identifier]
-				if !ok || len(libItems) == 0 {
-					return newNullResponseMessage(msg.ID), len(protocol.NullResult), nil
-				}
-				contents = filterLibItems(identifierNode, libItems, sourceCode)
-			} else {
-				// We found the definition, get the signature.
-				// TODO: this might cause us issues as we are assuming the
-				// structure of the tree. Might need to refactor this so that we
-				// search for the ancestor "function_definition" node.
-				funcDefNode := node.Parent().Parent()
-				if funcDefNode != nil {
-					if varType, declaration, desc, err := getFuncDocComponents(funcDefNode, sourceCode); err == nil {
-						contents = append(contents, createHoverDeclarationDocString(varType, declaration, desc, ""))
-					}
-				}
-			}
-		} else {
-			if _, node, err := findDefinition(identifierNode, identifier, sourceCode); err == nil && node.Type() == "identifier" {
-				if nodeType, err := getDefinitionType(node, sourceCode); err == nil {
-					prefix := ""
-					identifier := node.Content(sourceCode)
-					if isParameterDeclaration(node) {
-						prefix = "parameter"
-						if node.Parent().Type() == "pointer_declarator" {
-							identifier = node.Parent().Content(sourceCode)
-						}
-					}
-					if node.Parent().Type() == "function_declarator" {
-						funcDefNode := node.Parent().Parent()
-						if funcDefNode != nil {
-							if varType, declaration, desc, err := getFuncDocComponents(funcDefNode, sourceCode); err == nil {
-								contents = append(contents, createHoverDeclarationDocString(varType, declaration, desc, ""))
-							}
-						}
-					} else {
-						contents = append(contents, createHoverDeclarationDocString(nodeType, identifier, "", prefix))
-					}
-				}
-			}
+		contents := getHoverContents(identifierNode, identifier, sourceCode)
+		if len(contents) == 0 {
+			return newNullResponseMessage(msg.ID), len(protocol.NullResult), nil
 		}
 		result := protocol.Hover{Contents: contents}
 		resultBytes, err := json.Marshal(result)
@@ -365,6 +322,59 @@ func (s *Server) updateDocument(uri string, content string) error {
 	}
 	s.nodes[uri] = rootNode
 	return nil
+}
+
+// Gets the hover items for the provided node and identifier. The hover items
+// are strings of documentation to send to the client.
+func getHoverContents(identifierNode *sitter.Node, identifier string, sourceCode []byte) []string {
+	var contents []string
+	if identifierNode.Parent().Type() == "call_expression" {
+		_, node, err := findDefinition(identifierNode, identifier, sourceCode)
+		if err != nil {
+			// We cannot find the definition, try find it in the library
+			// items.
+			libItems, ok := lang.Lib[identifier]
+			if !ok || len(libItems) == 0 {
+				return []string{}
+			}
+			contents = filterLibItems(identifierNode, libItems, sourceCode)
+		} else {
+			// We found the definition, get the signature.
+			// TODO: this might cause us issues as we are assuming the
+			// structure of the tree. Might need to refactor this so that we
+			// search for the ancestor "function_definition" node.
+			funcDefNode := node.Parent().Parent()
+			if funcDefNode != nil {
+				if varType, declaration, desc, err := getFuncDocComponents(funcDefNode, sourceCode); err == nil {
+					contents = append(contents, createHoverDeclarationDocString(varType, declaration, desc, ""))
+				}
+			}
+		}
+	} else {
+		if _, node, err := findDefinition(identifierNode, identifier, sourceCode); err == nil && node.Type() == "identifier" {
+			if nodeType, err := getDefinitionType(node, sourceCode); err == nil {
+				prefix := ""
+				identifier := node.Content(sourceCode)
+				if isParameterDeclaration(node) {
+					prefix = "parameter"
+					if node.Parent().Type() == "pointer_declarator" {
+						identifier = node.Parent().Content(sourceCode)
+					}
+				}
+				if node.Parent().Type() == "function_declarator" {
+					funcDefNode := node.Parent().Parent()
+					if funcDefNode != nil {
+						if varType, declaration, desc, err := getFuncDocComponents(funcDefNode, sourceCode); err == nil {
+							contents = append(contents, createHoverDeclarationDocString(varType, declaration, desc, ""))
+						}
+					}
+				} else {
+					contents = append(contents, createHoverDeclarationDocString(nodeType, identifier, "", prefix))
+				}
+			}
+		}
+	}
+	return contents
 }
 
 // Formats the function declaration for display as documentation.
