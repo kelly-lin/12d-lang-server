@@ -521,14 +521,21 @@ func filterLibItems(identifierNode *sitter.Node, libItems []string, sourceCode [
 	}
 
 	var result []string
-	argsNode := identifierNode.Parent().ChildByFieldName("arguments")
+	callExpressionNode := identifierNode.Parent()
+	argsNode := callExpressionNode.ChildByFieldName("arguments")
 	if argsNode == nil {
 		return []string{}
 	}
 	funcIdentifier := identifierNode.Content(sourceCode)
 	types := getArgumentTypes(argsNode)
 	pattern := ""
+	aliases := map[string]string{
+		"Colour_Message_Box": "Message_Box",
+	}
 	for idx, t := range types {
+		if alias, ok := aliases[t]; ok {
+			t = alias
+		}
 		if idx == 0 {
 			pattern = fmt.Sprintf(`%s\s*&?\w+`, t)
 			continue

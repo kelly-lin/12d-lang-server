@@ -404,8 +404,18 @@ void main() {
 					Position: protocol.Position{Line: 2, Character: 4},
 					Pattern:  createFuncSignaturePattern("Get_item", []string{"Dynamic_Text", "Integer", "Text"}),
 				},
-				// TODO: Overloaded funcs with Colour_Message_Box and Message_Box
+				{
+					Desc: "Colour_Message_Box and Message_Box polymorphism",
+					SourceCode: `void main() {
+    Colour_Message_Box msg_box = Create_colour_message_box("");
+    Create_input_box("Name", msg_box);
+}`,
+					Position: protocol.Position{Line: 2, Character: 4},
+					Pattern:  createFuncSignaturePattern("Create_input_box", []string{"Text", "Message_Box"}),
+				},
 				// TODO: Overloads for Widget (Get_id(Widget widget))
+				// TODO: Binary expression hover e.g. Get_subtext(currentAttribute, 1, numOfCharsToSeparator-1);.
+				// TODO: Set_ups.h constants.
 			}
 			for _, testCase := range testCases {
 				t.Run(testCase.Desc, func(t *testing.T) {
