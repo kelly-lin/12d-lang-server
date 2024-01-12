@@ -364,7 +364,11 @@ func getHoverContents(identifierNode *sitter.Node, identifier string, sourceCode
 						contents = append(contents, createHoverDeclarationDocString(varType, declaration, desc, ""))
 					}
 				} else {
-					contents = append(contents, createHoverDeclarationDocString(nodeType, identifier, "", prefix))
+					if node.Parent().Type() == "array_declarator" {
+						contents = append(contents, createHoverDeclarationDocString(nodeType, identifier+"[]", "", prefix))
+					} else {
+						contents = append(contents, createHoverDeclarationDocString(nodeType, identifier, "", prefix))
+					}
 				}
 			}
 		}
@@ -490,6 +494,9 @@ func getDefinitionType(node *sitter.Node, sourceCode []byte) (string, error) {
 	if node.Parent().Type() == "function_declarator" && node.Parent().Parent().ChildByFieldName("type") != nil {
 		typeNode = node.Parent().Parent().ChildByFieldName("type")
 	}
+	if node.Parent().Type() == "array_declarator" && node.Parent().Parent().ChildByFieldName("type") != nil {
+		typeNode = node.Parent().Parent().ChildByFieldName("type")
+	}
 	if typeNode == nil {
 		return "", errors.New("definition type not found for node")
 	}
@@ -592,7 +599,9 @@ func findDefinition(identifierNode *sitter.Node, identifier string, sourceCode [
 
 	default:
 		currentNode := identifierNode
+		// var prevNode *sitter.Node
 		for currentNode.Parent() != nil {
+			// prevNode = currentNode
 			currentNode = currentNode.Parent()
 			if currentNode.Type() == "function_definition" {
 				funcIdentifierMode := currentNode.ChildByFieldName("declarator").ChildByFieldName("declarator")
@@ -606,6 +615,10 @@ func findDefinition(identifierNode *sitter.Node, identifier string, sourceCode [
 			}
 			for i := 0; i < int(currentNode.ChildCount()); i++ {
 				currentChildNode := currentNode.Child(i)
+				// // No point looking at nodes post the previous node.
+				// if prevNode == currentChildNode {
+				// 	break
+				// }
 				if currentChildNode.Type() == "preproc_def" {
 					identifierDeclarationNode := currentChildNode.ChildByFieldName("name")
 					if identifierDeclarationNode != nil && identifierDeclarationNode.Content(sourceCode) == identifier {
@@ -696,7 +709,14 @@ func findDeclaration(node *sitter.Node, identifier string, sourceCode []byte) (p
 				return parser.NewParserRange(identifierDeclarationNode), identifierDeclarationNode, nil
 			}
 
-		default:
+		case "array_declarator":
+			identifierDeclarationNode := declaratorNode.ChildByFieldName("declarator")
+			if identifierDeclarationNode == nil {
+				continue
+			}
+			if identifierDeclarationNode.Content(sourceCode) == identifier {
+				return parser.NewParserRange(identifierDeclarationNode), identifierDeclarationNode, nil
+			}
 		}
 
 		declaratorNode = declaratorNode.NextNamedSibling()

@@ -507,6 +507,14 @@ void main() {
 					Pattern:  []string{"```12dpl\nInteger augend\n```"},
 				},
 				{
+					Desc: "static array",
+					SourceCode: `void main() {
+    Text arr[3];
+}`,
+					Position: protocol.Position{Line: 1, Character: 9},
+					Pattern:  []string{"```12dpl\nText arr[]\n```"},
+				},
+				{
 					Desc: "func param",
 					SourceCode: `Integer Identity(Integer id) {
     return id;
