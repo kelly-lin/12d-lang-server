@@ -342,7 +342,7 @@ func getHoverContents(identifierNode *sitter.Node, identifier string, sourceCode
 			// We found the definition, get the signature.
 			if isFuncDefinition(node) {
 				funcDefNode := node.Parent().Parent()
-				if varType, declaration, desc, err := getFuncDoc(funcDefNode, sourceCode); err == nil {
+				if varType, declaration, desc, err := getFuncDocComponents(funcDefNode, sourceCode); err == nil {
 					contents = append(contents, createHoverDeclarationDocString(varType, declaration, desc, ""))
 				}
 			}
@@ -360,7 +360,7 @@ func getHoverContents(identifierNode *sitter.Node, identifier string, sourceCode
 				}
 				if isFuncDefinition(node) {
 					funcDefNode := node.Parent().Parent()
-					if varType, declaration, desc, err := getFuncDoc(funcDefNode, sourceCode); err == nil {
+					if varType, declaration, desc, err := getFuncDocComponents(funcDefNode, sourceCode); err == nil {
 						contents = append(contents, createHoverDeclarationDocString(varType, declaration, desc, ""))
 					}
 				} else {
@@ -432,7 +432,7 @@ func formatDescComment(desc string) string {
 
 // Gets the type, declaration and description from the function definition node.
 // Returns error if any of the components cannot be found.
-func getFuncDoc(funcDefNode *sitter.Node, sourceCode []byte) (string, string, string, error) {
+func getFuncDocComponents(funcDefNode *sitter.Node, sourceCode []byte) (string, string, string, error) {
 	typeNode := funcDefNode.ChildByFieldName("type")
 	if typeNode == nil {
 		return "", "", "", errors.New("type node not found")
@@ -445,8 +445,11 @@ func getFuncDoc(funcDefNode *sitter.Node, sourceCode []byte) (string, string, st
 	desc := ""
 	docNode := funcDefNode.PrevSibling()
 	if docNode != nil && docNode.Type() == "comment" {
-		desc = docNode.Content(sourceCode)
-		desc = formatDescComment(desc)
+		isDocNodeAboveDefinition := funcDefNode.StartPoint().Row-1 == docNode.EndPoint().Row
+		if isDocNodeAboveDefinition {
+			desc = docNode.Content(sourceCode)
+			desc = formatDescComment(desc)
+		}
 	}
 	return varType, declaration, desc, nil
 }
