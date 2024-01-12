@@ -553,15 +553,15 @@ void Forever(Integer subject) {
 					Pattern:  []string{"```12dpl\nvoid Forever(Integer subject)\n```"},
 				},
 				{
-					Desc: "user defined func - multi line parameter list",
-					SourceCode: `void SomeFunc(
-    Text a,
-    Integer b
+					Desc: "user defined func - poorly formatted multi line parameter list",
+					SourceCode: `void SomeFunc(    Text a,
+	Text b,
+         Integer c
 ) {
     return SomeFunc(a, b);
 }`,
 					Position: protocol.Position{Line: 4, Character: 11},
-					Pattern:  []string{"```12dpl\nvoid SomeFunc(Text a, Integer b)\n```"},
+					Pattern:  []string{"```12dpl\nvoid SomeFunc(Text a, Text b, Integer c)\n```"},
 				},
 				{
 					Desc: "user defined func - multi line parameter list with comment",

@@ -342,7 +342,7 @@ func getHoverContents(identifierNode *sitter.Node, identifier string, sourceCode
 			// We found the definition, get the signature.
 			if isFuncDefinition(node) {
 				funcDefNode := node.Parent().Parent()
-				if varType, declaration, desc, err := getFuncDocComponents(funcDefNode, sourceCode); err == nil {
+				if varType, declaration, desc, err := getFuncDoc(funcDefNode, sourceCode); err == nil {
 					contents = append(contents, createHoverDeclarationDocString(varType, declaration, desc, ""))
 				}
 			}
@@ -360,7 +360,7 @@ func getHoverContents(identifierNode *sitter.Node, identifier string, sourceCode
 				}
 				if isFuncDefinition(node) {
 					funcDefNode := node.Parent().Parent()
-					if varType, declaration, desc, err := getFuncDocComponents(funcDefNode, sourceCode); err == nil {
+					if varType, declaration, desc, err := getFuncDoc(funcDefNode, sourceCode); err == nil {
 						contents = append(contents, createHoverDeclarationDocString(varType, declaration, desc, ""))
 					}
 				} else {
@@ -373,16 +373,44 @@ func getHoverContents(identifierNode *sitter.Node, identifier string, sourceCode
 }
 
 // Formats the function declaration for display as documentation.
-func formatFuncDeclaration(declaration string) string {
-	declarationLines := strings.Split(declaration, "\n")
-	var newDeclarationLines []string
-	for _, line := range declarationLines {
-		newLine := strings.TrimSpace(line)
-		newDeclarationLines = append(newDeclarationLines, newLine)
+func formatFuncDeclaration(funcDefNode *sitter.Node, sourceCode []byte) (string, error) {
+	declaratorNode := funcDefNode.ChildByFieldName("declarator")
+	if declaratorNode == nil {
+		return "", errors.New("declarator not found")
 	}
-	result := strings.Join(newDeclarationLines, "")
-	result = strings.ReplaceAll(result, ",", ", ")
-	return result
+	identifierNode := declaratorNode.ChildByFieldName("declarator")
+	if identifierNode == nil {
+		return "", errors.New("identifier not found")
+	}
+	paramsNode := declaratorNode.ChildByFieldName("parameters")
+	if paramsNode == nil {
+		return "", errors.New("parameters node not found")
+	}
+	params := ""
+	var paramItems []string
+	for i := 0; i < int(paramsNode.ChildCount()); i++ {
+		paramNode := paramsNode.Child(i)
+		if paramNode.Type() != "parameter_declaration" {
+			continue
+		}
+		typeNode := paramNode.ChildByFieldName("type")
+		if typeNode == nil {
+			return "", fmt.Errorf("type node not found for parameter %d", i)
+		}
+		identifierNode := paramNode.ChildByFieldName("declarator")
+		if identifierNode == nil {
+			return "", fmt.Errorf("identifier node not found for parameter %d", i)
+		}
+		paramItems = append(paramItems, fmt.Sprintf("%s %s", typeNode.Content(sourceCode), identifierNode.Content(sourceCode)))
+	}
+	for i, item := range paramItems {
+		if i == 0 {
+			params = item
+		} else {
+			params = fmt.Sprintf("%s, %s", params, item)
+		}
+	}
+	return fmt.Sprintf("%s(%s)", identifierNode.Content(sourceCode), params), nil
 }
 
 // Formats the raw text from a comment node for display as documentation. This
@@ -404,20 +432,16 @@ func formatDescComment(desc string) string {
 
 // Gets the type, declaration and description from the function definition node.
 // Returns error if any of the components cannot be found.
-func getFuncDocComponents(funcDefNode *sitter.Node, sourceCode []byte) (string, string, string, error) {
+func getFuncDoc(funcDefNode *sitter.Node, sourceCode []byte) (string, string, string, error) {
 	typeNode := funcDefNode.ChildByFieldName("type")
 	if typeNode == nil {
 		return "", "", "", errors.New("type node not found")
 	}
 	varType := typeNode.Content(sourceCode)
-
-	declaratorNode := funcDefNode.ChildByFieldName("declarator")
-	if declaratorNode == nil {
-		return "", "", "", errors.New("declarator node not found")
+	declaration, err := formatFuncDeclaration(funcDefNode, sourceCode)
+	if err != nil {
+		return "", "", "", fmt.Errorf("could not format function declaration: %w", err)
 	}
-	declaration := declaratorNode.Content(sourceCode)
-	declaration = formatFuncDeclaration(declaration)
-
 	desc := ""
 	docNode := funcDefNode.PrevSibling()
 	if docNode != nil && docNode.Type() == "comment" {
