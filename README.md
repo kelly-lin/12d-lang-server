@@ -9,7 +9,8 @@ Language server for the 12d programming language (12dPL) conforming to the
 2. [Building](#building)
 3. [Testing](#testing)
 4. [Design Decisions](#design-decisions)
-5. [Contributing](#contributing)
+5. [Features](#features)
+6. [Contributing](#contributing)
 
 ## Dependencies
 
@@ -32,6 +33,12 @@ Run automated tests by executing `make test`.
   This means that it will only analyse and provide services for the current file.
 - Supports stdio as IPC. stdio is the standard transport for language server IPC
   and is also straight forward to implement.
+
+## Features
+
+- Go to definition.
+- Hover support.
+  - User defined function documentation in markdown.
 
 ## Contributing
 
