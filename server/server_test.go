@@ -435,6 +435,14 @@ void main() {
 					Pattern:  []string{createFuncSignaturePattern("Set_width_in_chars", []string{"Widget", "Integer"})},
 				},
 				{
+					Desc: "real literal",
+					SourceCode: `void main() {
+    Sin(2.0);
+}`,
+					Position: protocol.Position{Line: 1, Character: 4},
+					Pattern:  []string{createFuncSignaturePattern("Sin", []string{"Real"})},
+				},
+				{
 					Desc: "binary expression in arg list - variable",
 					SourceCode: `void main() {
     Integer length = 1;
@@ -459,7 +467,22 @@ void main() {
 					Position: protocol.Position{Line: 1, Character: 4},
 					Pattern:  []string{createFuncSignaturePattern("Get_subtext", []string{"Text", "Integer", "Integer"})},
 				},
-				// TODO: Real in binary expession.
+				{
+					Desc: "binary expression in arg list - number literal (Real)",
+					SourceCode: `void main() {
+    Sin(2.0 + 1.2);
+}`,
+					Position: protocol.Position{Line: 1, Character: 4},
+					Pattern:  []string{createFuncSignaturePattern("Sin", []string{"Real"})},
+				},
+				{
+					Desc: "binary expression in arg list - number literal (Integer)",
+					SourceCode: `void main() {
+    Sin(1 + 1);
+}`,
+					Position: protocol.Position{Line: 1, Character: 4},
+					Pattern:  []string{createFuncSignaturePattern("Sin", []string{"Real"})},
+				},
 				// TODO: Set_ups.h constants.
 				// TODO: Arrays in lib func args
 				//     Text scopes[2];
