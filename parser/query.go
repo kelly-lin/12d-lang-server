@@ -155,7 +155,7 @@ func (q *Queue) HasItems() bool {
 
 func DebugNode(n *sitter.Node, sourceCode []byte) {
 	fmt.Printf(
-		"node: %s:%s [%d, %d] - [%d, %d] %s\n",
+		"node: %s:%s [%d, %d] - [%d, %d] %q\n",
 		n.Type(),
 		n.String(),
 		n.StartPoint().Row,
