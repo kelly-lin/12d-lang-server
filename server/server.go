@@ -365,6 +365,7 @@ func getHoverContents(identifierNode *sitter.Node, identifier string, sourceCode
 					}
 				} else {
 					if node.Parent().Type() == "array_declarator" {
+						// TODO: refactor this, it is ugly.
 						contents = append(contents, createHoverDeclarationDocString(nodeType, identifier+"[]", "", prefix))
 					} else {
 						contents = append(contents, createHoverDeclarationDocString(nodeType, identifier, "", prefix))
@@ -599,9 +600,7 @@ func findDefinition(identifierNode *sitter.Node, identifier string, sourceCode [
 
 	default:
 		currentNode := identifierNode
-		// var prevNode *sitter.Node
 		for currentNode.Parent() != nil {
-			// prevNode = currentNode
 			currentNode = currentNode.Parent()
 			if currentNode.Type() == "function_definition" {
 				funcIdentifierMode := currentNode.ChildByFieldName("declarator").ChildByFieldName("declarator")
@@ -615,10 +614,6 @@ func findDefinition(identifierNode *sitter.Node, identifier string, sourceCode [
 			}
 			for i := 0; i < int(currentNode.ChildCount()); i++ {
 				currentChildNode := currentNode.Child(i)
-				// // No point looking at nodes post the previous node.
-				// if prevNode == currentChildNode {
-				// 	break
-				// }
 				if currentChildNode.Type() == "preproc_def" {
 					identifierDeclarationNode := currentChildNode.ChildByFieldName("name")
 					if identifierDeclarationNode != nil && identifierDeclarationNode.Content(sourceCode) == identifier {
@@ -627,12 +622,20 @@ func findDefinition(identifierNode *sitter.Node, identifier string, sourceCode [
 				}
 				if currentChildNode.Type() == "compound_statement" {
 					for i := 0; i < int(currentChildNode.ChildCount()); i++ {
+						// No point looking at nodes past the identifier node.
+						if currentChildNode.Child(i).StartPoint().Row > identifierNode.EndPoint().Row {
+							break
+						}
 						locRange, n, err := findDeclaration(currentChildNode.Child(i), identifier, sourceCode)
 						if err != nil {
 							continue
 						}
 						return locRange, n, nil
 					}
+				}
+				// No point looking at nodes past the identifier node.
+				if currentChildNode.StartPoint().Row > identifierNode.EndPoint().Row {
+					break
 				}
 				locRange, n, err := findDeclaration(currentChildNode, identifier, sourceCode)
 				if err != nil {

@@ -497,6 +497,15 @@ void main() {
 					Pattern:  []string{"```12dpl\nInteger augend\n```"},
 				},
 				{
+					Desc: "no definition for identifier declared after usage",
+					SourceCode: `void main() {
+    Print(text);
+	Text text = "Hello world";
+}`,
+					Position: protocol.Position{Line: 1, Character: 10},
+					Pattern:  []string{},
+				},
+				{
 					Desc: "local uninitialised var",
 					SourceCode: `Integer AddOne(Integer addend) {
     Integer augend;
