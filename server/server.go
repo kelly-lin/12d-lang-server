@@ -599,6 +599,13 @@ func findDefinition(identifierNode *sitter.Node, identifier string, sourceCode [
 		return locRange, node, err
 
 	default:
+		// No point looking at nodes past the identifier node.
+		isNodeRowAfterIdentifierNode := func(node *sitter.Node) bool {
+			return node.StartPoint().Row > identifierNode.EndPoint().Row
+		}
+		isGlobalScope := func(node *sitter.Node) bool {
+			return node.Type() == "preproc_def" || node.Type() == "compound_statement"
+		}
 		currentNode := identifierNode.Parent()
 		for currentNode.Parent() != nil {
 			currentNode = currentNode.Parent()
@@ -612,29 +619,31 @@ func findDefinition(identifierNode *sitter.Node, identifier string, sourceCode [
 					return parser.NewParserRange(paramNode), paramNode, nil
 				}
 			}
+
 			for i := 0; i < int(currentNode.ChildCount()); i++ {
 				currentChildNode := currentNode.Child(i)
-				if currentChildNode.Type() == "preproc_def" {
-					identifierDeclarationNode := currentChildNode.ChildByFieldName("name")
-					if identifierDeclarationNode != nil && identifierDeclarationNode.Content(sourceCode) == identifier {
-						return parser.NewParserRange(identifierDeclarationNode), identifierDeclarationNode, nil
+				if isGlobalScope(currentChildNode) {
+					if currentChildNode.Type() == "preproc_def" {
+						identifierDeclarationNode := currentChildNode.ChildByFieldName("name")
+						if identifierDeclarationNode != nil && identifierDeclarationNode.Content(sourceCode) == identifier {
+							return parser.NewParserRange(identifierDeclarationNode), identifierDeclarationNode, nil
+						}
 					}
-				}
-				if currentChildNode.Type() == "compound_statement" {
-					for i := 0; i < int(currentChildNode.ChildCount()); i++ {
-						// No point looking at nodes past the identifier node.
-						if currentChildNode.Child(i).StartPoint().Row > identifierNode.EndPoint().Row {
-							break
+					if currentChildNode.Type() == "compound_statement" {
+						for i := 0; i < int(currentChildNode.ChildCount()); i++ {
+							if isNodeRowAfterIdentifierNode(currentChildNode.Child(i)) {
+								break
+							}
+							locRange, n, err := findDeclaration(currentChildNode.Child(i), identifier, sourceCode)
+							if err != nil {
+								continue
+							}
+							return locRange, n, nil
 						}
-						locRange, n, err := findDeclaration(currentChildNode.Child(i), identifier, sourceCode)
-						if err != nil {
-							continue
-						}
-						return locRange, n, nil
 					}
 				}
 				// No point looking at nodes past the identifier node.
-				if currentChildNode.StartPoint().Row > identifierNode.EndPoint().Row {
+				if isNodeRowAfterIdentifierNode(currentChildNode) {
 					break
 				}
 				locRange, n, err := findDeclaration(currentChildNode, identifier, sourceCode)
