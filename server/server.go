@@ -550,6 +550,32 @@ func filterLibItems(identifierNode *sitter.Node, libItems []string, sourceCode [
 
 			case "number_literal":
 				types = append(types, "Integer")
+
+			case "binary_expression":
+				expressionNode := argIdentifierNode
+				// Binary expressions are recursive, we need to traverse down
+				// to the leaf of the binary expression tree.
+				for expressionNode.ChildByFieldName("left") != nil {
+					expressionNode = expressionNode.ChildByFieldName("left")
+				}
+				switch expressionNode.Type() {
+				case "identifier":
+					_, n, err := findDefinition(expressionNode, expressionNode.Content(sourceCode), sourceCode)
+					if err != nil {
+						break
+					}
+					varType, err := getDefinitionType(n, sourceCode)
+					if err != nil {
+						break
+					}
+					types = append(types, varType)
+
+				case "number_literal":
+					types = append(types, "Integer")
+
+				case "string_literal":
+					types = append(types, "Text")
+				}
 			}
 		}
 		return types

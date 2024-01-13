@@ -434,9 +434,39 @@ void main() {
 					Position: protocol.Position{Line: 2, Character: 4},
 					Pattern:  []string{createFuncSignaturePattern("Set_width_in_chars", []string{"Widget", "Integer"})},
 				},
-				// TODO: Overloads for Widget (Get_id(Widget widget))
-				// TODO: Binary expression hover e.g. Get_subtext(currentAttribute, 1, numOfCharsToSeparator-1);.
+				{
+					Desc: "binary expression in arg list - variable",
+					SourceCode: `void main() {
+    Integer length = 1;
+    Get_subtext("hello world", 1, length - 1);
+}`,
+					Position: protocol.Position{Line: 2, Character: 4},
+					Pattern:  []string{createFuncSignaturePattern("Get_subtext", []string{"Text", "Integer", "Integer"})},
+				},
+				{
+					Desc: "binary expression in arg list - number literal",
+					SourceCode: `void main() {
+    Get_subtext("hello world", 1, 2 - 1);
+}`,
+					Position: protocol.Position{Line: 1, Character: 4},
+					Pattern:  []string{createFuncSignaturePattern("Get_subtext", []string{"Text", "Integer", "Integer"})},
+				},
+				{
+					Desc: "binary expression in arg list - string literal",
+					SourceCode: `void main() {
+    Get_subtext("hello" + " " + "world", 1, 2 - 1);
+}`,
+					Position: protocol.Position{Line: 1, Character: 4},
+					Pattern:  []string{createFuncSignaturePattern("Get_subtext", []string{"Text", "Integer", "Integer"})},
+				},
+				// TODO: Real in binary expession.
 				// TODO: Set_ups.h constants.
+				// TODO: Arrays in lib func args
+				//     Text scopes[2];
+				//     scopes[1] = "root";
+				//     scopes[2] = "full tree";
+				//     Set_data(scopeChoiceBox,2,scopes); // No def on hover on Set_data.
+				//     Set_data(scopeChoiceBox,scopes[1]); // No def on hover on Set_data.
 			}
 			for _, testCase := range testCases {
 				t.Run(testCase.Desc, func(t *testing.T) {
