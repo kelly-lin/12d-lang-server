@@ -599,7 +599,7 @@ func findDefinition(identifierNode *sitter.Node, identifier string, sourceCode [
 		return locRange, node, err
 
 	default:
-		currentNode := identifierNode
+		currentNode := identifierNode.Parent()
 		for currentNode.Parent() != nil {
 			currentNode = currentNode.Parent()
 			if currentNode.Type() == "function_definition" {
