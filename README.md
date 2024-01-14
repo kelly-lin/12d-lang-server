@@ -37,12 +37,25 @@ Run automated tests by executing `make test`.
 ## Features
 
 - Go to definition.
+  TODO: add gif
 - Hover support.
   - User defined function documentation in markdown.
+    TODO: add gif
+
+## Planned features
+
+- Autoformatting.
+- Autocompletion.
 
 ## Contributing
 
 You can help the project by contributing in the following ways:
+
+### Add a feature request
+
+Submit a feature request through opening a [Github issue](https://github.com/kelly-lin/12d-lang-server/issues).
+with a [Feature Request] tag in the issue subject. e.g. `[Feature Request]
+Autocompletion`.
 
 ### Report a bug
 
@@ -63,19 +76,3 @@ Patching](./doc/4dm/README.md).
 ### Bugfixes
 
 Contribute to the project directly by fixing bugs and opening a pull request.
-
-### TODO
-
-- [ ] Script to vendor [Tree Sitter parser](https://github.com/kelly-lin/tree-sitter-12dpl).
-
-- [ ] Support reference type func parameters.
-
-  ```12dpl
-  Integer Foo(Integer &bar) {}
-  ```
-
-- [ ] Support multiple single line declaration.
-
-  ```12dpl
-  Integer foo, bar = 1;
-  ```
