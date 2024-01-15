@@ -76,3 +76,9 @@ Patching](./doc/4dm/README.md).
 ### Bugfixes
 
 Contribute to the project directly by fixing bugs and opening a pull request.
+
+## Troubleshooting
+
+- Error when compiling on windows `Cgo: sorry, unimplemented: 64-bit mode not compiled in`
+  You have a c complier which does not support 32 and 64 bit. Install [tdm-gcc](https://jmeubank.github.io/tdm-gcc/).
+  to fix.
