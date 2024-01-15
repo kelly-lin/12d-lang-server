@@ -38,3 +38,7 @@ genpatch:
 .PHONY:
 vendorparser:
 	@./scripts/vendor_parser.sh ./parser
+
+.PHONY:
+build-windows:
+	GOOS='windows' GOARCH='amd64' go build -o 12dls.exe ./cmd/12dls
