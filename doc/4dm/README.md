@@ -52,12 +52,12 @@ correct the mistakes.
    }
    ```
 
-2. Open up a terminal and run the patcher script `make genpatch`. This will
+2. Open up a terminal and run the patcher script `make gen-patch`. This will
    create a new patch object in `/doc/4dm/patch.json` if it does not exist
    or modified otherwise.
-3. Run the command `make gendoc` to patch the `/doc/4dm/generated.json` file
+3. Run the command `make gen-doc` to patch the `/doc/4dm/generated.json` file
    with updated changes.
-4. Run the command `make genlib` to update the library. This will regenerate the
+4. Run the command `make gen-lib` to update the library. This will regenerate the
    go code that the language server uses to serve documentation to the client.
 5. Run the tests `make test` and ensure everything is still passing.
 6. Commit changes to `/doc/4dm/patch.json`, `/doc/4dm/generated.json` and
