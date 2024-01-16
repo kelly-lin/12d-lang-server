@@ -2885,7 +2885,6 @@ var Lib = map[string][]string{
 		"```12dpl\nInteger Get_id(Log_Line line, Integer \u0026id)\n```\n---\nGet the Id of a given Log_Line line and return it in Integer id. A function return value of zero indicates the id was successfully returned.",
 		"```12dpl\nInteger Get_id(Function func, Uid \u0026id)\n```\n---\nFor the Function/Macro_Function func, get its unique Uid in the Project and return it in id. A function return value of zero indicates the Uid was successfully returned.",
 		"```12dpl\nInteger Get_id(Function func, Integer \u0026id)\n```\n---\nFor the Function/Macro_Function func, get its unique id in the Project and return it in id. A function return value of zero indicates the id was successfully returned. Deprecation Warning - this function has now been deprecated and will no longer exist unlessspecial compile flags are used.  Use Get_id(Function func,Uid \\u0026id) instead.",
-		"```12dpl\nInteger Get_id(Widget widget)\n```",
 	},
 	"Get_id64": {
 		"```12dpl\nInteger64 Get_id64(Widget widget)\n```\n---\nReturn the ID of a given Widget widget as a 64bit Integer.",

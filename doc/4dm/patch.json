@@ -24,6 +24,10 @@
     {
       "id": "977",
       "note": "this is a duplicate of id = 997: Integer Set_data(Choice_Box box, Integer nc, Text choices[])"
+    },
+    {
+      "id": "879",
+      "note": "duplicate of id = 1097"
     }
   ]
 }
