@@ -338,45 +338,56 @@ func getHoverContents(identifierNode *sitter.Node, identifier string, sourceCode
 				return []string{}
 			}
 			contents = filterLibItems(identifierNode, libItems, sourceCode)
-		} else {
-			// We found the definition, get the signature.
-			if isFuncDefinition(node) {
-				funcDefNode := node.Parent().Parent()
-				if varType, declaration, desc, err := getFuncDocComponents(funcDefNode, sourceCode); err == nil {
-					contents = append(contents, createHoverDeclarationDocString(varType, declaration, desc, ""))
-				}
+			return contents
+		}
+		// We found the definition, get the signature.
+		if isFuncDefinition(node) {
+			funcDefNode := node.Parent().Parent()
+			if varType, declaration, desc, err := getFuncDocComponents(funcDefNode, sourceCode); err == nil {
+				contents = append(contents, createHoverDeclarationDocString(varType, declaration, desc, ""))
+				return contents
 			}
 		}
-	} else {
-		if _, node, err := findDefinition(identifierNode, identifier, sourceCode); err == nil && node.Type() == "identifier" {
-			if nodeType, err := getDefinitionType(node, sourceCode); err == nil {
-				prefix := ""
-				identifier := node.Content(sourceCode)
-				if isParameterDeclaration(node) {
-					prefix = "parameter"
-					if node.Parent().Type() == "pointer_declarator" {
-						identifier = node.Parent().Content(sourceCode)
-					}
-				}
-				if isFuncDefinition(node) {
-					funcDefNode := node.Parent().Parent()
-					if varType, declaration, desc, err := getFuncDocComponents(funcDefNode, sourceCode); err == nil {
-						contents = append(contents, createHoverDeclarationDocString(varType, declaration, desc, ""))
-					}
-				} else {
-					if node.Parent().Type() == "array_declarator" {
-						nodeType = strings.TrimSuffix(nodeType, "[]")
-						// TODO: refactor this, it is ugly.
-						contents = append(contents, createHoverDeclarationDocString(nodeType, identifier+"[]", "", prefix))
-					} else if node.Parent().Type() == "preproc_def" {
-						signature := strings.TrimSpace(node.Parent().Content(sourceCode))
-						contents = append(contents, protocol.CreateDocMarkdownString(signature, ""))
-					} else {
-						contents = append(contents, createHoverDeclarationDocString(nodeType, identifier, "", prefix))
-					}
-				}
-			}
+		return contents
+	}
+
+	_, node, err := findDefinition(identifierNode, identifier, sourceCode)
+	if err != nil || node == nil || node.Type() != "identifier" {
+		return contents
+	}
+	nodeType, err := getDefinitionType(node, sourceCode)
+	if err != nil {
+		return contents
+	}
+	prefix := ""
+	canonicalIdentifier := node.Content(sourceCode)
+	if isParameterDeclaration(node) {
+		prefix = "parameter"
+		if node.Parent().Type() == "pointer_declarator" {
+			canonicalIdentifier = node.Parent().Content(sourceCode)
 		}
+	}
+
+	if isFuncDefinition(node) {
+		funcDefNode := node.Parent().Parent()
+		if varType, declaration, desc, err := getFuncDocComponents(funcDefNode, sourceCode); err == nil {
+			contents = append(contents, createHoverDeclarationDocString(varType, declaration, desc, ""))
+			return contents
+		}
+	}
+
+	switch node.Parent().Type() {
+	case "array_declarator":
+		nodeType = strings.TrimSuffix(nodeType, "[]")
+		// TODO: refactor this, it is ugly.
+		contents = append(contents, createHoverDeclarationDocString(nodeType, canonicalIdentifier+"[]", "", prefix))
+
+	case "preproc_def":
+		signature := strings.TrimSpace(node.Parent().Content(sourceCode))
+		contents = append(contents, protocol.CreateDocMarkdownString(signature, ""))
+
+	default:
+		contents = append(contents, createHoverDeclarationDocString(nodeType, canonicalIdentifier, "", prefix))
 	}
 	return contents
 }
