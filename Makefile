@@ -1,10 +1,14 @@
 .PHONY:
-run:
-	go run ./main.go
+install:
+	go install ./cmd/12dls
 
 .PHONY:
 build:
 	go build ./cmd/12dls
+
+.PHONY:
+run:
+	go run ./main.go
 
 .PHONY:
 log:
