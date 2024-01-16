@@ -62,3 +62,25 @@ correct the mistakes.
 5. Run the tests `make test` and ensure everything is still passing.
 6. Commit changes to `/doc/4dm/patch.json`, `/doc/4dm/generated.json` and
    `/lang/lib.go` and open a pull request.
+
+## How to remove a manual item
+
+Sometimes there are items in the generated manual which should not exist, e.g
+duplicate manual items. In these cases, we can delete them by creating a patch
+which sets the names and description to an empty array and string respectively.
+
+In the example below, if we manually add this to the patch file, it will
+effectively remove the documentation from the language server. Technically, it is
+not deleted but the entry will never be visible to the user as it will never
+match anything since the names and description is blank.
+
+```json
+{
+  "patches": [
+    {
+      "id": "977",
+      "note": "this is a duplicate of id = 997: Integer Set_data(Choice_Box box, Integer nc, Text choices[])"
+    }
+  ]
+}
+```
