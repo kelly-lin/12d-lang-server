@@ -368,6 +368,9 @@ func getHoverContents(identifierNode *sitter.Node, identifier string, sourceCode
 						nodeType = strings.TrimSuffix(nodeType, "[]")
 						// TODO: refactor this, it is ugly.
 						contents = append(contents, createHoverDeclarationDocString(nodeType, identifier+"[]", "", prefix))
+					} else if node.Parent().Type() == "preproc_def" {
+						signature := strings.TrimSpace(node.Parent().Content(sourceCode))
+						contents = append(contents, protocol.CreateDocMarkdownString(signature, ""))
 					} else {
 						contents = append(contents, createHoverDeclarationDocString(nodeType, identifier, "", prefix))
 					}
