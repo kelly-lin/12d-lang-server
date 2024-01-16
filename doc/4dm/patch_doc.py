@@ -21,6 +21,11 @@ def patch_manual(patch_filepath, manual, manual_id_idx_map):
                     exit("patch failed, manual item with id {} does not exist".format(
                         patch["id"]))
                 manual_idx = manual_id_idx_map[patch_id]
+                should_clear_manual_item = "names" not in patch and "description" not in patch
+                if should_clear_manual_item:
+                    manual["items"][manual_idx]["names"] = []
+                    manual["items"][manual_idx]["description"] = ""
+
                 if "names" in patch:
                     manual["items"][manual_idx]["names"] = patch["names"]
                 if "description" in patch:

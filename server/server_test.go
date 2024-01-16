@@ -332,12 +332,25 @@ void main() {
 		t.Run("library funcs", func(t *testing.T) {
 			createFuncSignaturePattern := func(name string, types []string) string {
 				result := ""
+				isArrayType := func(t string) bool {
+					return strings.HasSuffix(t, "[]")
+				}
 				for idx, t := range types {
 					if idx == 0 {
+						if isArrayType(t) {
+							result = fmt.Sprintf(`%s\s*&?\w+\[\]`, strings.TrimSuffix(t, "[]"))
+							continue
+						}
 						result = fmt.Sprintf(`%s\s*&?\w+`, t)
 						continue
 					}
-					result = fmt.Sprintf(`%s,\s*%s\s*&?\w+`, result, t)
+
+					if isArrayType(t) {
+						result = fmt.Sprintf(`%s,\s*%s\s*&?\w+\[\]`, result, strings.TrimSuffix(t, "[]"))
+						continue
+					} else {
+						result = fmt.Sprintf(`%s,\s*%s\s*&?\w+`, result, t)
+					}
 				}
 				if result != "" {
 					result = fmt.Sprintf(`%s\(%s\)`, name, result)
@@ -483,13 +496,25 @@ void main() {
 					Position: protocol.Position{Line: 1, Character: 4},
 					Pattern:  []string{createFuncSignaturePattern("Sin", []string{"Real"})},
 				},
-				// TODO: Set_ups.h constants.
+				{
+					Desc: "static arrays - array arg",
+					SourceCode: `void main() {
+    Choice_Box choice_box;
+    Text choices[2];
+    Set_data(choice_box, 2, choices);
+}`,
+					Position: protocol.Position{Line: 3, Character: 4},
+					Pattern:  []string{createFuncSignaturePattern("Set_data", []string{"Choice_Box", "Integer", "Text[]"})},
+				},
 				// TODO: Arrays in lib func args
 				//     Text scopes[2];
 				//     scopes[1] = "root";
 				//     scopes[2] = "full tree";
 				//     Set_data(scopeChoiceBox,2,scopes); // No def on hover on Set_data.
 				//     Set_data(scopeChoiceBox,scopes[1]); // No def on hover on Set_data.
+				// TODO: Set_ups.h constants.
+				// TODO: Return values of func expressions should return lib
+				// func e.g. Exit(ReturnsOne()); should match Exit(Integer arg);
 			}
 			for _, testCase := range testCases {
 				t.Run(testCase.Desc, func(t *testing.T) {
@@ -705,6 +730,8 @@ void Forever(Integer subject) {
 					Position: protocol.Position{Line: 1, Character: 5},
 					Pattern:  []string{"```12dpl\nvoid Forever(Integer subject)\n```\n---\nLoops forever."},
 				},
+				// TODO: preproc defs should show the value that it is defined
+				// as.
 			}
 			for _, testCase := range testCases {
 				t.Run(testCase.Desc, func(t *testing.T) {

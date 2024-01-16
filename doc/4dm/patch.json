@@ -20,6 +20,10 @@
       ],
       "description": "Create a Text from the Text text that has all the alphabetic characters converted to upper-case. The function return value is the upper case Text.",
       "id": "383"
+    },
+    {
+      "id": "977",
+      "note": "this is a duplicate of id = 997: Integer Set_data(Choice_Box box, Integer nc, Text choices[])"
     }
   ]
 }

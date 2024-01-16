@@ -22791,9 +22791,7 @@
       "id": "889"
     },
     {
-      "names": [
-        "Integer Set_data(Choice_Box box,Integer nc,Text choices[])"
-      ],
+      "names": [],
       "description": "",
       "id": "977"
     },

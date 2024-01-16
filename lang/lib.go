@@ -5902,7 +5902,6 @@ var Lib = map[string][]string{
 		"```12dpl\nInteger Set_data(Message_Box box, Text text_data)\n```\n---\nSet the data of type Text for the Message_Box box as the Text text_data. If the Message_Box box is on a panel then the message text_data will be displayed in thePage 1094Panels and Widgets\\u000cChapterinformation area of box. A function return value of zero indicates the data was successfully set.",
 		"```12dpl\nInteger Set_data(Select_Button select, Element string)\n```\n---\nSets the Element for the Select_Button select to string. A function return value of zero indicates the data was successfully set.",
 		"```12dpl\nInteger Set_data(Select_Button select, Text string)\n```\n---\nSet the model and string name as a Text string in the form \\\"model_name-\\u003estring_name\\\"A function return value of zero indicates the data was successfully set.",
-		"```12dpl\nInteger Set_data(Choice_Box box,Integer nc,Text choices[])\n```",
 	},
 	"Set_data_backslash_n": {
 		"```12dpl\nInteger Set_data_backslash_n(Text_Edit_Box widget,Text data)\n```",

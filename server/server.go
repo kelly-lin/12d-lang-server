@@ -365,6 +365,7 @@ func getHoverContents(identifierNode *sitter.Node, identifier string, sourceCode
 					}
 				} else {
 					if node.Parent().Type() == "array_declarator" {
+						nodeType = strings.TrimSuffix(nodeType, "[]")
 						// TODO: refactor this, it is ugly.
 						contents = append(contents, createHoverDeclarationDocString(nodeType, identifier+"[]", "", prefix))
 					} else {
@@ -471,7 +472,7 @@ func isFuncDefinition(node *sitter.Node) bool {
 // which represents: "Integer One = 1;" where node has content "One", will
 // return "Integer".
 func getDefinitionType(node *sitter.Node, sourceCode []byte) (string, error) {
-	var typeNode *sitter.Node
+	varType := ""
 	if node.Parent().Type() == "preproc_def" && node.Parent().ChildByFieldName("value").Child(0) != nil {
 		if node.Parent().ChildByFieldName("value").Child(0).Type() == "string_literal" {
 			return "Text", nil
@@ -481,27 +482,33 @@ func getDefinitionType(node *sitter.Node, sourceCode []byte) (string, error) {
 		}
 	}
 	if node.Parent().Type() == "declaration" && node.Parent().ChildByFieldName("type") != nil {
-		typeNode = node.Parent().ChildByFieldName("type")
+		typeNode := node.Parent().ChildByFieldName("type")
+		varType = typeNode.Content(sourceCode)
 	}
 	if node.Parent().Type() == "init_declarator" && node.Parent().Parent().ChildByFieldName("type") != nil {
-		typeNode = node.Parent().Parent().ChildByFieldName("type")
+		typeNode := node.Parent().Parent().ChildByFieldName("type")
+		varType = typeNode.Content(sourceCode)
 	}
 	if node.Parent().Type() == "parameter_declaration" {
-		typeNode = node.Parent().ChildByFieldName("type")
+		typeNode := node.Parent().ChildByFieldName("type")
+		varType = typeNode.Content(sourceCode)
 	}
 	if node.Parent().Type() == "pointer_declarator" && node.Parent().Parent().ChildByFieldName("type") != nil {
-		typeNode = node.Parent().Parent().ChildByFieldName("type")
+		typeNode := node.Parent().Parent().ChildByFieldName("type")
+		varType = typeNode.Content(sourceCode)
 	}
 	if node.Parent().Type() == "function_declarator" && node.Parent().Parent().ChildByFieldName("type") != nil {
-		typeNode = node.Parent().Parent().ChildByFieldName("type")
+		typeNode := node.Parent().Parent().ChildByFieldName("type")
+		varType = typeNode.Content(sourceCode)
 	}
 	if node.Parent().Type() == "array_declarator" && node.Parent().Parent().ChildByFieldName("type") != nil {
-		typeNode = node.Parent().Parent().ChildByFieldName("type")
+		typeNode := node.Parent().Parent().ChildByFieldName("type")
+		varType = typeNode.Content(sourceCode) + "[]"
 	}
-	if typeNode == nil {
+	if varType == "" {
 		return "", errors.New("definition type not found for node")
 	}
-	return typeNode.Content(sourceCode), nil
+	return varType, nil
 }
 
 // Returns true if the idenitifer node provided is a parameter declaration, i.e.
@@ -590,6 +597,11 @@ func filterLibItems(identifierNode *sitter.Node, libItems []string, sourceCode [
 	funcIdentifier := identifierNode.Content(sourceCode)
 	types := getArgumentTypes(argsNode)
 	pattern := ""
+	// This matches "Type (&?)Identifier".
+	// basePattern := `%s\s*&?\w+`
+	isArrayType := func(t string) bool {
+		return strings.HasSuffix(t, "[]")
+	}
 	for idx, t := range types {
 		if alias, ok := lang.TypeAliases[t]; ok {
 			for _, a := range alias {
@@ -598,10 +610,20 @@ func filterLibItems(identifierNode *sitter.Node, libItems []string, sourceCode [
 			t = fmt.Sprintf("(?:%s)", t)
 		}
 		if idx == 0 {
+			if isArrayType(t) {
+				pattern = fmt.Sprintf(`%s\s*&?\w+\[\]`, strings.TrimSuffix(t, "[]"))
+				continue
+			}
 			pattern = fmt.Sprintf(`%s\s*&?\w+`, t)
 			continue
 		}
-		pattern = fmt.Sprintf(`%s,\s*%s\s*&?\w+`, pattern, t)
+
+		if isArrayType(t) {
+			pattern = fmt.Sprintf(`%s,\s*%s\s*&?\w+\[\]`, pattern, strings.TrimSuffix(t, "[]"))
+			continue
+		} else {
+			pattern = fmt.Sprintf(`%s,\s*%s\s*&?\w+`, pattern, t)
+		}
 	}
 	pattern = fmt.Sprintf(`%s\(%s\)`, funcIdentifier, pattern)
 	for _, item := range libItems {
