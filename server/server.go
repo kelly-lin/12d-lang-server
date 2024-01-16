@@ -572,6 +572,25 @@ func filterLibItems(identifierNode *sitter.Node, libItems []string, sourceCode [
 			case "number_literal":
 				types = append(types, "Integer")
 
+			case "subscript_expression":
+				subscriptArgumentIdentifierNode := argIdentifierNode.ChildByFieldName("argument")
+				if subscriptArgumentIdentifierNode == nil {
+					break
+				}
+				_, n, err := findDefinition(subscriptArgumentIdentifierNode, subscriptArgumentIdentifierNode.Content(sourceCode), sourceCode)
+				if err != nil {
+					break
+				}
+				varType, err := getDefinitionType(n, sourceCode)
+				if err != nil {
+					break
+				}
+				// The argument identifier node is a subscript expression node,
+				// which means we want the type base type and not the array
+				// type.
+				varType = strings.TrimSuffix(varType, "[]")
+				types = append(types, varType)
+
 			case "binary_expression":
 				expressionNode := argIdentifierNode
 				// Binary expressions are recursive, we need to traverse down

@@ -506,15 +506,22 @@ void main() {
 					Position: protocol.Position{Line: 3, Character: 4},
 					Pattern:  []string{createFuncSignaturePattern("Set_data", []string{"Choice_Box", "Integer", "Text[]"})},
 				},
-				// TODO: Arrays in lib func args
-				//     Text scopes[2];
-				//     scopes[1] = "root";
-				//     scopes[2] = "full tree";
-				//     Set_data(scopeChoiceBox,2,scopes); // No def on hover on Set_data.
-				//     Set_data(scopeChoiceBox,scopes[1]); // No def on hover on Set_data.
+				{
+					Desc: "static arrays - array value arg",
+					SourceCode: `void main() {
+    Choice_Box choice_box;
+    Text choices[2];
+    Set_data(choice_box, choices[1]);
+}`,
+					Position: protocol.Position{Line: 3, Character: 4},
+					Pattern:  []string{createFuncSignaturePattern("Set_data", []string{"Choice_Box", "Text"})},
+				},
 				// TODO: Set_ups.h constants.
+				// TODO: Print("text"); shows 2 results.
 				// TODO: Return values of func expressions should return lib
 				// func e.g. Exit(ReturnsOne()); should match Exit(Integer arg);
+				// TODO: Set_root_node not working with local XML_node and
+				// &XML_Document
 			}
 			for _, testCase := range testCases {
 				t.Run(testCase.Desc, func(t *testing.T) {
@@ -565,171 +572,171 @@ void main() {
 
 		t.Run("declarations", func(t *testing.T) {
 			testCases := []TestCase{
-// 				{
-// 					Desc: "local initialised var",
-// 					SourceCode: `Integer AddOne(Integer addend) {
-//     Integer augend = 1;
-//     return addend, augend;
-// }`,
-// 					Position: protocol.Position{Line: 2, Character: 19},
-// 					Pattern:  []string{"```12dpl\nInteger augend\n```"},
-// 				},
-// 				{
-// 					Desc: "no definition for identifier declared after usage",
-// 					SourceCode: `void main() {
-//     Print(text);
-// 	Text text = "Hello world";
-// }`,
-// 					Position: protocol.Position{Line: 1, Character: 10},
-// 					Pattern:  []string{},
-// 				},
-// 				{
-// 					Desc: "local uninitialised var",
-// 					SourceCode: `Integer AddOne(Integer addend) {
-//     Integer augend;
-// 	augend = 1;
-//     return addend, augend;
-// }`,
-// 					Position: protocol.Position{Line: 3, Character: 19},
-// 					Pattern:  []string{"```12dpl\nInteger augend\n```"},
-// 				},
-// 				{
-// 					Desc: "static array",
-// 					SourceCode: `void main() {
-//     Text arr[3];
-// }`,
-// 					Position: protocol.Position{Line: 1, Character: 9},
-// 					Pattern:  []string{"```12dpl\nText arr[]\n```"},
-// 				},
-// 				{
-// 					Desc: "func param",
-// 					SourceCode: `Integer Identity(Integer id) {
-//     return id;
-// }`,
-// 					Position: protocol.Position{Line: 1, Character: 11},
-// 					Pattern:  []string{"```12dpl\n(parameter) Integer id\n```"},
-// 				},
-// 				{
-// 					Desc: "multiple variable declaration - initialised var",
-// 					SourceCode: `Integer Two() {
-//     Integer a = 1, b;
-//     return a + b;
-// }`,
-// 					Position: protocol.Position{Line: 2, Character: 11},
-// 					Pattern:  []string{"```12dpl\nInteger a\n```"},
-// 				},
-// 				{
-// 					Desc: "multiple variable declaration - uninitialised var",
-// 					SourceCode: `Integer Two() {
-//     Integer a = 1, b;
-//     return a + b;
-// }`,
-// 					Position: protocol.Position{Line: 2, Character: 15},
-// 					Pattern:  []string{"```12dpl\nInteger b\n```"},
-// 				},
-// 				{
-// 					Desc: "reference param hover in local scope",
-// 					SourceCode: `void Identity(Dynamic_Text &items) {
-//     return items;
-// }`,
-// 					Position: protocol.Position{Line: 1, Character: 11},
-// 					Pattern:  []string{"```12dpl\n(parameter) Dynamic_Text &items\n```"},
-// 				},
-// 				{
-// 					Desc: "user defined func - no doc",
-// 					SourceCode: `void Hello() {
-//     Print("hello\n");
-// }
-//
-// void Forever(Integer subject) {
-//     return Forever(subject);
-// }`,
-// 					Position: protocol.Position{Line: 5, Character: 11},
-// 					Pattern:  []string{"```12dpl\nvoid Forever(Integer subject)\n```"},
-// 				},
-// 				{
-// 					Desc: "user defined func - poorly formatted multi line parameter list",
-// 					SourceCode: `void SomeFunc(    Text a,
-// 	Text b,
-//          Integer c
-// ) {
-//     return SomeFunc(a, b);
-// }`,
-// 					Position: protocol.Position{Line: 4, Character: 11},
-// 					Pattern:  []string{"```12dpl\nvoid SomeFunc(Text a, Text b, Integer c)\n```"},
-// 				},
-// 				{
-// 					Desc: "user defined func - multi line parameter list with comment",
-// 					SourceCode: `// This function does nothing.
-// void SomeFunc(
-//     Text a,
-//     Integer b
-// ) {
-//     return SomeFunc(a, b);
-// }`,
-// 					Position: protocol.Position{Line: 5, Character: 11},
-// 					Pattern:  []string{"```12dpl\nvoid SomeFunc(Text a, Integer b)\n```\n---\nThis function does nothing."},
-// 				},
-// 				{
-// 					Desc: "user defined func - single line doc",
-// 					SourceCode: `// Loops forever.
-// void Forever(Integer subject) {
-//     return Forever(subject);
-// }`,
-// 					Position: protocol.Position{Line: 2, Character: 11},
-// 					Pattern:  []string{"```12dpl\nvoid Forever(Integer subject)\n```\n---\nLoops forever."},
-// 				},
-// 				{
-// 					Desc: "user defined func - single line comment not a doc if not directly above definition",
-// 					SourceCode: `// Loops forever.
-//
-// void Forever(Integer subject) {
-//     return Forever(subject);
-// }`,
-// 					Position: protocol.Position{Line: 3, Character: 11},
-// 					Pattern:  []string{"```12dpl\nvoid Forever(Integer subject)\n```"},
-// 				},
-// 				{
-// 					Desc: "user defined func - multiline comment not a doc if not directly above definition",
-// 					SourceCode: `/* 
-//     Loops forever
-// */.
-//
-// void Forever(Integer subject) {
-//     return Forever(subject);
-// }`,
-// 					Position: protocol.Position{Line: 5, Character: 11},
-// 					Pattern:  []string{"```12dpl\nvoid Forever(Integer subject)\n```"},
-// 				},
-// 				{
-// 					Desc: "user defined func - multi line doc",
-// 					SourceCode: `/*
-//     Loops forever.
-//     subject is an integer.
-// */
-// void Forever(Integer subject) {
-//     return Forever(subject);
-// }`,
-// 					Position: protocol.Position{Line: 5, Character: 11},
-// 					Pattern:  []string{"```12dpl\nvoid Forever(Integer subject)\n```\n---\nLoops forever.\nsubject is an integer."},
-// 				},
-// 				{
-// 					Desc: "user defined func - single line doc - on definition",
-// 					SourceCode: `void Forever(Integer subject) {
-//     return Forever(subject);
-// }`,
-// 					Position: protocol.Position{Line: 0, Character: 5},
-// 					Pattern:  []string{"```12dpl\nvoid Forever(Integer subject)\n```"},
-// 				},
-// 				{
-// 					Desc: "user defined func - single line doc - on definition with doc",
-// 					SourceCode: `// Loops forever.
-// void Forever(Integer subject) {
-//     return Forever(subject);
-// }`,
-// 					Position: protocol.Position{Line: 1, Character: 5},
-// 					Pattern:  []string{"```12dpl\nvoid Forever(Integer subject)\n```\n---\nLoops forever."},
-// 				},
+				{
+					Desc: "local initialised var",
+					SourceCode: `Integer AddOne(Integer addend) {
+    Integer augend = 1;
+    return addend, augend;
+}`,
+					Position: protocol.Position{Line: 2, Character: 19},
+					Pattern:  []string{"```12dpl\nInteger augend\n```"},
+				},
+				{
+					Desc: "no definition for identifier declared after usage",
+					SourceCode: `void main() {
+    Print(text);
+	Text text = "Hello world";
+}`,
+					Position: protocol.Position{Line: 1, Character: 10},
+					Pattern:  []string{},
+				},
+				{
+					Desc: "local uninitialised var",
+					SourceCode: `Integer AddOne(Integer addend) {
+    Integer augend;
+	augend = 1;
+    return addend, augend;
+}`,
+					Position: protocol.Position{Line: 3, Character: 19},
+					Pattern:  []string{"```12dpl\nInteger augend\n```"},
+				},
+				{
+					Desc: "static array",
+					SourceCode: `void main() {
+    Text arr[3];
+}`,
+					Position: protocol.Position{Line: 1, Character: 9},
+					Pattern:  []string{"```12dpl\nText arr[]\n```"},
+				},
+				{
+					Desc: "func param",
+					SourceCode: `Integer Identity(Integer id) {
+    return id;
+}`,
+					Position: protocol.Position{Line: 1, Character: 11},
+					Pattern:  []string{"```12dpl\n(parameter) Integer id\n```"},
+				},
+				{
+					Desc: "multiple variable declaration - initialised var",
+					SourceCode: `Integer Two() {
+    Integer a = 1, b;
+    return a + b;
+}`,
+					Position: protocol.Position{Line: 2, Character: 11},
+					Pattern:  []string{"```12dpl\nInteger a\n```"},
+				},
+				{
+					Desc: "multiple variable declaration - uninitialised var",
+					SourceCode: `Integer Two() {
+    Integer a = 1, b;
+    return a + b;
+}`,
+					Position: protocol.Position{Line: 2, Character: 15},
+					Pattern:  []string{"```12dpl\nInteger b\n```"},
+				},
+				{
+					Desc: "reference param hover in local scope",
+					SourceCode: `void Identity(Dynamic_Text &items) {
+    return items;
+}`,
+					Position: protocol.Position{Line: 1, Character: 11},
+					Pattern:  []string{"```12dpl\n(parameter) Dynamic_Text &items\n```"},
+				},
+				{
+					Desc: "user defined func - no doc",
+					SourceCode: `void Hello() {
+    Print("hello\n");
+}
+
+void Forever(Integer subject) {
+    return Forever(subject);
+}`,
+					Position: protocol.Position{Line: 5, Character: 11},
+					Pattern:  []string{"```12dpl\nvoid Forever(Integer subject)\n```"},
+				},
+				{
+					Desc: "user defined func - poorly formatted multi line parameter list",
+					SourceCode: `void SomeFunc(    Text a,
+	Text b,
+         Integer c
+) {
+    return SomeFunc(a, b);
+}`,
+					Position: protocol.Position{Line: 4, Character: 11},
+					Pattern:  []string{"```12dpl\nvoid SomeFunc(Text a, Text b, Integer c)\n```"},
+				},
+				{
+					Desc: "user defined func - multi line parameter list with comment",
+					SourceCode: `// This function does nothing.
+void SomeFunc(
+    Text a,
+    Integer b
+) {
+    return SomeFunc(a, b);
+}`,
+					Position: protocol.Position{Line: 5, Character: 11},
+					Pattern:  []string{"```12dpl\nvoid SomeFunc(Text a, Integer b)\n```\n---\nThis function does nothing."},
+				},
+				{
+					Desc: "user defined func - single line doc",
+					SourceCode: `// Loops forever.
+void Forever(Integer subject) {
+    return Forever(subject);
+}`,
+					Position: protocol.Position{Line: 2, Character: 11},
+					Pattern:  []string{"```12dpl\nvoid Forever(Integer subject)\n```\n---\nLoops forever."},
+				},
+				{
+					Desc: "user defined func - single line comment not a doc if not directly above definition",
+					SourceCode: `// Loops forever.
+
+void Forever(Integer subject) {
+    return Forever(subject);
+}`,
+					Position: protocol.Position{Line: 3, Character: 11},
+					Pattern:  []string{"```12dpl\nvoid Forever(Integer subject)\n```"},
+				},
+				{
+					Desc: "user defined func - multiline comment not a doc if not directly above definition",
+					SourceCode: `/* 
+    Loops forever
+*/.
+
+void Forever(Integer subject) {
+    return Forever(subject);
+}`,
+					Position: protocol.Position{Line: 5, Character: 11},
+					Pattern:  []string{"```12dpl\nvoid Forever(Integer subject)\n```"},
+				},
+				{
+					Desc: "user defined func - multi line doc",
+					SourceCode: `/*
+    Loops forever.
+    subject is an integer.
+*/
+void Forever(Integer subject) {
+    return Forever(subject);
+}`,
+					Position: protocol.Position{Line: 5, Character: 11},
+					Pattern:  []string{"```12dpl\nvoid Forever(Integer subject)\n```\n---\nLoops forever.\nsubject is an integer."},
+				},
+				{
+					Desc: "user defined func - single line doc - on definition",
+					SourceCode: `void Forever(Integer subject) {
+    return Forever(subject);
+}`,
+					Position: protocol.Position{Line: 0, Character: 5},
+					Pattern:  []string{"```12dpl\nvoid Forever(Integer subject)\n```"},
+				},
+				{
+					Desc: "user defined func - single line doc - on definition with doc",
+					SourceCode: `// Loops forever.
+void Forever(Integer subject) {
+    return Forever(subject);
+}`,
+					Position: protocol.Position{Line: 1, Character: 5},
+					Pattern:  []string{"```12dpl\nvoid Forever(Integer subject)\n```\n---\nLoops forever."},
+				},
 				{
 					Desc: "preproc declaration",
 					SourceCode: `#define NAME "hello world"
