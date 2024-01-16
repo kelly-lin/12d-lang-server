@@ -7,6 +7,10 @@ build:
 	go build ./cmd/12dls
 
 .PHONY:
+build-windows:
+	GOOS='windows' GOARCH='amd64' go build -o 12dls.exe ./cmd/12dls
+
+.PHONY:
 run:
 	go run ./main.go
 
@@ -40,7 +44,3 @@ gen-patch:
 .PHONY:
 vendor-parser:
 	@./scripts/vendor_parser.sh ./parser
-
-.PHONY:
-build-windows:
-	GOOS='windows' GOARCH='amd64' go build -o 12dls.exe ./cmd/12dls
