@@ -12,7 +12,7 @@ build-windows:
 
 .PHONY:
 run:
-	go run ./main.go
+	go run ./cmd/12dls
 
 .PHONY:
 log:
