@@ -8,9 +8,10 @@ Language server for the 12d programming language (12dPL) conforming to the
 1. [Dependencies](#dependencies)
 2. [Building](#building)
 3. [Testing](#testing)
-4. [Design Decisions](#design-decisions)
-5. [Features](#features)
-6. [Contributing](#contributing)
+4. [Configuration](#configuration)
+5. [Design Decisions](#design-decisions)
+6. [Features](#features)
+7. [Contributing](#contributing)
 
 ## Dependencies
 
@@ -26,6 +27,16 @@ language server binary `12dls` in the current directory.
 ## Testing
 
 Run automated tests by executing `make test`.
+
+## Configuration
+
+The language server can be configured by passing in the below options to the
+`12dls` command.
+
+| Option | Description                             | Default Value |
+| ------ | --------------------------------------- | ------------- |
+| -i     | Path to includes directory.             | `""`          |
+| -d     | Enable debugging features like logging. | `false`       |
 
 ## Design Decisions
 
@@ -79,6 +90,8 @@ Contribute to the project directly by fixing bugs and opening a pull request.
 
 ## Troubleshooting
 
-- Error when compiling on windows `Cgo: sorry, unimplemented: 64-bit mode not compiled in`
-  You have a c complier which does not support 32 and 64 bit. Install [tdm-gcc](https://jmeubank.github.io/tdm-gcc/).
+- Error when compiling on windows `Cgo: sorry, unimplemented: 64-bit mode not
+compiled in`
+  You have a c compiler which does not support 32 and 64 bit. Install [tdm-gcc](https://jmeubank.github.io/tdm-gcc/).
   to fix.
+
