@@ -516,10 +516,29 @@ void main() {
 					Position: protocol.Position{Line: 3, Character: 4},
 					Pattern:  []string{createFuncSignaturePattern("Set_data", []string{"Choice_Box", "Text"})},
 				},
-				// TODO: Set_ups.h constants.
-				// TODO: Print("text"); shows 2 results.
+				{
+					Desc: "inline string literal",
+					SourceCode: `void main() {
+    Print("text");
+}`,
+					Position: protocol.Position{Line: 1, Character: 4},
+					Pattern:  []string{createFuncSignaturePattern("Print", []string{"Text"})},
+				},
 				// TODO: Return values of func expressions should return lib
 				// func e.g. Exit(ReturnsOne()); should match Exit(Integer arg);
+// 				{
+// 					Desc: "inline string literal",
+// 					SourceCode: `Integer Ok() {
+//     return 1;
+// }
+//
+// void main() {
+//     Exit(Ok());
+// }`,
+// 					Position: protocol.Position{Line: 5, Character: 4},
+// 					Pattern:  []string{createFuncSignaturePattern("Exit", []string{"Integer"})},
+// 				},
+				// TODO: Set_ups.h constants.
 				// TODO: Set_root_node not working with local XML_node and
 				// &XML_Document
 			}

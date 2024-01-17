@@ -629,7 +629,7 @@ func filterLibItems(identifierNode *sitter.Node, libItems []string, sourceCode [
 	}
 	funcIdentifier := identifierNode.Content(sourceCode)
 	types := getArgumentTypes(argsNode)
-	pattern := ""
+	signaturePattern := ""
 	// This matches "Type (&?)Identifier".
 	// basePattern := `%s\s*&?\w+`
 	isArrayType := func(t string) bool {
@@ -644,23 +644,40 @@ func filterLibItems(identifierNode *sitter.Node, libItems []string, sourceCode [
 		}
 		if idx == 0 {
 			if isArrayType(t) {
-				pattern = fmt.Sprintf(`%s\s*&?\w+\[\]`, strings.TrimSuffix(t, "[]"))
+				signaturePattern = fmt.Sprintf(`%s\s*&?\w+\[\]`, strings.TrimSuffix(t, "[]"))
 				continue
 			}
-			pattern = fmt.Sprintf(`%s\s*&?\w+`, t)
+			signaturePattern = fmt.Sprintf(`%s\s*&?\w+`, t)
 			continue
 		}
 
 		if isArrayType(t) {
-			pattern = fmt.Sprintf(`%s,\s*%s\s*&?\w+\[\]`, pattern, strings.TrimSuffix(t, "[]"))
+			signaturePattern = fmt.Sprintf(`%s,\s*%s\s*&?\w+\[\]`, signaturePattern, strings.TrimSuffix(t, "[]"))
 			continue
 		} else {
-			pattern = fmt.Sprintf(`%s,\s*%s\s*&?\w+`, pattern, t)
+			signaturePattern = fmt.Sprintf(`%s,\s*%s\s*&?\w+`, signaturePattern, t)
 		}
 	}
-	pattern = fmt.Sprintf(`%s\(%s\)`, funcIdentifier, pattern)
+	codeBlockStartPattern := `12dpl\n\w+\s*`
+	codeBlockEndPattern := `\n` + "\\`\\`\\`"
+	// This creates the pattern:
+	// ```12dpl\\n\w+\s*
+	// |             |identifier
+	// |             |      |
+	// |             |      |signature pattern
+	// |             |      |       |
+	// |             |      |       | \\n```
+	// |             |      |       ||     |
+	// ```12dpl\nvoid Print(Text msg)\n```\n---\nPrint the Text msg to the Output Window.
+	//
+	// This is a bit of a hack to make sure we are matching the signature and
+	// not anything in the description, as there are some lib items which
+	// reference other library items by function signature. We should really
+	// restructure the library item struct so that it has a description,
+	// signature and doc field.
+	signaturePattern = fmt.Sprintf(`%s%s\(%s\)%s`, codeBlockStartPattern, funcIdentifier, signaturePattern, codeBlockEndPattern)
 	for _, item := range libItems {
-		if matched, _ := regexp.MatchString(pattern, item); matched {
+		if matched, _ := regexp.MatchString(signaturePattern, item); matched {
 			result = append(result, item)
 		}
 		continue
