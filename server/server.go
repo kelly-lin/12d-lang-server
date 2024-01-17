@@ -616,6 +616,21 @@ func filterLibItems(identifierNode *sitter.Node, libItems []string, sourceCode [
 				case "string_literal":
 					types = append(types, "Text")
 				}
+
+			case "call_expression":
+				funcIdentifierNode := argIdentifierNode.ChildByFieldName("function")
+				if funcIdentifierNode == nil {
+					break
+				}
+				_, n, err := findDefinition(funcIdentifierNode, funcIdentifierNode.Content(sourceCode), sourceCode)
+				if err != nil {
+					break
+				}
+				varType, err := getDefinitionType(n, sourceCode)
+				if err != nil {
+					break
+				}
+				types = append(types, varType)
 			}
 		}
 		return types
