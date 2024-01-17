@@ -573,16 +573,17 @@ void main() {
 					Position: protocol.Position{Line: 5, Character: 4},
 					Pattern:  []string{createFuncSignaturePattern("Exit", []string{"Integer"})},
 				},
-				// 				{
-				// 					Desc: "using set_ups.h - ALL_WIDGETS_OWN_WIDTH is defined in set_ups.h",
-				// 					SourceCode: `#include "set_ups.h"
-				//
-				// void main() {
-				//     Horizontal_Group h_group = Create_horizontal_group(ALL_WIDGETS_OWN_WIDTH);
-				// }`,
-				// 					Position: protocol.Position{Line: 3, Character: 31},
-				// 					Pattern:  []string{createFuncSignaturePattern("Create_horizontal_group", []string{"Integer"})},
-				// 				},
+				{
+					Desc: "using set_ups.h - ALL_WIDGETS_OWN_WIDTH is defined in set_ups.h",
+					SourceCode: `#include "set_ups.h"
+
+void main() {
+    Horizontal_Group h_group = Create_horizontal_group(ALL_WIDGETS_OWN_WIDTH);
+}`,
+					Position:    protocol.Position{Line: 3, Character: 31},
+					IncludesDir: includesDir,
+					Pattern:     []string{createFuncSignaturePattern("Create_horizontal_group", []string{"Integer"})},
+				},
 				// TODO: Set_root_node not working with local XML_node and
 				// &XML_Document
 			}
@@ -806,6 +807,17 @@ void Forever(Integer subject) {
 `,
 					Position: protocol.Position{Line: 0, Character: 8},
 					Pattern:  []string{"```12dpl\n#define NAME \"hello world\"\n```"},
+				},
+				{
+					Desc: "preproc declaration inside include",
+					SourceCode: `#include "set_ups.h"
+
+void main() {
+    Exit(TRUE);
+}`,
+					Position:    protocol.Position{Line: 3, Character: 9},
+					IncludesDir: includesDir,
+					Pattern:     []string{"```12dpl\n#define TRUE  1\n```"},
 				},
 			}
 			for _, testCase := range testCases {

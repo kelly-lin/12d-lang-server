@@ -343,7 +343,6 @@ func getHoverContents(identifierNode *sitter.Node, identifier string, uri string
 	if !ok {
 		return contents
 	}
-	sourceCode := doc.SourceCode
 	if identifierNode.Parent().Type() == "call_expression" {
 		def, err := findDefinition(identifierNode, identifier, uri, documents, includesDir)
 		if err != nil {
@@ -360,6 +359,7 @@ func getHoverContents(identifierNode *sitter.Node, identifier string, uri string
 		node := def.Node
 		if isFuncDefinition(node) {
 			funcDefNode := node.Parent().Parent()
+			sourceCode := doc.SourceCode
 			if varType, declaration, desc, err := getFuncDocComponents(funcDefNode, sourceCode); err == nil {
 				contents = append(contents, createHoverDeclarationDocString(varType, declaration, desc, ""))
 				return contents
@@ -373,6 +373,7 @@ func getHoverContents(identifierNode *sitter.Node, identifier string, uri string
 	if err != nil || node == nil || node.Type() != "identifier" {
 		return contents
 	}
+	sourceCode := documents[def.URI].SourceCode
 	nodeType, err := getDefinitionType(node, sourceCode)
 	if err != nil {
 		return contents
