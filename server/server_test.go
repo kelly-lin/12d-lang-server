@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path"
 	"regexp"
 	"strconv"
 	"strings"
@@ -20,20 +21,25 @@ import (
 )
 
 func TestServer(t *testing.T) {
-	mustNewLocationResponseMessage := func(start, end protocol.Position) protocol.ResponseMessage {
-		msg, err := newLocationResponseMessage(1, "file:///foo.4dm", start, end)
+	mustNewLocationResponseMessage := func(uri string, start, end protocol.Position) protocol.ResponseMessage {
+		msg, err := newLocationResponseMessage(1, uri, start, end)
 		assert.NoError(t, err)
 		return msg
 	}
+	// Test command should be run in the root directory.
+	startDir, err := os.Getwd()
+	require.NoError(t, err)
+	includesDir := path.Join(startDir, "..", "lang/includes")
 
 	t.Run("textDocument/definition", func(t *testing.T) {
 		// Helper returns the response message and fails if the test if the
 		// response message could not be created.
 		type TestCase struct {
-			Desc       string
-			SourceCode string
-			Pos        protocol.Position
-			Want       protocol.ResponseMessage
+			Desc        string
+			SourceCode  string
+			IncludesDir string
+			Pos         protocol.Position
+			Want        protocol.ResponseMessage
 		}
 		testCases := []TestCase{
 			{
@@ -47,6 +53,7 @@ void main() {
 }`,
 				Pos: protocol.Position{Line: 5, Character: 21},
 				Want: mustNewLocationResponseMessage(
+					"file:///main.4dm",
 					protocol.Position{Line: 0, Character: 8},
 					protocol.Position{Line: 0, Character: 11},
 				),
@@ -64,6 +71,7 @@ void main() {
 }`,
 				Pos: protocol.Position{Line: 2, Character: 11},
 				Want: mustNewLocationResponseMessage(
+					"file:///main.4dm",
 					protocol.Position{Line: 0, Character: 20},
 					protocol.Position{Line: 0, Character: 26},
 				),
@@ -78,6 +86,7 @@ void main() {
 }`,
 				Pos: protocol.Position{Line: 4, Character: 11},
 				Want: mustNewLocationResponseMessage(
+					"file:///main.4dm",
 					protocol.Position{Line: 1, Character: 12},
 					protocol.Position{Line: 1, Character: 18},
 				),
@@ -89,6 +98,7 @@ void main() {
 }`,
 				Pos: protocol.Position{Line: 1, Character: 13},
 				Want: mustNewLocationResponseMessage(
+					"file:///main.4dm",
 					protocol.Position{Line: 0, Character: 26},
 					protocol.Position{Line: 0, Character: 28},
 				),
@@ -101,6 +111,7 @@ void main() {
 }`,
 				Pos: protocol.Position{Line: 2, Character: 11},
 				Want: mustNewLocationResponseMessage(
+					"file:///main.4dm",
 					protocol.Position{Line: 1, Character: 12},
 					protocol.Position{Line: 1, Character: 18},
 				),
@@ -113,6 +124,7 @@ void main() {
 }`,
 				Pos: protocol.Position{Line: 2, Character: 11},
 				Want: mustNewLocationResponseMessage(
+					"file:///main.4dm",
 					protocol.Position{Line: 1, Character: 12},
 					protocol.Position{Line: 1, Character: 18},
 				),
@@ -126,6 +138,7 @@ void main() {
 }`,
 				Pos: protocol.Position{Line: 2, Character: 20},
 				Want: mustNewLocationResponseMessage(
+					"file:///main.4dm",
 					protocol.Position{Line: 1, Character: 17},
 					protocol.Position{Line: 1, Character: 18},
 				),
@@ -140,6 +153,7 @@ void main() {
 }`,
 				Pos: protocol.Position{Line: 3, Character: 20},
 				Want: mustNewLocationResponseMessage(
+					"file:///main.4dm",
 					protocol.Position{Line: 1, Character: 12},
 					protocol.Position{Line: 1, Character: 13},
 				),
@@ -154,6 +168,7 @@ void main() {
 }`,
 				Pos: protocol.Position{Line: 3, Character: 20},
 				Want: mustNewLocationResponseMessage(
+					"file:///main.4dm",
 					protocol.Position{Line: 2, Character: 16},
 					protocol.Position{Line: 2, Character: 17},
 				),
@@ -166,6 +181,7 @@ void main() {
 }`,
 				Pos: protocol.Position{Line: 2, Character: 25},
 				Want: mustNewLocationResponseMessage(
+					"file:///main.4dm",
 					protocol.Position{Line: 1, Character: 20},
 					protocol.Position{Line: 1, Character: 24},
 				),
@@ -181,6 +197,7 @@ void main() {
 }`,
 				Pos: protocol.Position{Line: 3, Character: 8},
 				Want: mustNewLocationResponseMessage(
+					"file:///main.4dm",
 					protocol.Position{Line: 0, Character: 8},
 					protocol.Position{Line: 0, Character: 13},
 				),
@@ -196,6 +213,7 @@ void main() {
 }`,
 				Pos: protocol.Position{Line: 5, Character: 21},
 				Want: mustNewLocationResponseMessage(
+					"file:///main.4dm",
 					protocol.Position{Line: 1, Character: 12},
 					protocol.Position{Line: 1, Character: 21},
 				),
@@ -210,6 +228,7 @@ void main() {
 }`,
 				Pos: protocol.Position{Line: 3, Character: 14},
 				Want: mustNewLocationResponseMessage(
+					"file:///main.4dm",
 					protocol.Position{Line: 1, Character: 9},
 					protocol.Position{Line: 1, Character: 10},
 				),
@@ -224,8 +243,24 @@ void main() {
 }`,
 				Pos: protocol.Position{Line: 4, Character: 14},
 				Want: mustNewLocationResponseMessage(
+					"file:///main.4dm",
 					protocol.Position{Line: 1, Character: 16},
 					protocol.Position{Line: 1, Character: 17},
+				),
+			},
+			{
+				Desc: "declaration in include file",
+				SourceCode: `#include "set_ups.h"
+
+void main() {
+    Integer mode = ALL_WIDGETS_OWN_WIDTH;
+}`,
+				Pos:         protocol.Position{Line: 3, Character: 19},
+				IncludesDir: includesDir,
+				Want: mustNewLocationResponseMessage(
+					fmt.Sprintf("file://%s", path.Join(includesDir, "set_ups.h")),
+					protocol.Position{Line: 354, Character: 8},
+					protocol.Position{Line: 354, Character: 29},
 				),
 			},
 		}
@@ -235,16 +270,16 @@ void main() {
 				assert := assert.New(t)
 				logger, err := newLogger()
 				assert.NoError(err)
-				in, out, cleanUp := startServer(logger)
+				in, out, cleanUp := startServer(testCase.IncludesDir, logger)
 				defer cleanUp()
 
 				var id int64 = 1
-				didOpenMsgBytes, err := newDidOpenRequestMessageBytes(id, "file:///foo.4dm", testCase.SourceCode)
+				didOpenMsgBytes, err := newDidOpenRequestMessageBytes(id, "file:///main.4dm", testCase.SourceCode)
 				assert.NoError(err)
 				_, err = in.Writer.Write([]byte(server.ToProtocolMessage(didOpenMsgBytes)))
 				assert.NoError(err)
 
-				definitionMsgBytes, err := newDefinitionRequestMessageBytes(id, "file:///foo.4dm", testCase.Pos)
+				definitionMsgBytes, err := newDefinitionRequestMessageBytes(id, "file:///main.4dm", testCase.Pos)
 				assert.NoError(err)
 				_, err = in.Writer.Write([]byte(server.ToProtocolMessage(definitionMsgBytes)))
 				assert.NoError(err)
@@ -264,21 +299,21 @@ void main() {
 		assert := assert.New(t)
 		logger, err := newLogger()
 		assert.NoError(err)
-		in, out, cleanUp := startServer(logger)
+		in, out, cleanUp := startServer("", logger)
 		defer cleanUp()
 
 		sourceCodeOnOpen := `void main() {
     Add(1, 1);
 }`
 		var openRequestID int64 = 1
-		didOpenMsgBytes, err := newDidOpenRequestMessageBytes(openRequestID, "file:///foo.4dm", sourceCodeOnOpen)
+		didOpenMsgBytes, err := newDidOpenRequestMessageBytes(openRequestID, "file:///main.4dm", sourceCodeOnOpen)
 		assert.NoError(err)
 		_, err = in.Writer.Write([]byte(server.ToProtocolMessage(didOpenMsgBytes)))
 		assert.NoError(err)
 
 		pos1 := protocol.Position{Line: 1, Character: 4}
 		var defintionRequestID1 int64 = 2
-		definitionMsg1Bytes, err := newDefinitionRequestMessageBytes(defintionRequestID1, "file:///foo.4dm", pos1)
+		definitionMsg1Bytes, err := newDefinitionRequestMessageBytes(defintionRequestID1, "file:///main.4dm", pos1)
 		assert.NoError(err)
 		_, err = in.Writer.Write([]byte(server.ToProtocolMessage(definitionMsg1Bytes)))
 		assert.NoError(err)
@@ -299,14 +334,14 @@ void main() {
     Add(1, 1);
 }`
 		var onChangeID int64 = 3
-		didChangeMsgBytes, err := newDidChangeRequestMessageBytes(onChangeID, "file:///foo.4dm", sourceCodeOnChange)
+		didChangeMsgBytes, err := newDidChangeRequestMessageBytes(onChangeID, "file:///main.4dm", sourceCodeOnChange)
 		assert.NoError(err)
 		_, err = in.Writer.Write([]byte(server.ToProtocolMessage(didChangeMsgBytes)))
 		assert.NoError(err)
 
 		var definitionRequestID2 int64 = 1
 		pos2 := protocol.Position{Line: 5, Character: 4}
-		definitionMsg2Bytes, err := newDefinitionRequestMessageBytes(definitionRequestID2, "file:///foo.4dm", pos2)
+		definitionMsg2Bytes, err := newDefinitionRequestMessageBytes(definitionRequestID2, "file:///main.4dm", pos2)
 		assert.NoError(err)
 		_, err = in.Writer.Write([]byte(server.ToProtocolMessage(definitionMsg2Bytes)))
 		assert.NoError(err)
@@ -315,6 +350,7 @@ void main() {
 		got, err = getReponseMessage(out.Reader)
 		assert.NoError(err)
 		want := mustNewLocationResponseMessage(
+			"file:///main.4dm",
 			protocol.Position{Line: 0, Character: 8},
 			protocol.Position{Line: 0, Character: 11},
 		)
@@ -323,10 +359,11 @@ void main() {
 
 	t.Run("textDocument/hover", func(t *testing.T) {
 		type TestCase struct {
-			Desc       string
-			SourceCode string
-			Position   protocol.Position
-			Pattern    []string
+			Desc        string
+			SourceCode  string
+			Position    protocol.Position
+			Pattern     []string
+			IncludesDir string
 		}
 
 		t.Run("library funcs", func(t *testing.T) {
@@ -536,7 +573,16 @@ void main() {
 					Position: protocol.Position{Line: 5, Character: 4},
 					Pattern:  []string{createFuncSignaturePattern("Exit", []string{"Integer"})},
 				},
-				// TODO: Set_ups.h constants.
+				// 				{
+				// 					Desc: "using set_ups.h - ALL_WIDGETS_OWN_WIDTH is defined in set_ups.h",
+				// 					SourceCode: `#include "set_ups.h"
+				//
+				// void main() {
+				//     Horizontal_Group h_group = Create_horizontal_group(ALL_WIDGETS_OWN_WIDTH);
+				// }`,
+				// 					Position: protocol.Position{Line: 3, Character: 31},
+				// 					Pattern:  []string{createFuncSignaturePattern("Create_horizontal_group", []string{"Integer"})},
+				// 				},
 				// TODO: Set_root_node not working with local XML_node and
 				// &XML_Document
 			}
@@ -546,17 +592,17 @@ void main() {
 					assert := assert.New(t)
 					logger, err := newLogger()
 					assert.NoError(err)
-					in, out, cleanUp := startServer(logger)
+					in, out, cleanUp := startServer(testCase.IncludesDir, logger)
 					defer cleanUp()
 
 					var openRequestID int64 = 1
-					didOpenMsgBytes, err := newDidOpenRequestMessageBytes(openRequestID, "file:///foo.4dm", testCase.SourceCode)
+					didOpenMsgBytes, err := newDidOpenRequestMessageBytes(openRequestID, "file:///main.4dm", testCase.SourceCode)
 					assert.NoError(err)
 					_, err = in.Writer.Write([]byte(server.ToProtocolMessage(didOpenMsgBytes)))
 					assert.NoError(err)
 
 					var hoverRequestID int64 = 2
-					hoverMsgBytes, err := newHoverRequestMessageBytes(hoverRequestID, "file:///foo.4dm", testCase.Position)
+					hoverMsgBytes, err := newHoverRequestMessageBytes(hoverRequestID, "file:///main.4dm", testCase.Position)
 					assert.NoError(err)
 					_, err = in.Writer.Write([]byte(server.ToProtocolMessage(hoverMsgBytes)))
 					assert.NoError(err)
@@ -768,17 +814,17 @@ void Forever(Integer subject) {
 					assert := assert.New(t)
 					logger, err := newLogger()
 					assert.NoError(err)
-					in, out, cleanUp := startServer(logger)
+					in, out, cleanUp := startServer(testCase.IncludesDir, logger)
 					defer cleanUp()
 
 					var openRequestID int64 = 1
-					didOpenMsgBytes, err := newDidOpenRequestMessageBytes(openRequestID, "file:///foo.4dm", testCase.SourceCode)
+					didOpenMsgBytes, err := newDidOpenRequestMessageBytes(openRequestID, "file:///main.4dm", testCase.SourceCode)
 					assert.NoError(err)
 					_, err = in.Writer.Write([]byte(server.ToProtocolMessage(didOpenMsgBytes)))
 					assert.NoError(err)
 
 					var hoverRequestID int64 = 2
-					hoverMsgBytes, err := newHoverRequestMessageBytes(hoverRequestID, "file:///foo.4dm", testCase.Position)
+					hoverMsgBytes, err := newHoverRequestMessageBytes(hoverRequestID, "file:///main.4dm", testCase.Position)
 					assert.NoError(err)
 					_, err = in.Writer.Write([]byte(server.ToProtocolMessage(hoverMsgBytes)))
 					assert.NoError(err)
@@ -951,8 +997,8 @@ func newLogger() (func(msg string), error) {
 
 // Starts the language server in a goroutine and returns the input pipe, output
 // pipe and a clean up function.
-func startServer(logger func(msg string)) (Pipe, Pipe, func()) {
-	serv := server.NewServer(logger)
+func startServer(includesDir string, logger func(msg string)) (Pipe, Pipe, func()) {
+	serv := server.NewServer(includesDir, logger)
 	inReader, inWriter := io.Pipe()
 	outReader, outWriter := io.Pipe()
 	go (func() {

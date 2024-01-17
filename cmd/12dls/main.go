@@ -10,7 +10,8 @@ import (
 
 const logFilepath = "/tmp/12d-lang-server.log"
 
-var debugFlag = flag.Bool("d", false, "enable debugging features")
+var debugFlag = flag.Bool("d", false, "enable debugging features such as logging")
+var includesDirFlag = flag.String("i", "", "includes directory")
 var helpFlag = flag.Bool("h", false, "show help")
 
 func main() {
@@ -28,7 +29,7 @@ func main() {
 	}
 	defer cleanUp()
 
-	langServer := server.NewServer(log)
+	langServer := server.NewServer(*includesDirFlag, log)
 	if err := langServer.Serve(os.Stdin, os.Stdout); err != nil {
 		log(fmt.Sprintf("%s\n", err.Error()))
 		os.Exit(1)

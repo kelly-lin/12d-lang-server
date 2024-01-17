@@ -7,6 +7,9 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/fs"
+	"os"
+	"path"
 	"regexp"
 	"strconv"
 	"strings"
@@ -25,28 +28,41 @@ var ErrUnhandledMethod = errors.New("unhandled method")
 // Creates a new language server. The logger function parameter specifies the
 // function to call for logging. If the logger is nil, will default to a
 // function that does not log anything.
-func NewServer(logger func(msg string)) Server {
+func NewServer(includesDir string, logger func(msg string)) Server {
 	serverLogger := func(msg string) {}
 	if logger != nil {
 		serverLogger = logger
 	}
-
-	return Server{
-		documents: make(map[string][]byte),
-		logger:    serverLogger,
-		nodes:     make(map[string]*sitter.Node),
+	s := Server{
+		documents:   make(map[string]Document),
+		logger:      serverLogger,
+		includesDir: includesDir,
 	}
+	// TODO: hard coding in an includes directory for now. Need to move this to
+	// config in client and expose this via an option on the command line.
+	if s.includesDir != "" {
+		filesystem := os.DirFS(s.includesDir)
+		if includeFiles, err := fs.Glob(filesystem, "*.h"); err == nil {
+			for _, includeFile := range includeFiles {
+				filepath := path.Join(s.includesDir, includeFile)
+				contents, err := os.ReadFile(filepath)
+				if err != nil {
+					continue
+				}
+				// TODO: how do we handle this error? Should we signal to
+				// the user that we had issues updating the file?
+				_ = s.setDocument(fmt.Sprintf("file://%s", filepath), string(contents))
+			}
+		}
+	}
+	return s
 }
 
 // Language server.
 type Server struct {
-	// Map of file URI and parsed nodes
-	nodes map[string]*sitter.Node
-	// Map of file URI and source code.
-	// TODO: should we be storing a []byte instead of a string? If most of our
-	// consumers are expecting []byte, we should change this type.
-	documents map[string][]byte
-	logger    func(msg string)
+	documents   map[string]Document
+	logger      func(msg string)
+	includesDir string
 }
 
 // Serve reads JSONRPC from the reader, processes the message and responds by
@@ -196,14 +212,12 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 		if err := json.Unmarshal(msg.Params, &params); err != nil {
 			return newNullResponseMessage(msg.ID), len(protocol.NullResult), err
 		}
-		rootNode, ok := s.nodes[params.TextDocument.URI]
+		doc, ok := s.documents[params.TextDocument.URI]
 		if !ok {
 			return newNullResponseMessage(msg.ID), len(protocol.NullResult), errors.New("source node not found")
 		}
-		sourceCode, ok := s.documents[params.TextDocument.URI]
-		if !ok {
-			return newNullResponseMessage(msg.ID), len(protocol.NullResult), errors.New("source code not found")
-		}
+		rootNode := doc.RootNode
+		sourceCode := doc.SourceCode
 		identifierNode, err := parser.FindIdentifierNode(rootNode, params.Position.Line, params.Position.Character)
 		if err != nil {
 			return newNullResponseMessage(msg.ID), len(protocol.NullResult), err
@@ -215,7 +229,7 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 		if err != nil {
 			return newNullResponseMessage(msg.ID), len(protocol.NullResult), err
 		}
-		contents := getHoverContents(identifierNode, identifier, sourceCode)
+		contents := getHoverContents(identifierNode, identifier, params.TextDocument.URI, s.documents, s.includesDir)
 		if len(contents) == 0 {
 			return newNullResponseMessage(msg.ID), len(protocol.NullResult), nil
 		}
@@ -242,7 +256,7 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 		if params.TextDocument.LanguageID != "12dpl" {
 			return protocol.ResponseMessage{}, 0, fmt.Errorf("unhandled language %s, expected 12dpl", params.TextDocument.LanguageID)
 		}
-		if err := s.updateDocument(params.TextDocument.URI, params.TextDocument.Text); err != nil {
+		if err := s.setDocument(params.TextDocument.URI, params.TextDocument.Text); err != nil {
 			return protocol.ResponseMessage{}, 0, err
 		}
 		return protocol.ResponseMessage{}, 0, nil
@@ -253,7 +267,7 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 			return protocol.ResponseMessage{}, 0, err
 		}
 		// The server currently only supports a full document sync.
-		if err := s.updateDocument(params.TextDocument.URI, params.ContentChanges[len(params.ContentChanges)-1].Text); err != nil {
+		if err := s.setDocument(params.TextDocument.URI, params.ContentChanges[len(params.ContentChanges)-1].Text); err != nil {
 			return protocol.ResponseMessage{}, 0, err
 		}
 		return protocol.ResponseMessage{}, 0, nil
@@ -263,14 +277,12 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 		if err := json.Unmarshal(msg.Params, &params); err != nil {
 			return protocol.ResponseMessage{}, 0, err
 		}
-		rootNode, ok := s.nodes[params.TextDocument.URI]
+		doc, ok := s.documents[params.TextDocument.URI]
 		if !ok {
-			return protocol.ResponseMessage{}, 0, errors.New("source node not found")
+			return newNullResponseMessage(msg.ID), len(protocol.NullResult), errors.New("source node not found")
 		}
-		sourceCode, ok := s.documents[params.TextDocument.URI]
-		if !ok {
-			return protocol.ResponseMessage{}, 0, errors.New("source code not found")
-		}
+		rootNode := doc.RootNode
+		sourceCode := doc.SourceCode
 		identifierNode, err := parser.FindIdentifierNode(rootNode, params.Position.Line, params.Position.Character)
 		if errors.Is(err, parser.ErrNoDefinition) {
 			return newNullResponseMessage(msg.ID),
@@ -283,15 +295,15 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 				err
 		}
 		identifier := identifierNode.Content(sourceCode)
-		locRange, _, err := findDefinition(identifierNode, identifier, sourceCode)
+		def, err := findDefinition(identifierNode, identifier, params.TextDocument.URI, s.documents, s.includesDir)
 		if err != nil {
 			return newNullResponseMessage(msg.ID),
 				len(protocol.NullResult),
 				nil
 		}
 		location := protocol.Location{
-			URI:   params.TextDocument.URI,
-			Range: ToProtocolRange(locRange),
+			URI:   def.URI,
+			Range: ToProtocolRange(def.Range),
 		}
 		locationBytes, err := json.Marshal(location)
 		if err != nil {
@@ -314,22 +326,26 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 
 // Update the document stored on the server identified by the uri with provided
 // content.
-func (s *Server) updateDocument(uri string, content string) error {
-	s.documents[uri] = []byte(content)
+func (s *Server) setDocument(uri string, content string) error {
 	rootNode, err := sitter.ParseCtx(context.Background(), []byte(content), parser.GetLanguage())
 	if err != nil {
 		return err
 	}
-	s.nodes[uri] = rootNode
+	s.documents[uri] = Document{RootNode: rootNode, SourceCode: []byte(content)}
 	return nil
 }
 
 // Gets the hover items for the provided node and identifier. The hover items
 // are strings of documentation to send to the client.
-func getHoverContents(identifierNode *sitter.Node, identifier string, sourceCode []byte) []string {
+func getHoverContents(identifierNode *sitter.Node, identifier string, uri string, documents map[string]Document, includesDir string) []string {
 	var contents []string
+	doc, ok := documents[uri]
+	if !ok {
+		return contents
+	}
+	sourceCode := doc.SourceCode
 	if identifierNode.Parent().Type() == "call_expression" {
-		_, node, err := findDefinition(identifierNode, identifier, sourceCode)
+		def, err := findDefinition(identifierNode, identifier, uri, documents, includesDir)
 		if err != nil {
 			// We cannot find the definition, try find it in the library
 			// items.
@@ -337,10 +353,11 @@ func getHoverContents(identifierNode *sitter.Node, identifier string, sourceCode
 			if !ok || len(libItems) == 0 {
 				return []string{}
 			}
-			contents = filterLibItems(identifierNode, libItems, sourceCode)
+			contents = filterLibItems(identifierNode, libItems, uri, documents, includesDir)
 			return contents
 		}
 		// We found the definition, get the signature.
+		node := def.Node
 		if isFuncDefinition(node) {
 			funcDefNode := node.Parent().Parent()
 			if varType, declaration, desc, err := getFuncDocComponents(funcDefNode, sourceCode); err == nil {
@@ -351,7 +368,8 @@ func getHoverContents(identifierNode *sitter.Node, identifier string, sourceCode
 		return contents
 	}
 
-	_, node, err := findDefinition(identifierNode, identifier, sourceCode)
+	def, err := findDefinition(identifierNode, identifier, uri, documents, includesDir)
+	node := def.Node
 	if err != nil || node == nil || node.Type() != "identifier" {
 		return contents
 	}
@@ -546,7 +564,13 @@ func createHoverDeclarationDocString(varType, identifier, desc, prefix string) s
 
 // Filters the library items so that it matches argument list described by the
 // function that the identifier node is referring to.
-func filterLibItems(identifierNode *sitter.Node, libItems []string, sourceCode []byte) []string {
+func filterLibItems(identifierNode *sitter.Node, libItems []string, uri string, documents map[string]Document, includesDir string) []string {
+	doc, ok := documents[uri]
+	if !ok {
+		return []string{}
+	}
+	sourceCode := doc.SourceCode
+
 	getArgumentTypes := func(argsNode *sitter.Node) []string {
 		var types []string
 		for i := 0; i < int(argsNode.ChildCount()); i++ {
@@ -556,11 +580,11 @@ func filterLibItems(identifierNode *sitter.Node, libItems []string, sourceCode [
 			}
 			switch argIdentifierNode.Type() {
 			case "identifier":
-				_, node, err := findDefinition(argIdentifierNode, argIdentifierNode.Content(sourceCode), sourceCode)
+				def, err := findDefinition(argIdentifierNode, argIdentifierNode.Content(sourceCode), uri, documents, includesDir)
 				if err != nil {
 					continue
 				}
-				nodeType, err := getDefinitionType(node, sourceCode)
+				nodeType, err := getDefinitionType(def.Node, sourceCode)
 				if err != nil {
 					continue
 				}
@@ -577,11 +601,11 @@ func filterLibItems(identifierNode *sitter.Node, libItems []string, sourceCode [
 				if subscriptArgumentIdentifierNode == nil {
 					break
 				}
-				_, n, err := findDefinition(subscriptArgumentIdentifierNode, subscriptArgumentIdentifierNode.Content(sourceCode), sourceCode)
+				def, err := findDefinition(subscriptArgumentIdentifierNode, subscriptArgumentIdentifierNode.Content(sourceCode), uri, documents, includesDir)
 				if err != nil {
 					break
 				}
-				varType, err := getDefinitionType(n, sourceCode)
+				varType, err := getDefinitionType(def.Node, sourceCode)
 				if err != nil {
 					break
 				}
@@ -600,11 +624,11 @@ func filterLibItems(identifierNode *sitter.Node, libItems []string, sourceCode [
 				}
 				switch expressionNode.Type() {
 				case "identifier":
-					_, n, err := findDefinition(expressionNode, expressionNode.Content(sourceCode), sourceCode)
+					def, err := findDefinition(expressionNode, expressionNode.Content(sourceCode), uri, documents, includesDir)
 					if err != nil {
 						break
 					}
-					varType, err := getDefinitionType(n, sourceCode)
+					varType, err := getDefinitionType(def.Node, sourceCode)
 					if err != nil {
 						break
 					}
@@ -622,11 +646,11 @@ func filterLibItems(identifierNode *sitter.Node, libItems []string, sourceCode [
 				if funcIdentifierNode == nil {
 					break
 				}
-				_, n, err := findDefinition(funcIdentifierNode, funcIdentifierNode.Content(sourceCode), sourceCode)
+				def, err := findDefinition(funcIdentifierNode, funcIdentifierNode.Content(sourceCode), uri, documents, includesDir)
 				if err != nil {
 					break
 				}
-				varType, err := getDefinitionType(n, sourceCode)
+				varType, err := getDefinitionType(def.Node, sourceCode)
 				if err != nil {
 					break
 				}
@@ -700,74 +724,101 @@ func filterLibItems(identifierNode *sitter.Node, libItems []string, sourceCode [
 	return result
 }
 
-// Find the definition of the node reprepsenting by identifier node and
-// identifier. The identifier node is the target for the definition.
-func findDefinition(identifierNode *sitter.Node, identifier string, sourceCode []byte) (parser.Range, *sitter.Node, error) {
-	switch identifierNode.Parent().Type() {
-	case "call_expression":
+type Document struct {
+	// Root of the parsed nodes for the document.
+	RootNode *sitter.Node
+	// Document source code.
+	SourceCode []byte
+}
+
+type DefinitionResult struct {
+	Range parser.Range
+	Node  *sitter.Node
+	URI   string
+}
+
+// Find the definition of the node reprepsented by start node and
+// identifier. The start node is the identifier node representing the
+// identifier.
+func findDefinition(startNode *sitter.Node, identifier string, uri string, documents map[string]Document, includesDir string) (DefinitionResult, error) {
+	doc, ok := documents[uri]
+	if !ok {
+		return DefinitionResult{}, errors.New("document not found")
+	}
+	sourceCode := doc.SourceCode
+	if startNode.Parent() != nil && startNode.Parent().Type() == "call_expression" {
 		// Is this byte slice conversion expensive? If it is, we might need to
 		// find a way so that we do not have to do the conversion. Ideally we
 		// should just need to parse the source code once and cache it.
 		locRange, node, err := parser.FindFuncDefinition(identifier, sourceCode)
-		return locRange, node, err
-
-	default:
-		// No point looking at nodes past the identifier node.
-		isNodeRowAfterIdentifierNode := func(node *sitter.Node) bool {
-			return node.StartPoint().Row > identifierNode.EndPoint().Row
-		}
-		isGlobalScope := func(node *sitter.Node) bool {
-			return node.Type() == "preproc_def" || node.Type() == "compound_statement"
-		}
-		currentNode := identifierNode.Parent()
-		for currentNode.Parent() != nil {
-			currentNode = currentNode.Parent()
-			if currentNode.Type() == "function_definition" {
-				funcIdentifierMode := currentNode.ChildByFieldName("declarator").ChildByFieldName("declarator")
-				if funcIdentifierMode != nil && funcIdentifierMode.Content(sourceCode) == identifier {
-					return parser.NewParserRange(funcIdentifierMode), funcIdentifierMode, nil
-				}
-				paramsNode := currentNode.ChildByFieldName("declarator").ChildByFieldName("parameters")
-				if paramNode, err := findParameterNode(paramsNode, identifier, sourceCode); err == nil {
-					return parser.NewParserRange(paramNode), paramNode, nil
-				}
-			}
-
-			for i := 0; i < int(currentNode.ChildCount()); i++ {
-				currentChildNode := currentNode.Child(i)
-				if isGlobalScope(currentChildNode) {
-					if currentChildNode.Type() == "preproc_def" {
-						identifierDeclarationNode := currentChildNode.ChildByFieldName("name")
-						if identifierDeclarationNode != nil && identifierDeclarationNode.Content(sourceCode) == identifier {
-							return parser.NewParserRange(identifierDeclarationNode), identifierDeclarationNode, nil
-						}
-					}
-					if currentChildNode.Type() == "compound_statement" {
-						for i := 0; i < int(currentChildNode.ChildCount()); i++ {
-							if isNodeRowAfterIdentifierNode(currentChildNode.Child(i)) {
-								break
-							}
-							locRange, n, err := findDeclaration(currentChildNode.Child(i), identifier, sourceCode)
-							if err != nil {
-								continue
-							}
-							return locRange, n, nil
-						}
-					}
-				}
-				// No point looking at nodes past the identifier node.
-				if isNodeRowAfterIdentifierNode(currentChildNode) {
-					break
-				}
-				locRange, n, err := findDeclaration(currentChildNode, identifier, sourceCode)
-				if err != nil {
-					continue
-				}
-				return locRange, n, nil
-			}
-		}
-		return parser.Range{}, nil, errors.New("parent function definition not found")
+		return DefinitionResult{Range: locRange, Node: node, URI: uri}, err
 	}
+	// No point looking at nodes past the identifier node.
+	isNodeRowAfterIdentifierNode := func(node *sitter.Node) bool {
+		return node.StartPoint().Row > startNode.EndPoint().Row
+	}
+	currentNode := startNode
+	for currentNode != nil {
+		if currentNode.Type() == "function_definition" {
+			funcIdentifierMode := currentNode.ChildByFieldName("declarator").ChildByFieldName("declarator")
+			if funcIdentifierMode != nil && funcIdentifierMode.Content(sourceCode) == identifier {
+				return DefinitionResult{Range: parser.NewParserRange(funcIdentifierMode), Node: funcIdentifierMode, URI: uri}, nil
+			}
+			paramsNode := currentNode.ChildByFieldName("declarator").ChildByFieldName("parameters")
+			if paramNode, err := findParameterNode(paramsNode, identifier, sourceCode); err == nil {
+				return DefinitionResult{Range: parser.NewParserRange(paramNode), Node: paramNode, URI: uri}, nil
+			}
+		}
+
+		for i := 0; i < int(currentNode.ChildCount()); i++ {
+			currentChildNode := currentNode.Child(i)
+			if currentChildNode.Type() == "preproc_def" {
+				identifierDeclarationNode := currentChildNode.ChildByFieldName("name")
+				if identifierDeclarationNode != nil && identifierDeclarationNode.Content(sourceCode) == identifier {
+					return DefinitionResult{Range: parser.NewParserRange(identifierDeclarationNode), Node: identifierDeclarationNode, URI: uri}, nil
+				}
+			}
+			if currentChildNode.Type() == "preproc_include" {
+				if pathNode := currentChildNode.ChildByFieldName("path"); pathNode != nil {
+					pathQuoted := pathNode.Content(sourceCode)
+					pathUnquoted := pathQuoted[1 : len(pathQuoted)-1]
+					includeFilepath := path.Join(includesDir, pathUnquoted)
+					includeURI := protocol.FilepathURI(includeFilepath)
+					if includeDoc, ok := documents[includeURI]; ok {
+						includeRootNode := includeDoc.RootNode
+						// TODO: we should keep track of the includes we have
+						// already visited and put a limit on the number of
+						// recursions we can allow. Otherwise we will blow the
+						// stack if the user has authored an import cycle.
+						return findDefinition(includeRootNode, identifier, includeURI, documents, includesDir)
+					}
+				}
+			}
+			if currentChildNode.Type() == "compound_statement" {
+				for i := 0; i < int(currentChildNode.ChildCount()); i++ {
+					if isNodeRowAfterIdentifierNode(currentChildNode.Child(i)) {
+						break
+					}
+					locRange, n, err := findDeclaration(currentChildNode.Child(i), identifier, sourceCode)
+					if err != nil {
+						continue
+					}
+					return DefinitionResult{Range: locRange, Node: n, URI: uri}, nil
+				}
+			}
+			// No point looking at nodes past the identifier node.
+			if isNodeRowAfterIdentifierNode(currentChildNode) {
+				break
+			}
+			locRange, n, err := findDeclaration(currentChildNode, identifier, sourceCode)
+			if err != nil {
+				continue
+			}
+			return DefinitionResult{Range: locRange, Node: n, URI: uri}, nil
+		}
+		currentNode = currentNode.Parent()
+	}
+	return DefinitionResult{}, errors.New("parent function definition not found")
 }
 
 // Find the parameter node with the provided identifier name in the parameters

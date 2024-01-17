@@ -1,6 +1,9 @@
 package protocol
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"fmt"
+)
 
 const (
 	CompletionItemKindText          = "text"
@@ -37,6 +40,11 @@ const (
 )
 
 var NullResult = json.RawMessage("null")
+
+// Converts filepath into a URI.
+func FilepathURI(filepath string) string {
+	return fmt.Sprintf("file://%s", filepath)
+}
 
 func GetCompletionItemKind(kind string) *uint {
 	var result uint
