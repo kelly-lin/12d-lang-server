@@ -152,11 +152,6 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 		err := protocol.ResponseError{Code: -32601, Message: "unhandled method"}
 		return protocol.ResponseMessage{ID: msg.ID, Error: &err}, 0, nil
 	}
-
-	// TODO: stub documentation markdown, to extract this out to a formatting
-	// function.
-	doc := protocol.MarkUpContent{Kind: "markdown", Value: "`Integer Get_command_argument(Integer i, Text &argument, Integer i, Text &argument, Integer i, Text &argument)`" + "\n\nGet the number of tokens in the program command-line. The number of tokens is returned as the function return value. For some example code, see 5. 4 Command Line-Arguments."}
-
 	switch msg.Method {
 	case "initialize":
 		result := protocol.InitializeResult{
@@ -174,13 +169,17 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 			nil
 
 	case "textDocument/completion":
-		// TODO: Below are stub completion items, to replace with proper
-		// completion items.
-		items := []protocol.CompletionItem{
-			{Label: "Typescript", Documentation: doc},
-			{Label: "Javascript", Documentation: doc},
-			{Label: "Boo", Documentation: doc},
+		var params protocol.CompletionParams
+		if err := json.Unmarshal(msg.Params, &params); err != nil {
+			return newNullResponseMessage(msg.ID), len(protocol.NullResult), err
 		}
+		doc, ok := s.documents[params.TextDocument.URI]
+		if !ok {
+			return newNullResponseMessage(msg.ID), len(protocol.NullResult), errors.New("source node not found")
+		}
+		rootNode := doc.RootNode
+		sourceCode := doc.SourceCode
+		items := getCompletionItems(rootNode, sourceCode, params.Position)
 		resultBytes, err := json.Marshal(items)
 		if err != nil {
 			return protocol.ResponseMessage{}, 0, err
@@ -194,8 +193,8 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 
 	case "completionItem/resolve":
 		item := protocol.CompletionItem{
-			Label:         "Typescript",
-			Documentation: doc}
+			Label: "Typescript",
+		}
 		resultBytes, err := json.Marshal(item)
 		if err != nil {
 			return protocol.ResponseMessage{}, 0, err
@@ -333,6 +332,76 @@ func (s *Server) setDocument(uri string, content string) error {
 	}
 	s.documents[uri] = Document{RootNode: rootNode, SourceCode: []byte(content)}
 	return nil
+}
+
+// Gets the completion items for the node given by position.
+func getCompletionItems(rootNode *sitter.Node, sourceCode []byte, position protocol.Position) []protocol.CompletionItem {
+	var result []protocol.CompletionItem
+	// Find the ancestor node that contains our line number.
+	var containingNode *sitter.Node
+	for i := 0; i < int(rootNode.ChildCount()); i++ {
+		if rootNode.Child(i).StartPoint().Row <= uint32(position.Line) && uint32(position.Line) <= rootNode.Child(i).EndPoint().Row {
+			containingNode = rootNode.Child(i)
+			break
+		}
+	}
+	if containingNode == nil {
+		return []protocol.CompletionItem{}
+	}
+	// Depth first search the ancestor for the nearest node.
+	// TODO: BFS might be better here?
+	stack := parser.NewStack()
+	stack.Push(rootNode)
+	var nearestNode *sitter.Node
+	for stack.HasItems() {
+		currentNode, err := stack.Pop()
+		if err != nil {
+			continue
+		}
+		// if currentNode.EndPoint().Row > uint32(position.Line) {
+		// 	break
+		// }
+		if currentNode.StartPoint().Row == uint32(position.Line) &&
+			uint(currentNode.StartPoint().Column) <= position.Character &&
+			position.Character <= uint(currentNode.EndPoint().Column) {
+			nearestNode = currentNode
+		}
+		for i := 0; i < int(currentNode.ChildCount()); i++ {
+			stack.Push(currentNode.Child(i))
+		}
+	}
+	if nearestNode == nil {
+		return []protocol.CompletionItem{}
+	}
+	var reachableDeclarators []*sitter.Node
+	if nearestNode.Type() == "identifier" {
+		// Walk up the tree and look for all identifiers.
+		currentNode := nearestNode
+		for currentNode.Parent() != nil {
+			currentNode = currentNode.Parent()
+			for i := 0; i < int(currentNode.ChildCount()); i++ {
+				currentChild := currentNode.Child(i)
+				if currentChild.StartPoint().Row >= nearestNode.StartPoint().Row {
+					break
+				}
+				if currentChild.Type() == "declaration" {
+					reachableDeclarators = append(reachableDeclarators, currentChild)
+				}
+			}
+		}
+	}
+	for _, declaratorNode := range reachableDeclarators {
+		if declaratorNode.Type() == "declaration" {
+			// TODO: this is only handling the first "init_declarator", need to
+			// handle multiple single line declarations.
+			identifier := declaratorNode.ChildByFieldName("declarator").ChildByFieldName("declarator").Content(sourceCode)
+			result = append(result, protocol.CompletionItem{
+				Label: identifier,
+				Kind:  protocol.GetCompletionItemKind(protocol.CompletionItemKindVariable),
+			})
+		}
+	}
+	return result
 }
 
 // Gets the hover items for the provided node and identifier. The hover items

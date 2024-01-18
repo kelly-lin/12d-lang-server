@@ -21,9 +21,11 @@ import (
 )
 
 func TestServer(t *testing.T) {
+	// Helper returns the response message and fails if the test if the
+	// response message could not be created.
 	mustNewLocationResponseMessage := func(uri string, start, end protocol.Position) protocol.ResponseMessage {
 		msg, err := newLocationResponseMessage(1, uri, start, end)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		return msg
 	}
 	// Test command should be run in the root directory.
@@ -34,6 +36,64 @@ func TestServer(t *testing.T) {
 	t.Run("textDocument/definition", func(t *testing.T) {
 		// Helper returns the response message and fails if the test if the
 		// response message could not be created.
+		mustNewCompletionResponseMessage := func(items []protocol.CompletionItem) protocol.ResponseMessage {
+			msg, err := newCompletionResponseMessage(1, items)
+			require.NoError(t, err)
+			return msg
+		}
+
+		type TestCase struct {
+			Desc        string
+			SourceCode  string
+			IncludesDir string
+			Pos         protocol.Position
+			Want        protocol.ResponseMessage
+		}
+		testCases := []TestCase{
+			{
+				Desc: "identifier",
+				SourceCode: `void main() {
+    Integer orig = 1;
+    Integer b = o
+}`,
+				Pos: protocol.Position{Line: 2, Character: 17},
+				Want: mustNewCompletionResponseMessage(
+					[]protocol.CompletionItem{
+						{
+							Label: "orig",
+							Kind:  protocol.GetCompletionItemKind(protocol.CompletionItemKindVariable),
+						},
+					},
+				),
+			},
+		}
+		for _, testCase := range testCases {
+			t.Run(testCase.Desc, func(t *testing.T) {
+				defer goleak.VerifyNone(t)
+				assert := assert.New(t)
+				logger, err := newLogger()
+				assert.NoError(err)
+				in, out, cleanUp := startServer(testCase.IncludesDir, logger)
+				defer cleanUp()
+
+				var id int64 = 1
+				didOpenMsgBytes, err := newDidOpenRequestMessageBytes(id, "file:///main.4dm", testCase.SourceCode)
+				assert.NoError(err)
+				_, err = in.Writer.Write([]byte(server.ToProtocolMessage(didOpenMsgBytes)))
+				assert.NoError(err)
+
+				msgBytes, err := newCompletionRequestMessageBytes(id, "file:///main.4dm", testCase.Pos)
+				assert.NoError(err)
+				_, err = in.Writer.Write([]byte(server.ToProtocolMessage(msgBytes)))
+				assert.NoError(err)
+
+				got, err := getReponseMessage(out.Reader)
+				assert.NoError(err)
+				assertResponseMessageEqual(t, testCase.Want, got)
+			})
+		}
+	})
+	t.Run("textDocument/definition", func(t *testing.T) {
 		type TestCase struct {
 			Desc        string
 			SourceCode  string
@@ -899,6 +959,34 @@ func newDefinitionRequestMessageBytes(id int64, uri string, position protocol.Po
 	return definitionMsgBytes, nil
 }
 
+// Creates a new protocol request message with definition params and returns the
+// wire representation.
+func newCompletionRequestMessageBytes(id int64, uri string, position protocol.Position) ([]byte, error) {
+	params := protocol.CompletionParams{
+		TextDocumentPositionParams: protocol.TextDocumentPositionParams{
+			TextDocument: protocol.TextDocumentIdentifier{
+				URI: uri,
+			},
+			Position: position,
+		},
+	}
+	paramsBytes, err := json.Marshal(params)
+	if err != nil {
+		return nil, err
+	}
+	msg := protocol.RequestMessage{
+		JSONRPC: "2.0",
+		ID:      id,
+		Method:  "textDocument/completion",
+		Params:  json.RawMessage(paramsBytes),
+	}
+	msgBytes, err := json.Marshal(msg)
+	if err != nil {
+		return nil, err
+	}
+	return msgBytes, nil
+}
+
 func newHoverRequestMessageBytes(id int64, uri string, position protocol.Position) ([]byte, error) {
 	hoverParams := protocol.HoverParams{
 		TextDocumentPositionParams: protocol.TextDocumentPositionParams{
@@ -992,6 +1080,17 @@ func newLocationResponseMessage(id int64, uri string, start, end protocol.Positi
 		return protocol.ResponseMessage{}, err
 	}
 	msg := protocol.ResponseMessage{ID: id, Result: json.RawMessage(locationBytes)}
+	return msg, nil
+}
+
+// Creates a new protocol response message with completion items and returns
+// the wire representation.
+func newCompletionResponseMessage(id int64, items []protocol.CompletionItem) (protocol.ResponseMessage, error) {
+	resultBytes, err := json.Marshal(items)
+	if err != nil {
+		return protocol.ResponseMessage{}, err
+	}
+	msg := protocol.ResponseMessage{ID: id, Result: json.RawMessage(resultBytes)}
 	return msg, nil
 }
 

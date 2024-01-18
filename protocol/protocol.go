@@ -39,6 +39,12 @@ const (
 	TextDocumentSyncKindIncremental uint = 2
 )
 
+const (
+	CompletionTriggerKindInvoked                         int = 1
+	CompletionTriggerKindTriggerCharacter                int = 2
+	CompletionTriggerKindTriggerForIncompleteCompletions int = 3
+)
+
 var NullResult = json.RawMessage("null")
 
 // Converts filepath into a URI.
@@ -226,4 +232,14 @@ type VersionedTextDocumentIdentifier struct {
 
 type TextDocumentContentChangeEvent struct {
 	Text string `json:"text"`
+}
+
+type CompletionParams struct {
+	TextDocumentPositionParams
+	Context CompletionContext `json:"context,omitempty"`
+}
+
+type CompletionContext struct {
+	TriggerKind      int    `json:"triggerKind"`
+	TriggerCharacter string `json:"triggerCharacter,omitempty"`
 }
