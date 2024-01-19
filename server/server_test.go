@@ -165,6 +165,16 @@ void main() {
 					}),
 				),
 			},
+			{
+				Desc: "identifier and keyword completion - inside incomplete for loop",
+				SourceCode: `void main() {
+    for (
+}`,
+				Pos: protocol.Position{Line: 1, Character: 9},
+				Want: mustNewCompletionResponseMessage(
+					appendKeywords([]protocol.CompletionItem{mainFuncItem}),
+				),
+			},
 		}
 		for _, testCase := range testCases {
 			t.Run(testCase.Desc, func(t *testing.T) {
@@ -425,6 +435,7 @@ void main() {
 			},
 			// TODO: preproc def as subscript expression index e.g. arr[INDEX]
 			// where INDEX is "#define INDEX 1".
+			// TODO: go to def of include file.
 		}
 		for _, testCase := range testCases {
 			t.Run(testCase.Desc, func(t *testing.T) {
