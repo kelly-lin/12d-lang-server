@@ -1005,7 +1005,7 @@ func stringifyRequestMessage(msg protocol.RequestMessage) string {
 }
 
 func newServerCapabilities() protocol.ServerCapabilities {
-	resolveProvider := true
+	resolveProvider := false
 	definitionProvider := true
 	textDocumentSyncKind := protocol.TextDocumentSyncKindFull
 	result := protocol.ServerCapabilities{
