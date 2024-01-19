@@ -14,6 +14,7 @@ import (
 
 	"go.uber.org/goleak"
 
+	"github.com/kelly-lin/12d-lang-server/lang"
 	"github.com/kelly-lin/12d-lang-server/protocol"
 	"github.com/kelly-lin/12d-lang-server/server"
 	"github.com/stretchr/testify/assert"
@@ -41,6 +42,7 @@ func TestServer(t *testing.T) {
 			require.NoError(t, err)
 			return msg
 		}
+		emptyDoc := protocol.MarkupContent{Kind: protocol.MarkupKindPlainText, Value: ""}
 
 		type TestCase struct {
 			Desc        string
@@ -60,8 +62,9 @@ func TestServer(t *testing.T) {
 				Want: mustNewCompletionResponseMessage(
 					[]protocol.CompletionItem{
 						{
-							Label: "orig",
-							Kind:  protocol.GetCompletionItemKind(protocol.CompletionItemKindVariable),
+							Label:         "orig",
+							Kind:          protocol.GetCompletionItemKind(protocol.CompletionItemKindVariable),
+							Documentation: emptyDoc,
 						},
 					},
 				),
@@ -76,8 +79,9 @@ func TestServer(t *testing.T) {
 				Want: mustNewCompletionResponseMessage(
 					[]protocol.CompletionItem{
 						{
-							Label: "orig",
-							Kind:  protocol.GetCompletionItemKind(protocol.CompletionItemKindVariable),
+							Label:         "orig",
+							Kind:          protocol.GetCompletionItemKind(protocol.CompletionItemKindVariable),
+							Documentation: emptyDoc,
 						},
 					},
 				),
@@ -92,12 +96,29 @@ func TestServer(t *testing.T) {
 // 				Want: mustNewCompletionResponseMessage(
 // 					[]protocol.CompletionItem{
 // 						{
-// 							Label: "orig",
-// 							Kind:  protocol.GetCompletionItemKind(protocol.CompletionItemKindVariable),
+// 							Label:         "orig",
+// 							Kind:          protocol.GetCompletionItemKind(protocol.CompletionItemKindVariable),
+// 							Documentation: emptyDoc,
 // 						},
 // 					},
 // 				),
 // 			},
+			{
+				Desc: "typing identifier - no completions",
+				SourceCode: `void main() {
+    Integer o;
+}`,
+				Pos:  protocol.Position{Line: 1, Character: 13},
+				Want: newNullResponseMessage(1),
+			},
+			{
+				Desc: "keyword",
+				SourceCode: `void main() {
+    I
+}`,
+				Pos:  protocol.Position{Line: 1, Character: 5},
+				Want: mustNewCompletionResponseMessage(lang.Keywords),
+			},
 		}
 		for _, testCase := range testCases {
 			t.Run(testCase.Desc, func(t *testing.T) {
@@ -1124,6 +1145,12 @@ func newCompletionResponseMessage(id int64, items []protocol.CompletionItem) (pr
 	}
 	msg := protocol.ResponseMessage{ID: id, Result: json.RawMessage(resultBytes)}
 	return msg, nil
+}
+
+// Creates a new protocol response message id that returns the null result in
+// the wire representation.
+func newNullResponseMessage(id int64) protocol.ResponseMessage {
+	return protocol.ResponseMessage{ID: id, Result: json.RawMessage([]byte("null"))}
 }
 
 // Creates a new logging function for debugging.

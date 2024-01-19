@@ -356,7 +356,25 @@ func getCompletionItems(rootNode *sitter.Node, sourceCode []byte, position proto
 		}
 	}
 	if nearestNode == nil {
-		return []protocol.CompletionItem{}
+		return result
+	}
+	// We might get a node which has a parent with the same row and col numbers
+	// like below:
+	//   (compound_statement [0, 12] - [2, 1]
+	//     (ERROR [1, 4] - [1, 5]
+	//       (identifier [1, 4] - [1, 5]))
+	// To handle this, walk up the parents and find the nearest parent which has
+	// the same coordinates and set it as the nearest node instead.
+	for nearestNode.Parent() != nil {
+		currentNode := nearestNode.Parent()
+		if currentNode.StartPoint().Row == nearestNode.StartPoint().Row &&
+			currentNode.StartPoint().Column == nearestNode.StartPoint().Column &&
+			currentNode.EndPoint().Row == nearestNode.EndPoint().Row &&
+			currentNode.EndPoint().Column == nearestNode.EndPoint().Column {
+			nearestNode = currentNode
+		} else {
+			break
+		}
 	}
 	var reachableDeclarators []*sitter.Node
 	if nearestNode.Type() == "identifier" {
@@ -374,26 +392,38 @@ func getCompletionItems(rootNode *sitter.Node, sourceCode []byte, position proto
 				}
 			}
 		}
-	}
-	for _, declaratorNode := range reachableDeclarators {
-		if declaratorNode.Type() == "declaration" {
-			// TODO: this is only handling the first "init_declarator", need to
-			// handle multiple single line declarations.
-			if identifierNode := declaratorNode.ChildByFieldName("declarator").ChildByFieldName("declarator"); identifierNode != nil {
-				result = append(result, protocol.CompletionItem{
-					Label: identifierNode.Content(sourceCode),
-					Kind:  protocol.GetCompletionItemKind(protocol.CompletionItemKindVariable),
-				})
-				continue
-			}
-			if identifierNode := declaratorNode.ChildByFieldName("declarator"); identifierNode != nil {
-				result = append(result, protocol.CompletionItem{
-					Label: identifierNode.Content(sourceCode),
-					Kind:  protocol.GetCompletionItemKind(protocol.CompletionItemKindVariable),
-				})
-				continue
+		var declarations []protocol.CompletionItem
+		for _, declaratorNode := range reachableDeclarators {
+			if declaratorNode.Type() == "declaration" {
+				// TODO: this is only handling the first "init_declarator", need to
+				// handle multiple single line declarations.
+				if identifierNode := declaratorNode.ChildByFieldName("declarator").ChildByFieldName("declarator"); identifierNode != nil {
+					declarations = append(declarations, protocol.CompletionItem{
+						Label: identifierNode.Content(sourceCode),
+						Kind:  protocol.GetCompletionItemKind(protocol.CompletionItemKindVariable),
+						Documentation: protocol.MarkupContent{
+							Kind:  protocol.MarkupKindPlainText,
+							Value: "",
+						},
+					})
+					continue
+				}
+				if identifierNode := declaratorNode.ChildByFieldName("declarator"); identifierNode != nil {
+					declarations = append(declarations, protocol.CompletionItem{
+						Label: identifierNode.Content(sourceCode),
+						Kind:  protocol.GetCompletionItemKind(protocol.CompletionItemKindVariable),
+						Documentation: protocol.MarkupContent{
+							Kind:  protocol.MarkupKindPlainText,
+							Value: "",
+						},
+					})
+					continue
+				}
 			}
 		}
+		result = append(result, declarations...)
+	} else {
+		result = append(result, lang.Keywords...)
 	}
 	return result
 }

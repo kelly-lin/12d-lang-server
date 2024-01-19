@@ -45,6 +45,11 @@ const (
 	CompletionTriggerKindTriggerForIncompleteCompletions int = 3
 )
 
+const (
+	MarkupKindPlainText string = "plaintext"
+	MarkupKindMarkdown  string = "markdown"
+)
+
 var NullResult = json.RawMessage("null")
 
 // Converts filepath into a URI.
@@ -144,10 +149,10 @@ type CompletionItem struct {
 	Label         string        `json:"label"`
 	Kind          *uint         `json:"kind,omitempty"`
 	Data          any           `json:"data,omitempty"`
-	Documentation MarkUpContent `json:"documentation,omitempty"`
+	Documentation MarkupContent `json:"documentation,omitempty"`
 }
 
-type MarkUpContent struct {
+type MarkupContent struct {
 	Kind  string `json:"kind"`
 	Value string `json:"value"`
 }
