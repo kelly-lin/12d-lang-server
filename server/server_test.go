@@ -106,9 +106,10 @@ func TestServer(t *testing.T) {
 			{
 				Desc: "typing identifier - no completions",
 				SourceCode: `void main() {
-    Integer o;
+    Integer october = 10;
+    Integer o
 }`,
-				Pos:  protocol.Position{Line: 1, Character: 13},
+				Pos:  protocol.Position{Line: 2, Character: 13},
 				Want: newNullResponseMessage(1),
 			},
 			{

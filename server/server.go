@@ -378,6 +378,10 @@ func getCompletionItems(rootNode *sitter.Node, sourceCode []byte, position proto
 	}
 	var reachableDeclarators []*sitter.Node
 	if nearestNode.Type() == "identifier" {
+		// We are typing in a declaration identifier, do not provide completion.
+		if nearestNode.Parent().Type() == "declaration" {
+			return result
+		}
 		// Walk up the tree and look for all identifiers.
 		currentNode := nearestNode
 		for currentNode.Parent() != nil {
