@@ -34,7 +34,7 @@ func TestServer(t *testing.T) {
 	require.NoError(t, err)
 	includesDir := path.Join(startDir, "..", "lang/includes")
 
-	t.Run("textDocument/definition", func(t *testing.T) {
+	t.Run("textDocument/completion", func(t *testing.T) {
 		// Helper returns the response message and fails if the test if the
 		// response message could not be created.
 		mustNewCompletionResponseMessage := func(items []protocol.CompletionItem) protocol.ResponseMessage {
@@ -186,6 +186,7 @@ void main() {
 			})
 		}
 	})
+
 	t.Run("textDocument/definition", func(t *testing.T) {
 		type TestCase struct {
 			Desc        string
@@ -416,6 +417,8 @@ void main() {
 					protocol.Position{Line: 354, Character: 29},
 				),
 			},
+			// TODO: preproc def as subscript expression index e.g. arr[INDEX]
+			// where INDEX is "#define INDEX 1".
 		}
 		for _, testCase := range testCases {
 			t.Run(testCase.Desc, func(t *testing.T) {
