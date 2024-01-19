@@ -51,6 +51,18 @@ func TestServer(t *testing.T) {
 			Kind:          protocol.GetCompletionItemKind(protocol.CompletionItemKindFunction),
 			Documentation: emptyDoc,
 		}
+		assertCompletionResponseMessageEqual := func(t *testing.T, want, got protocol.ResponseMessage) {
+			t.Helper()
+			assert.Equal(t, want.ID, got.ID)
+			assert.Equal(t, want.Error, got.Error)
+			var wantResult []protocol.CompletionItem
+			err := json.Unmarshal(want.Result, &wantResult)
+			require.NoError(t, err)
+			var gotResult []protocol.CompletionItem
+			err = json.Unmarshal(got.Result, &gotResult)
+			require.NoError(t, err)
+			assert.Equal(t, wantResult, gotResult)
+		}
 
 		type TestCase struct {
 			Desc        string
@@ -166,7 +178,7 @@ void main() {
 				),
 			},
 			{
-				Desc: "identifier and keyword completion - inside incomplete for loop",
+				Desc: "identifier and keyword completion - initializer declaration",
 				SourceCode: `void main() {
     for (
 }`,
@@ -175,6 +187,23 @@ void main() {
 					appendKeywords([]protocol.CompletionItem{mainFuncItem}),
 				),
 			},
+// 			{
+// 				Desc: "identifier keyword and initializer completion when typing for loop condition",
+// 				SourceCode: `void main() {
+//     for (Integer counter = 1; c
+// }`,
+// 				Pos: protocol.Position{Line: 1, Character: 31},
+// 				Want: mustNewCompletionResponseMessage(
+// 					[]protocol.CompletionItem{
+// 						{
+// 							Label:         "counter",
+// 							Kind:          protocol.GetCompletionItemKind(protocol.CompletionItemKindVariable),
+// 							Documentation: emptyDoc,
+// 						},
+// 						mainFuncItem,
+// 					},
+// 				),
+// 			},
 		}
 		for _, testCase := range testCases {
 			t.Run(testCase.Desc, func(t *testing.T) {
@@ -198,7 +227,7 @@ void main() {
 
 				got, err := getReponseMessage(out.Reader)
 				assert.NoError(err)
-				assertResponseMessageEqual(t, testCase.Want, got)
+				assertCompletionResponseMessageEqual(t, testCase.Want, got)
 			})
 		}
 	})
