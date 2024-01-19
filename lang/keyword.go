@@ -149,4 +149,6 @@ var Keywords = []protocol.CompletionItem{
 	{Label: "default", Kind: protocol.GetCompletionItemKind(protocol.CompletionItemKindKeyword), Documentation: protocol.MarkupContent{Kind: protocol.MarkupKindPlainText, Value: ""}},
 	{Label: "case", Kind: protocol.GetCompletionItemKind(protocol.CompletionItemKindKeyword), Documentation: protocol.MarkupContent{Kind: protocol.MarkupKindPlainText, Value: ""}},
 	{Label: "return", Kind: protocol.GetCompletionItemKind(protocol.CompletionItemKindKeyword), Documentation: protocol.MarkupContent{Kind: protocol.MarkupKindPlainText, Value: ""}},
+	{Label: "include", Kind: protocol.GetCompletionItemKind(protocol.CompletionItemKindKeyword), Documentation: protocol.MarkupContent{Kind: protocol.MarkupKindPlainText, Value: ""}},
+	{Label: "define", Kind: protocol.GetCompletionItemKind(protocol.CompletionItemKindKeyword), Documentation: protocol.MarkupContent{Kind: protocol.MarkupKindPlainText, Value: ""}},
 }
