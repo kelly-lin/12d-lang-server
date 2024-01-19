@@ -86,23 +86,28 @@ func TestServer(t *testing.T) {
 					},
 				),
 			},
-// 			{
-// 				Desc: "initialised declaration identifier in multi declaration",
-// 				SourceCode: `void main() {
-//     Integer a, orig = 1;
-//     Integer b = o
-// }`,
-// 				Pos: protocol.Position{Line: 2, Character: 17},
-// 				Want: mustNewCompletionResponseMessage(
-// 					[]protocol.CompletionItem{
-// 						{
-// 							Label:         "orig",
-// 							Kind:          protocol.GetCompletionItemKind(protocol.CompletionItemKindVariable),
-// 							Documentation: emptyDoc,
-// 						},
-// 					},
-// 				),
-// 			},
+			{
+				Desc: "initialised declaration identifier in multi declaration",
+				SourceCode: `void main() {
+    Integer a, orig = 1;
+    Integer b = o
+}`,
+				Pos: protocol.Position{Line: 2, Character: 17},
+				Want: mustNewCompletionResponseMessage(
+					[]protocol.CompletionItem{
+						{
+							Label:         "a",
+							Kind:          protocol.GetCompletionItemKind(protocol.CompletionItemKindVariable),
+							Documentation: emptyDoc,
+						},
+						{
+							Label:         "orig",
+							Kind:          protocol.GetCompletionItemKind(protocol.CompletionItemKindVariable),
+							Documentation: emptyDoc,
+						},
+					},
+				),
+			},
 			{
 				Desc: "typing identifier - no completions",
 				SourceCode: `void main() {

@@ -401,27 +401,28 @@ func getCompletionItems(rootNode *sitter.Node, sourceCode []byte, position proto
 			if declaratorNode.Type() == "declaration" {
 				// TODO: this is only handling the first "init_declarator", need to
 				// handle multiple single line declarations.
-				if identifierNode := declaratorNode.ChildByFieldName("declarator").ChildByFieldName("declarator"); identifierNode != nil {
-					declarations = append(declarations, protocol.CompletionItem{
-						Label: identifierNode.Content(sourceCode),
-						Kind:  protocol.GetCompletionItemKind(protocol.CompletionItemKindVariable),
-						Documentation: protocol.MarkupContent{
-							Kind:  protocol.MarkupKindPlainText,
-							Value: "",
-						},
-					})
-					continue
-				}
-				if identifierNode := declaratorNode.ChildByFieldName("declarator"); identifierNode != nil {
-					declarations = append(declarations, protocol.CompletionItem{
-						Label: identifierNode.Content(sourceCode),
-						Kind:  protocol.GetCompletionItemKind(protocol.CompletionItemKindVariable),
-						Documentation: protocol.MarkupContent{
-							Kind:  protocol.MarkupKindPlainText,
-							Value: "",
-						},
-					})
-					continue
+				for i := 0; i < int(declaratorNode.ChildCount()); i++ {
+					currentChild := declaratorNode.Child(i)
+					if currentChild.Type() == "identifier" {
+						declarations = append(declarations, protocol.CompletionItem{
+							Label: currentChild.Content(sourceCode),
+							Kind:  protocol.GetCompletionItemKind(protocol.CompletionItemKindVariable),
+							Documentation: protocol.MarkupContent{
+								Kind:  protocol.MarkupKindPlainText,
+								Value: "",
+							},
+						})
+					}
+					if currentChild.Type() == "init_declarator" {
+						declarations = append(declarations, protocol.CompletionItem{
+							Label: currentChild.ChildByFieldName("declarator").Content(sourceCode),
+							Kind:  protocol.GetCompletionItemKind(protocol.CompletionItemKindVariable),
+							Documentation: protocol.MarkupContent{
+								Kind:  protocol.MarkupKindPlainText,
+								Value: "",
+							},
+						})
+					}
 				}
 			}
 		}
