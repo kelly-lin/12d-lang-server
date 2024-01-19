@@ -1005,6 +1005,12 @@ func stringifyRequestMessage(msg protocol.RequestMessage) string {
 }
 
 func newServerCapabilities() protocol.ServerCapabilities {
+	// Disabling resolve provider so that it simplifies our implementation by
+	// not having to calculate the documentation in a separate goroutine and
+	// resolving at a later time. We should enable this if we find generating
+	// completion items are expensive. We set this flag so that we can provide
+	// at least one filed to the completion options so that our server responds
+	// to the client that we provide completion services.
 	resolveProvider := false
 	definitionProvider := true
 	textDocumentSyncKind := protocol.TextDocumentSyncKindFull
