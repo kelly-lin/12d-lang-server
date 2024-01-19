@@ -394,11 +394,20 @@ func getCompletionItems(rootNode *sitter.Node, sourceCode []byte, position proto
 		if declaratorNode.Type() == "declaration" {
 			// TODO: this is only handling the first "init_declarator", need to
 			// handle multiple single line declarations.
-			identifier := declaratorNode.ChildByFieldName("declarator").ChildByFieldName("declarator").Content(sourceCode)
-			result = append(result, protocol.CompletionItem{
-				Label: identifier,
-				Kind:  protocol.GetCompletionItemKind(protocol.CompletionItemKindVariable),
-			})
+			if identifierNode := declaratorNode.ChildByFieldName("declarator").ChildByFieldName("declarator"); identifierNode != nil {
+				result = append(result, protocol.CompletionItem{
+					Label: identifierNode.Content(sourceCode),
+					Kind:  protocol.GetCompletionItemKind(protocol.CompletionItemKindVariable),
+				})
+				continue
+			}
+			if identifierNode := declaratorNode.ChildByFieldName("declarator"); identifierNode != nil {
+				result = append(result, protocol.CompletionItem{
+					Label: identifierNode.Content(sourceCode),
+					Kind:  protocol.GetCompletionItemKind(protocol.CompletionItemKindVariable),
+				})
+				continue
+			}
 		}
 	}
 	return result

@@ -51,7 +51,7 @@ func TestServer(t *testing.T) {
 		}
 		testCases := []TestCase{
 			{
-				Desc: "identifier",
+				Desc: "initialised declaration identifier",
 				SourceCode: `void main() {
     Integer orig = 1;
     Integer b = o
@@ -66,6 +66,38 @@ func TestServer(t *testing.T) {
 					},
 				),
 			},
+			{
+				Desc: "uninitialised declaration identifier",
+				SourceCode: `void main() {
+    Integer orig;
+    Integer b = o
+}`,
+				Pos: protocol.Position{Line: 2, Character: 17},
+				Want: mustNewCompletionResponseMessage(
+					[]protocol.CompletionItem{
+						{
+							Label: "orig",
+							Kind:  protocol.GetCompletionItemKind(protocol.CompletionItemKindVariable),
+						},
+					},
+				),
+			},
+// 			{
+// 				Desc: "initialised declaration identifier in multi declaration",
+// 				SourceCode: `void main() {
+//     Integer a, orig = 1;
+//     Integer b = o
+// }`,
+// 				Pos: protocol.Position{Line: 2, Character: 17},
+// 				Want: mustNewCompletionResponseMessage(
+// 					[]protocol.CompletionItem{
+// 						{
+// 							Label: "orig",
+// 							Kind:  protocol.GetCompletionItemKind(protocol.CompletionItemKindVariable),
+// 						},
+// 					},
+// 				),
+// 			},
 		}
 		for _, testCase := range testCases {
 			t.Run(testCase.Desc, func(t *testing.T) {
