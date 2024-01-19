@@ -333,6 +333,7 @@ func getCompletionItems(rootNode *sitter.Node, sourceCode []byte, position proto
 	if containingNode == nil {
 		return []protocol.CompletionItem{}
 	}
+
 	// Depth first search the ancestor for the nearest node.
 	// TODO: BFS might be better here?
 	stack := parser.NewStack()
@@ -356,8 +357,9 @@ func getCompletionItems(rootNode *sitter.Node, sourceCode []byte, position proto
 		}
 	}
 	if nearestNode == nil {
-		return result
+		return nil
 	}
+
 	// We might get a node which has a parent with the same row and col numbers
 	// like below:
 	//   (compound_statement [0, 12] - [2, 1]
@@ -377,57 +379,72 @@ func getCompletionItems(rootNode *sitter.Node, sourceCode []byte, position proto
 		}
 	}
 	var reachableDeclarators []*sitter.Node
+	// We are typing in a declaration identifier, do not provide completion.
+	if nearestNode.Parent().Type() == "declaration" {
+		return nil
+	}
+	// Walk up the tree and look for all identifiers.
+	currentNode := nearestNode
+	for currentNode.Parent() != nil {
+		currentNode = currentNode.Parent()
+		for i := 0; i < int(currentNode.ChildCount()); i++ {
+			currentChild := currentNode.Child(i)
+			if currentChild.StartPoint().Row >= nearestNode.StartPoint().Row {
+				break
+			}
+			if currentChild.Type() == "declaration" {
+				reachableDeclarators = append(reachableDeclarators, currentChild)
+			}
+			if currentChild.Type() == "function_definition" {
+				reachableDeclarators = append(reachableDeclarators, currentChild)
+			}
+		}
+	}
+	var declarations []protocol.CompletionItem
+	for _, declaratorNode := range reachableDeclarators {
+		if declaratorNode.Type() == "declaration" {
+			// TODO: this is only handling the first "init_declarator", need to
+			// handle multiple single line declarations.
+			for i := 0; i < int(declaratorNode.ChildCount()); i++ {
+				currentChild := declaratorNode.Child(i)
+				if currentChild.Type() == "identifier" {
+					declarations = append(declarations, protocol.CompletionItem{
+						Label: currentChild.Content(sourceCode),
+						Kind:  protocol.GetCompletionItemKind(protocol.CompletionItemKindVariable),
+						Documentation: protocol.MarkupContent{
+							Kind:  protocol.MarkupKindPlainText,
+							Value: "",
+						},
+					})
+				}
+				if currentChild.Type() == "init_declarator" {
+					declarations = append(declarations, protocol.CompletionItem{
+						Label: currentChild.ChildByFieldName("declarator").Content(sourceCode),
+						Kind:  protocol.GetCompletionItemKind(protocol.CompletionItemKindVariable),
+						Documentation: protocol.MarkupContent{
+							Kind:  protocol.MarkupKindPlainText,
+							Value: "",
+						},
+					})
+				}
+			}
+		}
+		if declaratorNode.Type() == "function_definition" {
+			identifier := declaratorNode.ChildByFieldName("declarator").ChildByFieldName("declarator").Content(sourceCode)
+			declarations = append(declarations, protocol.CompletionItem{
+				Label: identifier,
+				Kind:  protocol.GetCompletionItemKind(protocol.CompletionItemKindFunction),
+				Documentation: protocol.MarkupContent{
+					Kind:  protocol.MarkupKindPlainText,
+					Value: "",
+				},
+			})
+		}
+	}
 	if nearestNode.Type() == "identifier" {
-		// We are typing in a declaration identifier, do not provide completion.
-		if nearestNode.Parent().Type() == "declaration" {
-			return result
-		}
-		// Walk up the tree and look for all identifiers.
-		currentNode := nearestNode
-		for currentNode.Parent() != nil {
-			currentNode = currentNode.Parent()
-			for i := 0; i < int(currentNode.ChildCount()); i++ {
-				currentChild := currentNode.Child(i)
-				if currentChild.StartPoint().Row >= nearestNode.StartPoint().Row {
-					break
-				}
-				if currentChild.Type() == "declaration" {
-					reachableDeclarators = append(reachableDeclarators, currentChild)
-				}
-			}
-		}
-		var declarations []protocol.CompletionItem
-		for _, declaratorNode := range reachableDeclarators {
-			if declaratorNode.Type() == "declaration" {
-				// TODO: this is only handling the first "init_declarator", need to
-				// handle multiple single line declarations.
-				for i := 0; i < int(declaratorNode.ChildCount()); i++ {
-					currentChild := declaratorNode.Child(i)
-					if currentChild.Type() == "identifier" {
-						declarations = append(declarations, protocol.CompletionItem{
-							Label: currentChild.Content(sourceCode),
-							Kind:  protocol.GetCompletionItemKind(protocol.CompletionItemKindVariable),
-							Documentation: protocol.MarkupContent{
-								Kind:  protocol.MarkupKindPlainText,
-								Value: "",
-							},
-						})
-					}
-					if currentChild.Type() == "init_declarator" {
-						declarations = append(declarations, protocol.CompletionItem{
-							Label: currentChild.ChildByFieldName("declarator").Content(sourceCode),
-							Kind:  protocol.GetCompletionItemKind(protocol.CompletionItemKindVariable),
-							Documentation: protocol.MarkupContent{
-								Kind:  protocol.MarkupKindPlainText,
-								Value: "",
-							},
-						})
-					}
-				}
-			}
-		}
 		result = append(result, declarations...)
 	} else {
+		result = append(result, declarations...)
 		result = append(result, lang.Keywords...)
 	}
 	return result

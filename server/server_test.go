@@ -43,6 +43,14 @@ func TestServer(t *testing.T) {
 			return msg
 		}
 		emptyDoc := protocol.MarkupContent{Kind: protocol.MarkupKindPlainText, Value: ""}
+		appendKeywords := func(items []protocol.CompletionItem) []protocol.CompletionItem {
+			return append(items, lang.Keywords...)
+		}
+		mainFuncItem := protocol.CompletionItem{
+			Label:         "main",
+			Kind:          protocol.GetCompletionItemKind(protocol.CompletionItemKindFunction),
+			Documentation: emptyDoc,
+		}
 
 		type TestCase struct {
 			Desc        string
@@ -66,6 +74,7 @@ func TestServer(t *testing.T) {
 							Kind:          protocol.GetCompletionItemKind(protocol.CompletionItemKindVariable),
 							Documentation: emptyDoc,
 						},
+						mainFuncItem,
 					},
 				),
 			},
@@ -83,6 +92,7 @@ func TestServer(t *testing.T) {
 							Kind:          protocol.GetCompletionItemKind(protocol.CompletionItemKindVariable),
 							Documentation: emptyDoc,
 						},
+						mainFuncItem,
 					},
 				),
 			},
@@ -105,6 +115,7 @@ func TestServer(t *testing.T) {
 							Kind:          protocol.GetCompletionItemKind(protocol.CompletionItemKindVariable),
 							Documentation: emptyDoc,
 						},
+						mainFuncItem,
 					},
 				),
 			},
@@ -122,8 +133,31 @@ func TestServer(t *testing.T) {
 				SourceCode: `void main() {
     I
 }`,
-				Pos:  protocol.Position{Line: 1, Character: 5},
-				Want: mustNewCompletionResponseMessage(lang.Keywords),
+				Pos: protocol.Position{Line: 1, Character: 5},
+				Want: mustNewCompletionResponseMessage(
+					appendKeywords([]protocol.CompletionItem{mainFuncItem}),
+				),
+			},
+			{
+				Desc: "user defined funcs",
+				SourceCode: `Integer One() {
+    return 1;
+}
+
+void main() {
+    O
+}`,
+				Pos: protocol.Position{Line: 5, Character: 5},
+				Want: mustNewCompletionResponseMessage(
+					appendKeywords([]protocol.CompletionItem{
+						{
+							Label:         "One",
+							Kind:          protocol.GetCompletionItemKind(protocol.CompletionItemKindFunction),
+							Documentation: emptyDoc,
+						},
+						mainFuncItem,
+					}),
+				),
 			},
 		}
 		for _, testCase := range testCases {
