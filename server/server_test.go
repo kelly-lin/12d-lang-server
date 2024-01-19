@@ -61,6 +61,12 @@ func TestServer(t *testing.T) {
 		}
 		testCases := []TestCase{
 			{
+				Desc:       "new file",
+				SourceCode: `v`,
+				Pos:        protocol.Position{Line: 0, Character: 1},
+				Want:       mustNewCompletionResponseMessage(lang.Keywords),
+			},
+			{
 				Desc: "initialised declaration identifier",
 				SourceCode: `void main() {
     Integer orig = 1;

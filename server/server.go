@@ -380,7 +380,7 @@ func getCompletionItems(rootNode *sitter.Node, sourceCode []byte, position proto
 	}
 	var reachableDeclarators []*sitter.Node
 	// We are typing in a declaration identifier, do not provide completion.
-	if nearestNode.Parent().Type() == "declaration" {
+	if parent := nearestNode.Parent(); parent != nil && nearestNode.Parent().Type() == "declaration" {
 		return nil
 	}
 	// Walk up the tree and look for all identifiers.
@@ -403,8 +403,6 @@ func getCompletionItems(rootNode *sitter.Node, sourceCode []byte, position proto
 	var declarations []protocol.CompletionItem
 	for _, declaratorNode := range reachableDeclarators {
 		if declaratorNode.Type() == "declaration" {
-			// TODO: this is only handling the first "init_declarator", need to
-			// handle multiple single line declarations.
 			for i := 0; i < int(declaratorNode.ChildCount()); i++ {
 				currentChild := declaratorNode.Child(i)
 				if currentChild.Type() == "identifier" {
