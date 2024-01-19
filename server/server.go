@@ -191,21 +191,6 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 			len(resultBytes),
 			nil
 
-	case "completionItem/resolve":
-		item := protocol.CompletionItem{
-			Label: "Typescript",
-		}
-		resultBytes, err := json.Marshal(item)
-		if err != nil {
-			return protocol.ResponseMessage{}, 0, err
-		}
-		return protocol.ResponseMessage{
-				ID:     msg.ID,
-				Result: json.RawMessage(resultBytes),
-			},
-			0,
-			nil
-
 	case "textDocument/hover":
 		var params protocol.HoverParams
 		if err := json.Unmarshal(msg.Params, &params); err != nil {
