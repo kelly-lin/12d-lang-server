@@ -406,22 +406,30 @@ func getCompletionItems(rootNode *sitter.Node, sourceCode []byte, position proto
 			for i := 0; i < int(declaratorNode.ChildCount()); i++ {
 				currentChild := declaratorNode.Child(i)
 				if currentChild.Type() == "identifier" {
+					value := ""
+					if varType, err := getDefinitionType(currentChild, sourceCode); err == nil {
+						value = fmt.Sprintf("```12dpl\n%s\n```", varType)
+					}
 					declarations = append(declarations, protocol.CompletionItem{
 						Label: currentChild.Content(sourceCode),
 						Kind:  protocol.GetCompletionItemKind(protocol.CompletionItemKindVariable),
 						Documentation: protocol.MarkupContent{
-							Kind:  protocol.MarkupKindPlainText,
-							Value: "",
+							Kind:  protocol.MarkupKindMarkdown,
+							Value: value,
 						},
 					})
 				}
 				if currentChild.Type() == "init_declarator" {
+					value := ""
+					if varType, err := getDefinitionType(currentChild.ChildByFieldName("declarator"), sourceCode); err == nil {
+						value = fmt.Sprintf("```12dpl\n%s\n```", varType)
+					}
 					declarations = append(declarations, protocol.CompletionItem{
 						Label: currentChild.ChildByFieldName("declarator").Content(sourceCode),
 						Kind:  protocol.GetCompletionItemKind(protocol.CompletionItemKindVariable),
 						Documentation: protocol.MarkupContent{
-							Kind:  protocol.MarkupKindPlainText,
-							Value: "",
+							Kind:  protocol.MarkupKindMarkdown,
+							Value: value,
 						},
 					})
 				}
@@ -433,7 +441,7 @@ func getCompletionItems(rootNode *sitter.Node, sourceCode []byte, position proto
 				Label: identifier,
 				Kind:  protocol.GetCompletionItemKind(protocol.CompletionItemKindFunction),
 				Documentation: protocol.MarkupContent{
-					Kind:  protocol.MarkupKindPlainText,
+					Kind:  protocol.MarkupKindMarkdown,
 					Value: "",
 				},
 			})

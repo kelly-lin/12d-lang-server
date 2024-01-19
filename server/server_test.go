@@ -42,7 +42,7 @@ func TestServer(t *testing.T) {
 			require.NoError(t, err)
 			return msg
 		}
-		emptyDoc := protocol.MarkupContent{Kind: protocol.MarkupKindPlainText, Value: ""}
+		emptyDoc := protocol.MarkupContent{Kind: protocol.MarkupKindMarkdown, Value: ""}
 		appendKeywords := func(items []protocol.CompletionItem) []protocol.CompletionItem {
 			return append(items, lang.Keywords...)
 		}
@@ -88,9 +88,12 @@ func TestServer(t *testing.T) {
 				Want: mustNewCompletionResponseMessage(
 					[]protocol.CompletionItem{
 						{
-							Label:         "orig",
-							Kind:          protocol.GetCompletionItemKind(protocol.CompletionItemKindVariable),
-							Documentation: emptyDoc,
+							Label: "orig",
+							Kind:  protocol.GetCompletionItemKind(protocol.CompletionItemKindVariable),
+							Documentation: protocol.MarkupContent{
+								Kind:  protocol.MarkupKindMarkdown,
+								Value: "```12dpl\nInteger\n```",
+							},
 						},
 						mainFuncItem,
 					},
@@ -106,9 +109,12 @@ func TestServer(t *testing.T) {
 				Want: mustNewCompletionResponseMessage(
 					[]protocol.CompletionItem{
 						{
-							Label:         "orig",
-							Kind:          protocol.GetCompletionItemKind(protocol.CompletionItemKindVariable),
-							Documentation: emptyDoc,
+							Label: "orig",
+							Kind:  protocol.GetCompletionItemKind(protocol.CompletionItemKindVariable),
+							Documentation: protocol.MarkupContent{
+								Kind:  protocol.MarkupKindMarkdown,
+								Value: "```12dpl\nInteger\n```",
+							},
 						},
 						mainFuncItem,
 					},
@@ -124,14 +130,20 @@ func TestServer(t *testing.T) {
 				Want: mustNewCompletionResponseMessage(
 					[]protocol.CompletionItem{
 						{
-							Label:         "a",
-							Kind:          protocol.GetCompletionItemKind(protocol.CompletionItemKindVariable),
-							Documentation: emptyDoc,
+							Label: "a",
+							Kind:  protocol.GetCompletionItemKind(protocol.CompletionItemKindVariable),
+							Documentation: protocol.MarkupContent{
+								Kind:  protocol.MarkupKindMarkdown,
+								Value: "```12dpl\nInteger\n```",
+							},
 						},
 						{
-							Label:         "orig",
-							Kind:          protocol.GetCompletionItemKind(protocol.CompletionItemKindVariable),
-							Documentation: emptyDoc,
+							Label: "orig",
+							Kind:  protocol.GetCompletionItemKind(protocol.CompletionItemKindVariable),
+							Documentation: protocol.MarkupContent{
+								Kind:  protocol.MarkupKindMarkdown,
+								Value: "```12dpl\nInteger\n```",
+							},
 						},
 						mainFuncItem,
 					},
@@ -187,23 +199,23 @@ void main() {
 					appendKeywords([]protocol.CompletionItem{mainFuncItem}),
 				),
 			},
-// 			{
-// 				Desc: "identifier keyword and initializer completion when typing for loop condition",
-// 				SourceCode: `void main() {
-//     for (Integer counter = 1; c
-// }`,
-// 				Pos: protocol.Position{Line: 1, Character: 31},
-// 				Want: mustNewCompletionResponseMessage(
-// 					[]protocol.CompletionItem{
-// 						{
-// 							Label:         "counter",
-// 							Kind:          protocol.GetCompletionItemKind(protocol.CompletionItemKindVariable),
-// 							Documentation: emptyDoc,
-// 						},
-// 						mainFuncItem,
-// 					},
-// 				),
-// 			},
+			// 			{
+			// 				Desc: "identifier keyword and initializer completion when typing for loop condition",
+			// 				SourceCode: `void main() {
+			//     for (Integer counter = 1; c
+			// }`,
+			// 				Pos: protocol.Position{Line: 1, Character: 31},
+			// 				Want: mustNewCompletionResponseMessage(
+			// 					[]protocol.CompletionItem{
+			// 						{
+			// 							Label:         "counter",
+			// 							Kind:          protocol.GetCompletionItemKind(protocol.CompletionItemKindVariable),
+			// 							Documentation: emptyDoc,
+			// 						},
+			// 						mainFuncItem,
+			// 					},
+			// 				),
+			// 			},
 		}
 		for _, testCase := range testCases {
 			t.Run(testCase.Desc, func(t *testing.T) {
