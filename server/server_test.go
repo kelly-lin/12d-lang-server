@@ -43,7 +43,7 @@ func TestServer(t *testing.T) {
 			return msg
 		}
 		emptyDoc := protocol.MarkupContent{Kind: protocol.MarkupKindMarkdown, Value: ""}
-		appendKeywords := func(items []protocol.CompletionItem) []protocol.CompletionItem {
+		withKeywords := func(items []protocol.CompletionItem) []protocol.CompletionItem {
 			return append(items, lang.Keywords...)
 		}
 		mainFuncItem := protocol.CompletionItem{
@@ -165,7 +165,7 @@ func TestServer(t *testing.T) {
 }`,
 				Pos: protocol.Position{Line: 1, Character: 5},
 				Want: mustNewCompletionResponseMessage(
-					appendKeywords([]protocol.CompletionItem{mainFuncItem}),
+					withKeywords([]protocol.CompletionItem{mainFuncItem}),
 				),
 			},
 			{
@@ -179,7 +179,7 @@ void main() {
 }`,
 				Pos: protocol.Position{Line: 5, Character: 5},
 				Want: mustNewCompletionResponseMessage(
-					appendKeywords([]protocol.CompletionItem{
+					withKeywords([]protocol.CompletionItem{
 						{
 							Label:         "One",
 							Kind:          protocol.GetCompletionItemKind(protocol.CompletionItemKindFunction),
@@ -196,7 +196,7 @@ void main() {
 }`,
 				Pos: protocol.Position{Line: 1, Character: 9},
 				Want: mustNewCompletionResponseMessage(
-					appendKeywords([]protocol.CompletionItem{mainFuncItem}),
+					withKeywords([]protocol.CompletionItem{mainFuncItem}),
 				),
 			},
 			// 			{
