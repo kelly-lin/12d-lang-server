@@ -14,7 +14,6 @@ import (
 
 	"go.uber.org/goleak"
 
-	"github.com/kelly-lin/12d-lang-server/lang"
 	"github.com/kelly-lin/12d-lang-server/protocol"
 	"github.com/kelly-lin/12d-lang-server/server"
 	"github.com/stretchr/testify/assert"
@@ -33,6 +32,14 @@ func TestServer(t *testing.T) {
 	startDir, err := os.Getwd()
 	require.NoError(t, err)
 	includesDir := path.Join(startDir, "..", "lang/includes")
+	stubKeywordCompletion := protocol.CompletionItem{Label: "!sentinel-keyword-completion-item"}
+	stubKeywordCompletions := []protocol.CompletionItem{stubKeywordCompletion}
+	stubLibCompletion := protocol.CompletionItem{Label: "!sentinel-lib-completion-item"}
+	stubLibCompletions := []protocol.CompletionItem{stubLibCompletion}
+	langCompletions := &server.LangCompletions{
+		Keyword: stubKeywordCompletions,
+		Lib:     stubLibCompletions,
+	}
 
 	t.Run("textDocument/completion", func(t *testing.T) {
 		// Helper returns the response message and fails if the test if the
@@ -44,7 +51,10 @@ func TestServer(t *testing.T) {
 		}
 		emptyDoc := protocol.MarkupContent{Kind: protocol.MarkupKindMarkdown, Value: ""}
 		withKeywords := func(items []protocol.CompletionItem) []protocol.CompletionItem {
-			return append(items, lang.Keywords...)
+			return append(items, stubKeywordCompletion)
+		}
+		_ = func(items []protocol.CompletionItem) []protocol.CompletionItem {
+			return append(items, stubLibCompletion)
 		}
 		mainFuncItem := protocol.CompletionItem{
 			Label:         "main",
@@ -76,7 +86,7 @@ func TestServer(t *testing.T) {
 				Desc:       "new file",
 				SourceCode: `v`,
 				Pos:        protocol.Position{Line: 0, Character: 1},
-				Want:       mustNewCompletionResponseMessage(lang.Keywords),
+				Want:       mustNewCompletionResponseMessage(stubKeywordCompletions),
 			},
 			{
 				Desc: "initialised declaration identifier",
@@ -223,7 +233,7 @@ void main() {
 				assert := assert.New(t)
 				logger, err := newLogger()
 				assert.NoError(err)
-				in, out, cleanUp := startServer(testCase.IncludesDir, logger)
+				in, out, cleanUp := startServer(testCase.IncludesDir, langCompletions, logger)
 				defer cleanUp()
 
 				var id int64 = 1
@@ -484,7 +494,7 @@ void main() {
 				assert := assert.New(t)
 				logger, err := newLogger()
 				assert.NoError(err)
-				in, out, cleanUp := startServer(testCase.IncludesDir, logger)
+				in, out, cleanUp := startServer(testCase.IncludesDir, langCompletions, logger)
 				defer cleanUp()
 
 				var id int64 = 1
@@ -513,7 +523,7 @@ void main() {
 		assert := assert.New(t)
 		logger, err := newLogger()
 		assert.NoError(err)
-		in, out, cleanUp := startServer("", logger)
+		in, out, cleanUp := startServer("", nil, logger)
 		defer cleanUp()
 
 		sourceCodeOnOpen := `void main() {
@@ -807,7 +817,7 @@ void main() {
 					assert := assert.New(t)
 					logger, err := newLogger()
 					assert.NoError(err)
-					in, out, cleanUp := startServer(testCase.IncludesDir, logger)
+					in, out, cleanUp := startServer(testCase.IncludesDir, langCompletions, logger)
 					defer cleanUp()
 
 					var openRequestID int64 = 1
@@ -1040,7 +1050,7 @@ void main() {
 					assert := assert.New(t)
 					logger, err := newLogger()
 					assert.NoError(err)
-					in, out, cleanUp := startServer(testCase.IncludesDir, logger)
+					in, out, cleanUp := startServer(testCase.IncludesDir, langCompletions, logger)
 					defer cleanUp()
 
 					var openRequestID int64 = 1
@@ -1268,8 +1278,8 @@ func newLogger() (func(msg string), error) {
 
 // Starts the language server in a goroutine and returns the input pipe, output
 // pipe and a clean up function.
-func startServer(includesDir string, logger func(msg string)) (Pipe, Pipe, func()) {
-	serv := server.NewServer(includesDir, logger)
+func startServer(includesDir string, langCompletions *server.LangCompletions, logger func(msg string)) (Pipe, Pipe, func()) {
+	serv := server.NewServer(includesDir, langCompletions, logger)
 	inReader, inWriter := io.Pipe()
 	outReader, outWriter := io.Pipe()
 	go (func() {

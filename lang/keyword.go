@@ -2,7 +2,7 @@ package lang
 
 import "github.com/kelly-lin/12d-lang-server/protocol"
 
-var Keywords = []protocol.CompletionItem{
+var KeywordCompletionItems = []protocol.CompletionItem{
 	{Label: "Angle_Box", Kind: protocol.GetCompletionItemKind(protocol.CompletionItemKindKeyword), Documentation: protocol.MarkupContent{Kind: protocol.MarkupKindPlainText, Value: ""}},
 	{Label: "Apply_Function", Kind: protocol.GetCompletionItemKind(protocol.CompletionItemKindKeyword), Documentation: protocol.MarkupContent{Kind: protocol.MarkupKindPlainText, Value: ""}},
 	{Label: "Apply_Many_Function", Kind: protocol.GetCompletionItemKind(protocol.CompletionItemKindKeyword), Documentation: protocol.MarkupContent{Kind: protocol.MarkupKindPlainText, Value: ""}},

@@ -25,10 +25,20 @@ const contentLengthHeaderName = "Content-Length"
 // Unhandled LSP method error.
 var ErrUnhandledMethod = errors.New("unhandled method")
 
+type LangCompletions struct {
+	Keyword []protocol.CompletionItem
+	Lib     []protocol.CompletionItem
+}
+
+var BuiltInLangCompletions LangCompletions = LangCompletions{
+	Keyword: lang.KeywordCompletionItems,
+	Lib:     lang.LibCompletionItems,
+}
+
 // Creates a new language server. The logger function parameter specifies the
 // function to call for logging. If the logger is nil, will default to a
 // function that does not log anything.
-func NewServer(includesDir string, logger func(msg string)) Server {
+func NewServer(includesDir string, builtInCompletions *LangCompletions, logger func(msg string)) Server {
 	serverLogger := func(msg string) {}
 	if logger != nil {
 		serverLogger = logger
@@ -37,6 +47,9 @@ func NewServer(includesDir string, logger func(msg string)) Server {
 		documents:   make(map[string]Document),
 		logger:      serverLogger,
 		includesDir: includesDir,
+	}
+	if builtInCompletions != nil {
+		s.builtInCompletions = *builtInCompletions
 	}
 	// TODO: hard coding in an includes directory for now. Need to move this to
 	// config in client and expose this via an option on the command line.
@@ -60,9 +73,10 @@ func NewServer(includesDir string, logger func(msg string)) Server {
 
 // Language server.
 type Server struct {
-	documents   map[string]Document
-	logger      func(msg string)
-	includesDir string
+	documents          map[string]Document
+	logger             func(msg string)
+	includesDir        string
+	builtInCompletions LangCompletions
 }
 
 // Serve reads JSONRPC from the reader, processes the message and responds by
@@ -179,7 +193,7 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 		}
 		rootNode := doc.RootNode
 		sourceCode := doc.SourceCode
-		items := getCompletionItems(rootNode, sourceCode, params.Position)
+		items := getCompletionItems(rootNode, sourceCode, params.Position, s.builtInCompletions)
 		resultBytes, err := json.Marshal(items)
 		if err != nil {
 			return protocol.ResponseMessage{}, 0, err
@@ -320,7 +334,7 @@ func (s *Server) setDocument(uri string, content string) error {
 }
 
 // Gets the completion items for the node given by position.
-func getCompletionItems(rootNode *sitter.Node, sourceCode []byte, position protocol.Position) []protocol.CompletionItem {
+func getCompletionItems(rootNode *sitter.Node, sourceCode []byte, position protocol.Position, builtInCompletions LangCompletions) []protocol.CompletionItem {
 	var result []protocol.CompletionItem
 	// Find the ancestor node that contains our line number.
 	var containingNode *sitter.Node
@@ -449,9 +463,11 @@ func getCompletionItems(rootNode *sitter.Node, sourceCode []byte, position proto
 	}
 	if nearestNode.Type() == "identifier" {
 		result = append(result, declarations...)
+		// result = append(result, builtInCompletions.Lib...)
 	} else {
 		result = append(result, declarations...)
-		result = append(result, lang.Keywords...)
+		result = append(result, builtInCompletions.Keyword...)
+		// result = append(result, builtInCompletions.Lib...)
 	}
 	return result
 }

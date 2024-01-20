@@ -29,7 +29,7 @@ func main() {
 	}
 	defer cleanUp()
 
-	langServer := server.NewServer(*includesDirFlag, log)
+	langServer := server.NewServer(*includesDirFlag, &server.BuiltInLangCompletions, log)
 	if err := langServer.Serve(os.Stdin, os.Stdout); err != nil {
 		log(fmt.Sprintf("%s\n", err.Error()))
 		os.Exit(1)
