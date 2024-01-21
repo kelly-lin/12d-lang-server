@@ -49,7 +49,6 @@ func TestServer(t *testing.T) {
 			require.NoError(t, err)
 			return msg
 		}
-		emptyDoc := protocol.MarkupContent{Kind: protocol.MarkupKindMarkdown, Value: ""}
 		withKeywords := func(items []protocol.CompletionItem) []protocol.CompletionItem {
 			return append(items, stubKeywordCompletion)
 		}
@@ -57,9 +56,8 @@ func TestServer(t *testing.T) {
 			return append(items, stubLibCompletion)
 		}
 		mainFuncItem := protocol.CompletionItem{
-			Label:         "main",
-			Kind:          protocol.GetCompletionItemKind(protocol.CompletionItemKindFunction),
-			Documentation: emptyDoc,
+			Label: "main",
+			Kind:  protocol.GetCompletionItemKind(protocol.CompletionItemKindFunction),
 		}
 		assertCompletionResponseMessageEqual := func(t *testing.T, want, got protocol.ResponseMessage) {
 			t.Helper()
@@ -98,12 +96,9 @@ func TestServer(t *testing.T) {
 				Want: mustNewCompletionResponseMessage(
 					withLib([]protocol.CompletionItem{
 						{
-							Label: "orig",
-							Kind:  protocol.GetCompletionItemKind(protocol.CompletionItemKindVariable),
-							Documentation: protocol.MarkupContent{
-								Kind:  protocol.MarkupKindMarkdown,
-								Value: "```12dpl\nInteger\n```",
-							},
+							Label:  "orig",
+							Detail: "Integer",
+							Kind:   protocol.GetCompletionItemKind(protocol.CompletionItemKindVariable),
 						},
 						mainFuncItem,
 					}),
@@ -119,12 +114,9 @@ func TestServer(t *testing.T) {
 				Want: mustNewCompletionResponseMessage(
 					withLib([]protocol.CompletionItem{
 						{
-							Label: "orig",
-							Kind:  protocol.GetCompletionItemKind(protocol.CompletionItemKindVariable),
-							Documentation: protocol.MarkupContent{
-								Kind:  protocol.MarkupKindMarkdown,
-								Value: "```12dpl\nInteger\n```",
-							},
+							Label:  "orig",
+							Detail: "Integer",
+							Kind:   protocol.GetCompletionItemKind(protocol.CompletionItemKindVariable),
 						},
 						mainFuncItem,
 					}),
@@ -140,20 +132,14 @@ func TestServer(t *testing.T) {
 				Want: mustNewCompletionResponseMessage(
 					withLib([]protocol.CompletionItem{
 						{
-							Label: "a",
-							Kind:  protocol.GetCompletionItemKind(protocol.CompletionItemKindVariable),
-							Documentation: protocol.MarkupContent{
-								Kind:  protocol.MarkupKindMarkdown,
-								Value: "```12dpl\nInteger\n```",
-							},
+							Label:  "a",
+							Detail: "Integer",
+							Kind:   protocol.GetCompletionItemKind(protocol.CompletionItemKindVariable),
 						},
 						{
-							Label: "orig",
-							Kind:  protocol.GetCompletionItemKind(protocol.CompletionItemKindVariable),
-							Documentation: protocol.MarkupContent{
-								Kind:  protocol.MarkupKindMarkdown,
-								Value: "```12dpl\nInteger\n```",
-							},
+							Label:  "orig",
+							Detail: "Integer",
+							Kind:   protocol.GetCompletionItemKind(protocol.CompletionItemKindVariable),
 						},
 						mainFuncItem,
 					}),
@@ -191,9 +177,8 @@ void main() {
 				Want: mustNewCompletionResponseMessage(
 					withLib(withKeywords([]protocol.CompletionItem{
 						{
-							Label:         "One",
-							Kind:          protocol.GetCompletionItemKind(protocol.CompletionItemKindFunction),
-							Documentation: emptyDoc,
+							Label: "One",
+							Kind:  protocol.GetCompletionItemKind(protocol.CompletionItemKindFunction),
 						},
 						mainFuncItem,
 					})),
