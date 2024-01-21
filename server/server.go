@@ -336,20 +336,8 @@ func (s *Server) setDocument(uri string, content string) error {
 // Gets the completion items for the node given by position.
 func getCompletionItems(rootNode *sitter.Node, sourceCode []byte, position protocol.Position, builtInCompletions LangCompletions) []protocol.CompletionItem {
 	var result []protocol.CompletionItem
-	// Find the ancestor node that contains our line number.
-	var containingNode *sitter.Node
-	for i := 0; i < int(rootNode.ChildCount()); i++ {
-		if rootNode.Child(i).StartPoint().Row <= uint32(position.Line) && uint32(position.Line) <= rootNode.Child(i).EndPoint().Row {
-			containingNode = rootNode.Child(i)
-			break
-		}
-	}
-	if containingNode == nil {
-		return []protocol.CompletionItem{}
-	}
 
-	// Depth first search the ancestor for the nearest node.
-	// TODO: BFS might be better here?
+	// Depth first search the deepest node described by position.
 	stack := parser.NewStack()
 	stack.Push(rootNode)
 	var nearestNode *sitter.Node
@@ -392,12 +380,20 @@ func getCompletionItems(rootNode *sitter.Node, sourceCode []byte, position proto
 			break
 		}
 	}
-	var reachableDeclarators []*sitter.Node
+
+	isCursorOnDeclaration := func() bool {
+		if parent := nearestNode.Parent(); parent != nil && nearestNode.Parent().Type() == "declaration" {
+			return true
+		}
+		return false
+	}
 	// We are typing in a declaration identifier, do not provide completion.
-	if parent := nearestNode.Parent(); parent != nil && nearestNode.Parent().Type() == "declaration" {
+	if isCursorOnDeclaration() {
 		return nil
 	}
-	// Walk up the tree and look for all identifiers.
+
+	// Walk up the tree and look for reachable declarators.
+	var reachableDeclarators []*sitter.Node
 	currentNode := nearestNode
 	for currentNode.Parent() != nil {
 		currentNode = currentNode.Parent()
@@ -412,6 +408,7 @@ func getCompletionItems(rootNode *sitter.Node, sourceCode []byte, position proto
 			if currentChild.Type() == "function_definition" {
 				reachableDeclarators = append(reachableDeclarators, currentChild)
 			}
+			// TODO: include completions for include files.
 		}
 	}
 	var declarations []protocol.CompletionItem
