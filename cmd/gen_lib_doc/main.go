@@ -85,7 +85,7 @@ var LibCompletionItems = []protocol.CompletionItem{
 		Label:  "{{$item.Label}}",
 		Detail: "{{$item.Detail}}",
 		Kind:   protocol.GetCompletionItemKind(protocol.CompletionItemKindFunction),
-		Documentation: protocol.MarkupContent{
+		Documentation: &protocol.MarkupContent{
 			Kind:  protocol.MarkupKindPlainText,
 			Value: {{$item.Documentation}},
 		},
