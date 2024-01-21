@@ -9,6 +9,7 @@ import (
 	"io"
 	"os"
 	"regexp"
+	"strconv"
 	"text/template"
 )
 
@@ -40,7 +41,8 @@ func main() {
 		os.Exit(1)
 	}
 
-	agg := map[string][]string{}
+	hoverDocStrings := map[string][]string{}
+	completionDocStrings := map[string][]CompletionDoc{}
 	for _, api := range manual.Items {
 		for _, name := range api.Names {
 			re := regexp.MustCompile(`\w+ (\w+)\(`)
@@ -48,8 +50,15 @@ func main() {
 			if len(matches) > 1 {
 				funcName := matches[1]
 				docString := createDocMarkdownString(name, api.Desc)
-				santizedDocString, _ := json.Marshal(docString)
-				agg[funcName] = append(agg[funcName], string(santizedDocString))
+				hoverDocStrings[funcName] = append(hoverDocStrings[funcName], strconv.Quote(docString))
+				completionDocStrings[funcName] = append(
+					completionDocStrings[funcName],
+					CompletionDoc{
+						Label:         funcName,
+						Detail:        name,
+						Documentation: strconv.Quote(api.Desc),
+					},
+				)
 			}
 		}
 	}
@@ -60,7 +69,7 @@ import "github.com/kelly-lin/12d-lang-server/protocol"
 
 // Map of library func identifier and slice of docstrings in markdown.
 var Lib = map[string][]string{
-{{- range $name, $descriptions := .}}
+{{- range $name, $descriptions := .HoverDoc}}
 	"{{$name}}": {
 {{- range $description := $descriptions}}
 		{{$description}},
@@ -70,24 +79,30 @@ var Lib = map[string][]string{
 }
 
 var LibCompletionItems = []protocol.CompletionItem{
-{{- range $name, $descriptions := .}}
-{{- range $description := $descriptions}}
+{{- range $name, $items := .CompletionDoc}}
+{{- range $item := $items}}
 	{
-		Label: "{{$name}}",
-		Kind:  protocol.GetCompletionItemKind(protocol.CompletionItemKindFunction),
+		Label:  "{{$item.Label}}",
+		Detail: "{{$item.Detail}}",
+		Kind:   protocol.GetCompletionItemKind(protocol.CompletionItemKindFunction),
 		Documentation: protocol.MarkupContent{
-			Kind:  protocol.MarkupKindMarkdown,
-			Value: {{$description}},
+			Kind:  protocol.MarkupKindPlainText,
+			Value: {{$item.Documentation}},
 		},
 	},
 {{- end}}
 {{- end}}
 }
 `))
-	if err := templ.Execute(os.Stdout, agg); err != nil {
+	if err := templ.Execute(os.Stdout, Data{HoverDoc: hoverDocStrings, CompletionDoc: completionDocStrings}); err != nil {
 		fmt.Printf("could not execute template: %s\n", err)
 		os.Exit(1)
 	}
+}
+
+type Data struct {
+	HoverDoc      map[string][]string
+	CompletionDoc map[string][]CompletionDoc
 }
 
 type Manual struct {
@@ -98,6 +113,12 @@ type ManualItem struct {
 	Names []string `json:"names"`
 	Desc  string   `json:"description"`
 	ID    string   `json:"id"`
+}
+
+type CompletionDoc struct {
+	Label         string
+	Detail        string
+	Documentation string
 }
 
 // Creates the documentation markdown string from the provided signature as

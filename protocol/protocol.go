@@ -150,6 +150,7 @@ type CompletionItem struct {
 	Kind          *uint         `json:"kind,omitempty"`
 	Data          any           `json:"data,omitempty"`
 	Documentation MarkupContent `json:"documentation,omitempty"`
+	Detail        string        `json:"detail,omitempty"`
 }
 
 type MarkupContent struct {
