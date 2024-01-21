@@ -461,13 +461,22 @@ func getCompletionItems(rootNode *sitter.Node, sourceCode []byte, position proto
 			})
 		}
 	}
-	if nearestNode.Type() == "identifier" {
+	if nearestNode.Parent() != nil && nearestNode.Parent().Type() == "source_file" {
+		result = append(result, builtInCompletions.Keyword...)
+	} else if nearestNode.Parent() != nil && nearestNode.Parent().Type() == "init_declarator" {
 		result = append(result, declarations...)
-		// result = append(result, builtInCompletions.Lib...)
+		result = append(result, builtInCompletions.Lib...)
+	} else if nearestNode.Parent() != nil && nearestNode.Parent().Type() == "compound_statement" {
+		result = append(result, declarations...)
+		result = append(result, builtInCompletions.Keyword...)
+		result = append(result, builtInCompletions.Lib...)
+	} else if nearestNode.Type() == "identifier" {
+		result = append(result, declarations...)
+		result = append(result, builtInCompletions.Lib...)
+		result = append(result, builtInCompletions.Keyword...)
 	} else {
 		result = append(result, declarations...)
 		result = append(result, builtInCompletions.Keyword...)
-		// result = append(result, builtInCompletions.Lib...)
 	}
 	return result
 }

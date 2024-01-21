@@ -53,7 +53,7 @@ func TestServer(t *testing.T) {
 		withKeywords := func(items []protocol.CompletionItem) []protocol.CompletionItem {
 			return append(items, stubKeywordCompletion)
 		}
-		_ = func(items []protocol.CompletionItem) []protocol.CompletionItem {
+		withLib := func(items []protocol.CompletionItem) []protocol.CompletionItem {
 			return append(items, stubLibCompletion)
 		}
 		mainFuncItem := protocol.CompletionItem{
@@ -96,7 +96,7 @@ func TestServer(t *testing.T) {
 }`,
 				Pos: protocol.Position{Line: 2, Character: 17},
 				Want: mustNewCompletionResponseMessage(
-					[]protocol.CompletionItem{
+					withLib([]protocol.CompletionItem{
 						{
 							Label: "orig",
 							Kind:  protocol.GetCompletionItemKind(protocol.CompletionItemKindVariable),
@@ -106,7 +106,7 @@ func TestServer(t *testing.T) {
 							},
 						},
 						mainFuncItem,
-					},
+					}),
 				),
 			},
 			{
@@ -117,7 +117,7 @@ func TestServer(t *testing.T) {
 }`,
 				Pos: protocol.Position{Line: 2, Character: 17},
 				Want: mustNewCompletionResponseMessage(
-					[]protocol.CompletionItem{
+					withLib([]protocol.CompletionItem{
 						{
 							Label: "orig",
 							Kind:  protocol.GetCompletionItemKind(protocol.CompletionItemKindVariable),
@@ -127,7 +127,7 @@ func TestServer(t *testing.T) {
 							},
 						},
 						mainFuncItem,
-					},
+					}),
 				),
 			},
 			{
@@ -138,7 +138,7 @@ func TestServer(t *testing.T) {
 }`,
 				Pos: protocol.Position{Line: 2, Character: 17},
 				Want: mustNewCompletionResponseMessage(
-					[]protocol.CompletionItem{
+					withLib([]protocol.CompletionItem{
 						{
 							Label: "a",
 							Kind:  protocol.GetCompletionItemKind(protocol.CompletionItemKindVariable),
@@ -156,7 +156,7 @@ func TestServer(t *testing.T) {
 							},
 						},
 						mainFuncItem,
-					},
+					}),
 				),
 			},
 			{
@@ -171,11 +171,11 @@ func TestServer(t *testing.T) {
 			{
 				Desc: "keyword",
 				SourceCode: `void main() {
-    I
+    i
 }`,
 				Pos: protocol.Position{Line: 1, Character: 5},
 				Want: mustNewCompletionResponseMessage(
-					withKeywords([]protocol.CompletionItem{mainFuncItem}),
+					withLib(withKeywords([]protocol.CompletionItem{mainFuncItem})),
 				),
 			},
 			{
@@ -189,14 +189,14 @@ void main() {
 }`,
 				Pos: protocol.Position{Line: 5, Character: 5},
 				Want: mustNewCompletionResponseMessage(
-					withKeywords([]protocol.CompletionItem{
+					withLib(withKeywords([]protocol.CompletionItem{
 						{
 							Label:         "One",
 							Kind:          protocol.GetCompletionItemKind(protocol.CompletionItemKindFunction),
 							Documentation: emptyDoc,
 						},
 						mainFuncItem,
-					}),
+					})),
 				),
 			},
 			{
