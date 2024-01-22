@@ -452,17 +452,27 @@ func getCompletionItems(rootNode *sitter.Node, sourceCode []byte, position proto
 		}
 	}
 
+	isFuncIdentifier := nearestNode.Parent() != nil &&
+		nearestNode.Parent().Parent() != nil &&
+		nearestNode.Type() == "identifier" &&
+		nearestNode.Parent().Parent().Type() == "source_file"
+	if isFuncIdentifier {
+		return nil
+	}
+	isRootDeclaration := nearestNode.Parent() != nil && nearestNode.Parent().Type() == "source_file"
+	isInsideFuncBody := nearestNode.Parent() != nil && nearestNode.Parent().Type() == "compound_statement"
+	isIdentifier := nearestNode.Type() == "identifier"
 	switch {
-	case nearestNode.Parent() != nil && nearestNode.Parent().Type() == "source_file":
+	case isRootDeclaration:
 		result = append(result, builtInCompletions.Keyword...)
 	case nearestNode.Parent() != nil && nearestNode.Parent().Type() == "init_declarator":
 		result = append(result, declarations...)
 		result = append(result, builtInCompletions.Lib...)
-	case nearestNode.Parent() != nil && nearestNode.Parent().Type() == "compound_statement":
+	case isInsideFuncBody:
 		result = append(result, declarations...)
 		result = append(result, builtInCompletions.Keyword...)
 		result = append(result, builtInCompletions.Lib...)
-	case nearestNode.Type() == "identifier":
+	case isIdentifier:
 		result = append(result, declarations...)
 		result = append(result, builtInCompletions.Lib...)
 		result = append(result, builtInCompletions.Keyword...)

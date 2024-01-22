@@ -147,7 +147,7 @@ func TestServer(t *testing.T) {
 				),
 			},
 			{
-				Desc: "typing identifier - no completions",
+				Desc: "typing var identifier - no completions",
 				SourceCode: `void main() {
     Integer october = 10;
     Integer o
@@ -204,7 +204,7 @@ void main() {
 							Detail: "Integer One()",
 							Kind:   protocol.GetCompletionItemKind(protocol.CompletionItemKindFunction),
 							Documentation: &protocol.MarkupContent{
-								Kind: protocol.MarkupKindPlainText,
+								Kind:  protocol.MarkupKindPlainText,
 								Value: "Returns the number 1.",
 							},
 						},
@@ -221,6 +221,12 @@ void main() {
 				Want: mustNewCompletionResponseMessage(
 					withKeywords([]protocol.CompletionItem{mainFuncItem}),
 				),
+			},
+			{
+				Desc:       "typing func identifier - no completions",
+				SourceCode: `Integer A`,
+				Pos:        protocol.Position{Line: 0, Character: 9},
+				Want:       newNullResponseMessage(1),
 			},
 			// 			{
 			// 				Desc: "identifier keyword and initializer completion when typing for loop condition",
