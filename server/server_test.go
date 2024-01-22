@@ -242,6 +242,12 @@ void main() {
 					withTypes([]protocol.CompletionItem{}),
 				),
 			},
+			{
+				Desc:       "typing func param identifier - no completions",
+				SourceCode: `Integer Add(Integer a`,
+				Pos:        protocol.Position{Line: 0, Character: 21},
+				Want:       newNullResponseMessage(1),
+			},
 			// 			{
 			// 				Desc: "identifier keyword and initializer completion when typing for loop condition",
 			// 				SourceCode: `void main() {

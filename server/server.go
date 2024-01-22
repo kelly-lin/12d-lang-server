@@ -461,6 +461,11 @@ func getCompletionItems(rootNode *sitter.Node, sourceCode []byte, position proto
 	if isFuncIdentifier {
 		return nil
 	}
+	isParameterDeclaration := nearestNode.Parent() != nil &&
+		nearestNode.Parent().Type() == "parameter_declaration"
+	if isParameterDeclaration {
+		return nil
+	}
 	// TODO: refactor this, especially the parent chaining.
 	isInFuncParamList := nearestNode.Parent() != nil &&
 		nearestNode.Parent().Parent() != nil &&
