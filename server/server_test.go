@@ -248,6 +248,14 @@ void main() {
 				Pos:        protocol.Position{Line: 0, Character: 21},
 				Want:       newNullResponseMessage(1),
 			},
+			{
+				Desc:       "typing second func param type - type completions",
+				SourceCode: `Integer Add(Integer a, I`,
+				Pos:        protocol.Position{Line: 0, Character: 24},
+				Want: mustNewCompletionResponseMessage(
+					withTypes([]protocol.CompletionItem{}),
+				),
+			},
 			// 			{
 			// 				Desc: "identifier keyword and initializer completion when typing for loop condition",
 			// 				SourceCode: `void main() {
