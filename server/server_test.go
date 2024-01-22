@@ -56,8 +56,9 @@ func TestServer(t *testing.T) {
 			return append(items, stubLibCompletion)
 		}
 		mainFuncItem := protocol.CompletionItem{
-			Label: "main",
-			Kind:  protocol.GetCompletionItemKind(protocol.CompletionItemKindFunction),
+			Label:  "main",
+			Kind:   protocol.GetCompletionItemKind(protocol.CompletionItemKindFunction),
+			Detail: "void main()",
 		}
 		assertCompletionResponseMessageEqual := func(t *testing.T, want, got protocol.ResponseMessage) {
 			t.Helper()
@@ -165,7 +166,7 @@ func TestServer(t *testing.T) {
 				),
 			},
 			{
-				Desc: "user defined funcs",
+				Desc: "user defined funcs - no doc",
 				SourceCode: `Integer One() {
     return 1;
 }
@@ -177,8 +178,35 @@ void main() {
 				Want: mustNewCompletionResponseMessage(
 					withLib(withKeywords([]protocol.CompletionItem{
 						{
-							Label: "One",
-							Kind:  protocol.GetCompletionItemKind(protocol.CompletionItemKindFunction),
+							Label:  "One",
+							Detail: "Integer One()",
+							Kind:   protocol.GetCompletionItemKind(protocol.CompletionItemKindFunction),
+						},
+						mainFuncItem,
+					})),
+				),
+			},
+			{
+				Desc: "user defined funcs - with doc",
+				SourceCode: `// Returns the number 1.
+Integer One() {
+    return 1;
+}
+
+void main() {
+    O
+}`,
+				Pos: protocol.Position{Line: 6, Character: 5},
+				Want: mustNewCompletionResponseMessage(
+					withLib(withKeywords([]protocol.CompletionItem{
+						{
+							Label:  "One",
+							Detail: "Integer One()",
+							Kind:   protocol.GetCompletionItemKind(protocol.CompletionItemKindFunction),
+							Documentation: &protocol.MarkupContent{
+								Kind: protocol.MarkupKindPlainText,
+								Value: "Returns the number 1.",
+							},
 						},
 						mainFuncItem,
 					})),

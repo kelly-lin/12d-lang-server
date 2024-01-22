@@ -435,10 +435,20 @@ func getCompletionItems(rootNode *sitter.Node, sourceCode []byte, position proto
 		}
 		if declaratorNode.Type() == "function_definition" {
 			identifier := declaratorNode.ChildByFieldName("declarator").ChildByFieldName("declarator").Content(sourceCode)
-			declarations = append(declarations, protocol.CompletionItem{
-				Label: identifier,
-				Kind:  protocol.GetCompletionItemKind(protocol.CompletionItemKindFunction),
-			})
+			if varType, declaration, doc, err := getFuncDocComponents(declaratorNode, sourceCode); err == nil {
+				item := protocol.CompletionItem{
+					Label:  identifier,
+					Detail: fmt.Sprintf("%s %s", varType, declaration),
+					Kind:   protocol.GetCompletionItemKind(protocol.CompletionItemKindFunction),
+				}
+				if doc != "" {
+					item.Documentation = &protocol.MarkupContent{
+						Kind:  protocol.MarkupKindPlainText,
+						Value: doc,
+					}
+				}
+				declarations = append(declarations, item)
+			}
 		}
 	}
 
