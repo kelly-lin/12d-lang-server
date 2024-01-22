@@ -3,6 +3,21 @@ package lang
 import "github.com/kelly-lin/12d-lang-server/protocol"
 
 var KeywordCompletionItems = []protocol.CompletionItem{
+	{Label: "for", Kind: protocol.GetCompletionItemKind(protocol.CompletionItemKindKeyword), Documentation: &protocol.MarkupContent{Kind: protocol.MarkupKindPlainText, Value: ""}},
+	{Label: "do", Kind: protocol.GetCompletionItemKind(protocol.CompletionItemKindKeyword), Documentation: &protocol.MarkupContent{Kind: protocol.MarkupKindPlainText, Value: ""}},
+	{Label: "while", Kind: protocol.GetCompletionItemKind(protocol.CompletionItemKindKeyword), Documentation: &protocol.MarkupContent{Kind: protocol.MarkupKindPlainText, Value: ""}},
+	{Label: "if", Kind: protocol.GetCompletionItemKind(protocol.CompletionItemKindKeyword), Documentation: &protocol.MarkupContent{Kind: protocol.MarkupKindPlainText, Value: ""}},
+	{Label: "else", Kind: protocol.GetCompletionItemKind(protocol.CompletionItemKindKeyword), Documentation: &protocol.MarkupContent{Kind: protocol.MarkupKindPlainText, Value: ""}},
+	{Label: "goto", Kind: protocol.GetCompletionItemKind(protocol.CompletionItemKindKeyword), Documentation: &protocol.MarkupContent{Kind: protocol.MarkupKindPlainText, Value: ""}},
+	{Label: "switch", Kind: protocol.GetCompletionItemKind(protocol.CompletionItemKindKeyword), Documentation: &protocol.MarkupContent{Kind: protocol.MarkupKindPlainText, Value: ""}},
+	{Label: "default", Kind: protocol.GetCompletionItemKind(protocol.CompletionItemKindKeyword), Documentation: &protocol.MarkupContent{Kind: protocol.MarkupKindPlainText, Value: ""}},
+	{Label: "case", Kind: protocol.GetCompletionItemKind(protocol.CompletionItemKindKeyword), Documentation: &protocol.MarkupContent{Kind: protocol.MarkupKindPlainText, Value: ""}},
+	{Label: "return", Kind: protocol.GetCompletionItemKind(protocol.CompletionItemKindKeyword), Documentation: &protocol.MarkupContent{Kind: protocol.MarkupKindPlainText, Value: ""}},
+	{Label: "include", Kind: protocol.GetCompletionItemKind(protocol.CompletionItemKindKeyword), Documentation: &protocol.MarkupContent{Kind: protocol.MarkupKindPlainText, Value: ""}},
+	{Label: "define", Kind: protocol.GetCompletionItemKind(protocol.CompletionItemKindKeyword), Documentation: &protocol.MarkupContent{Kind: protocol.MarkupKindPlainText, Value: ""}},
+}
+
+var TypeCompletionItems = []protocol.CompletionItem{
 	{Label: "Angle_Box", Kind: protocol.GetCompletionItemKind(protocol.CompletionItemKindKeyword), Documentation: &protocol.MarkupContent{Kind: protocol.MarkupKindPlainText, Value: ""}},
 	{Label: "Apply_Function", Kind: protocol.GetCompletionItemKind(protocol.CompletionItemKindKeyword), Documentation: &protocol.MarkupContent{Kind: protocol.MarkupKindPlainText, Value: ""}},
 	{Label: "Apply_Many_Function", Kind: protocol.GetCompletionItemKind(protocol.CompletionItemKindKeyword), Documentation: &protocol.MarkupContent{Kind: protocol.MarkupKindPlainText, Value: ""}},
@@ -139,16 +154,4 @@ var KeywordCompletionItems = []protocol.CompletionItem{
 	{Label: "XML_Node", Kind: protocol.GetCompletionItemKind(protocol.CompletionItemKindKeyword), Documentation: &protocol.MarkupContent{Kind: protocol.MarkupKindPlainText, Value: ""}},
 	{Label: "XYZ_Box", Kind: protocol.GetCompletionItemKind(protocol.CompletionItemKindKeyword), Documentation: &protocol.MarkupContent{Kind: protocol.MarkupKindPlainText, Value: ""}},
 	{Label: "void", Kind: protocol.GetCompletionItemKind(protocol.CompletionItemKindKeyword), Documentation: &protocol.MarkupContent{Kind: protocol.MarkupKindPlainText, Value: ""}},
-	{Label: "for", Kind: protocol.GetCompletionItemKind(protocol.CompletionItemKindKeyword), Documentation: &protocol.MarkupContent{Kind: protocol.MarkupKindPlainText, Value: ""}},
-	{Label: "do", Kind: protocol.GetCompletionItemKind(protocol.CompletionItemKindKeyword), Documentation: &protocol.MarkupContent{Kind: protocol.MarkupKindPlainText, Value: ""}},
-	{Label: "while", Kind: protocol.GetCompletionItemKind(protocol.CompletionItemKindKeyword), Documentation: &protocol.MarkupContent{Kind: protocol.MarkupKindPlainText, Value: ""}},
-	{Label: "if", Kind: protocol.GetCompletionItemKind(protocol.CompletionItemKindKeyword), Documentation: &protocol.MarkupContent{Kind: protocol.MarkupKindPlainText, Value: ""}},
-	{Label: "else", Kind: protocol.GetCompletionItemKind(protocol.CompletionItemKindKeyword), Documentation: &protocol.MarkupContent{Kind: protocol.MarkupKindPlainText, Value: ""}},
-	{Label: "goto", Kind: protocol.GetCompletionItemKind(protocol.CompletionItemKindKeyword), Documentation: &protocol.MarkupContent{Kind: protocol.MarkupKindPlainText, Value: ""}},
-	{Label: "switch", Kind: protocol.GetCompletionItemKind(protocol.CompletionItemKindKeyword), Documentation: &protocol.MarkupContent{Kind: protocol.MarkupKindPlainText, Value: ""}},
-	{Label: "default", Kind: protocol.GetCompletionItemKind(protocol.CompletionItemKindKeyword), Documentation: &protocol.MarkupContent{Kind: protocol.MarkupKindPlainText, Value: ""}},
-	{Label: "case", Kind: protocol.GetCompletionItemKind(protocol.CompletionItemKindKeyword), Documentation: &protocol.MarkupContent{Kind: protocol.MarkupKindPlainText, Value: ""}},
-	{Label: "return", Kind: protocol.GetCompletionItemKind(protocol.CompletionItemKindKeyword), Documentation: &protocol.MarkupContent{Kind: protocol.MarkupKindPlainText, Value: ""}},
-	{Label: "include", Kind: protocol.GetCompletionItemKind(protocol.CompletionItemKindKeyword), Documentation: &protocol.MarkupContent{Kind: protocol.MarkupKindPlainText, Value: ""}},
-	{Label: "define", Kind: protocol.GetCompletionItemKind(protocol.CompletionItemKindKeyword), Documentation: &protocol.MarkupContent{Kind: protocol.MarkupKindPlainText, Value: ""}},
 }

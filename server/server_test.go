@@ -33,12 +33,15 @@ func TestServer(t *testing.T) {
 	require.NoError(t, err)
 	includesDir := path.Join(startDir, "..", "lang/includes")
 	stubKeywordCompletion := protocol.CompletionItem{Label: "!sentinel-keyword-completion-item"}
+	stubTypeCompletion := protocol.CompletionItem{Label: "!sentinel-type-completion-item"}
+	stubTypeCompletions := []protocol.CompletionItem{stubTypeCompletion}
 	stubKeywordCompletions := []protocol.CompletionItem{stubKeywordCompletion}
 	stubLibCompletion := protocol.CompletionItem{Label: "!sentinel-lib-completion-item"}
 	stubLibCompletions := []protocol.CompletionItem{stubLibCompletion}
 	langCompletions := &server.LangCompletions{
 		Keyword: stubKeywordCompletions,
 		Lib:     stubLibCompletions,
+		Type:    stubTypeCompletions,
 	}
 
 	t.Run("textDocument/completion", func(t *testing.T) {
@@ -51,6 +54,9 @@ func TestServer(t *testing.T) {
 		}
 		withKeywords := func(items []protocol.CompletionItem) []protocol.CompletionItem {
 			return append(items, stubKeywordCompletion)
+		}
+		withTypes := func(items []protocol.CompletionItem) []protocol.CompletionItem {
+			return append(items, stubTypeCompletion)
 		}
 		withLib := func(items []protocol.CompletionItem) []protocol.CompletionItem {
 			return append(items, stubLibCompletion)
@@ -85,7 +91,7 @@ func TestServer(t *testing.T) {
 				Desc:       "new file",
 				SourceCode: `v`,
 				Pos:        protocol.Position{Line: 0, Character: 1},
-				Want:       mustNewCompletionResponseMessage(stubKeywordCompletions),
+				Want:       mustNewCompletionResponseMessage(stubTypeCompletions),
 			},
 			{
 				Desc: "initialised declaration identifier",
@@ -156,13 +162,13 @@ func TestServer(t *testing.T) {
 				Want: newNullResponseMessage(1),
 			},
 			{
-				Desc: "keyword",
+				Desc: "keyword and types",
 				SourceCode: `void main() {
     i
 }`,
 				Pos: protocol.Position{Line: 1, Character: 5},
 				Want: mustNewCompletionResponseMessage(
-					withLib(withKeywords([]protocol.CompletionItem{mainFuncItem})),
+					withTypes(withLib(withKeywords([]protocol.CompletionItem{mainFuncItem}))),
 				),
 			},
 			{
@@ -176,14 +182,14 @@ void main() {
 }`,
 				Pos: protocol.Position{Line: 5, Character: 5},
 				Want: mustNewCompletionResponseMessage(
-					withLib(withKeywords([]protocol.CompletionItem{
+					withTypes(withLib(withKeywords([]protocol.CompletionItem{
 						{
 							Label:  "One",
 							Detail: "Integer One()",
 							Kind:   protocol.GetCompletionItemKind(protocol.CompletionItemKindFunction),
 						},
 						mainFuncItem,
-					})),
+					}))),
 				),
 			},
 			{
@@ -198,7 +204,7 @@ void main() {
 }`,
 				Pos: protocol.Position{Line: 6, Character: 5},
 				Want: mustNewCompletionResponseMessage(
-					withLib(withKeywords([]protocol.CompletionItem{
+					withTypes(withLib(withKeywords([]protocol.CompletionItem{
 						{
 							Label:  "One",
 							Detail: "Integer One()",
@@ -209,7 +215,7 @@ void main() {
 							},
 						},
 						mainFuncItem,
-					})),
+					}))),
 				),
 			},
 			{
@@ -219,7 +225,7 @@ void main() {
 }`,
 				Pos: protocol.Position{Line: 1, Character: 9},
 				Want: mustNewCompletionResponseMessage(
-					withKeywords([]protocol.CompletionItem{mainFuncItem}),
+					withTypes(withKeywords([]protocol.CompletionItem{mainFuncItem})),
 				),
 			},
 			{
@@ -227,6 +233,14 @@ void main() {
 				SourceCode: `Integer A`,
 				Pos:        protocol.Position{Line: 0, Character: 9},
 				Want:       newNullResponseMessage(1),
+			},
+			{
+				Desc:       "typing func param type - type completions",
+				SourceCode: `Integer Add(`,
+				Pos:        protocol.Position{Line: 0, Character: 12},
+				Want: mustNewCompletionResponseMessage(
+					withTypes([]protocol.CompletionItem{}),
+				),
 			},
 			// 			{
 			// 				Desc: "identifier keyword and initializer completion when typing for loop condition",

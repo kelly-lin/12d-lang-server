@@ -28,11 +28,13 @@ var ErrUnhandledMethod = errors.New("unhandled method")
 type LangCompletions struct {
 	Keyword []protocol.CompletionItem
 	Lib     []protocol.CompletionItem
+	Type    []protocol.CompletionItem
 }
 
 var BuiltInLangCompletions LangCompletions = LangCompletions{
 	Keyword: lang.KeywordCompletionItems,
 	Lib:     lang.LibCompletionItems,
+	Type:    lang.TypeCompletionItems,
 }
 
 // Creates a new language server. The logger function parameter specifies the
@@ -459,12 +461,19 @@ func getCompletionItems(rootNode *sitter.Node, sourceCode []byte, position proto
 	if isFuncIdentifier {
 		return nil
 	}
-	isRootDeclaration := nearestNode.Parent() != nil && nearestNode.Parent().Type() == "source_file"
+	// TODO: refactor this, especially the parent chaining.
+	isInFuncParamList := nearestNode.Parent() != nil &&
+		nearestNode.Parent().Parent() != nil &&
+		nearestNode.Parent().Parent().Type() == "source_file" &&
+		nearestNode.Parent().ChildCount() > 1 &&
+		nearestNode.Parent().Child(0).Type() == "primitive_type" &&
+		nearestNode.Parent().Child(1).Type() == "identifier"
+	isRootDeclaration := nearestNode.Type() == "source_file"
 	isInsideFuncBody := nearestNode.Parent() != nil && nearestNode.Parent().Type() == "compound_statement"
 	isIdentifier := nearestNode.Type() == "identifier"
 	switch {
-	case isRootDeclaration:
-		result = append(result, builtInCompletions.Keyword...)
+	case isRootDeclaration, isInFuncParamList:
+		result = append(result, builtInCompletions.Type...)
 	case nearestNode.Parent() != nil && nearestNode.Parent().Type() == "init_declarator":
 		result = append(result, declarations...)
 		result = append(result, builtInCompletions.Lib...)
@@ -472,13 +481,16 @@ func getCompletionItems(rootNode *sitter.Node, sourceCode []byte, position proto
 		result = append(result, declarations...)
 		result = append(result, builtInCompletions.Keyword...)
 		result = append(result, builtInCompletions.Lib...)
+		result = append(result, builtInCompletions.Type...)
 	case isIdentifier:
 		result = append(result, declarations...)
-		result = append(result, builtInCompletions.Lib...)
 		result = append(result, builtInCompletions.Keyword...)
+		result = append(result, builtInCompletions.Lib...)
+		result = append(result, builtInCompletions.Type...)
 	default:
 		result = append(result, declarations...)
 		result = append(result, builtInCompletions.Keyword...)
+		result = append(result, builtInCompletions.Type...)
 	}
 	return result
 }
