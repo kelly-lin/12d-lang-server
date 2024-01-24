@@ -18,9 +18,6 @@ jobs:
         with:
           go-version: "1.21.3"
 
-      - name: Build macOS
-        run: env GOOS='darwin' GOARCH='amd64' go build -o '12dls' ./cmd/12dls
-
       - name: Build Linux
         run: env GOOS='linux' GOARCH='amd64' go build -o '12dls' ./cmd/12dls
 
