@@ -22,7 +22,7 @@ jobs:
         run: make test
 
   build:
-    runs-on: windows  # Users are going to be on windows machines.
+    runs-on: windows-latest  # Users are going to be on windows machines.
     steps:
       - uses: actions/checkout@v3
 
