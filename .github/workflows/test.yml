@@ -19,7 +19,7 @@ jobs:
           go-version: "1.21.3"
 
       - name: Build Linux
-        run: env GOOS='linux' GOARCH='amd64' go build -o '12dls' ./cmd/12dls
+        run: env GOOS='linux' GOARCH='386' go build -o '12dls' ./cmd/12dls
 
       - name: Build Windows
-        run: env GOOS='windows' GOARCH='amd64' go build -o '12dls.exe' ./cmd/12dls
+        run: env GOOS='windows' GOARCH='386' go build -o '12dls.exe' ./cmd/12dls
