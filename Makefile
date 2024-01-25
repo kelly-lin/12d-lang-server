@@ -4,11 +4,11 @@ install:
 
 .PHONY:
 build:
-	go build ./cmd/12dls
+	go build -ldflags "-X main.version=$(shell git describe --tags --abbrev=0)" ./cmd/12dls
 
 .PHONY:
 build-windows:
-	GOOS='windows' GOARCH='amd64' go build -o 12dls.exe ./cmd/12dls
+	GOOS='windows' GOARCH='amd64' go build -ldflags "-X main.version=$(shell git describe --tags --abbrev=0)" -o 12dls.exe ./cmd/12dls
 
 .PHONY:
 run:
