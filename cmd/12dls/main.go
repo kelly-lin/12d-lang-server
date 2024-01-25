@@ -8,11 +8,14 @@ import (
 	"github.com/kelly-lin/12d-lang-server/server"
 )
 
+var version string
+
 const logFilepath = "/tmp/12d-lang-server.log"
 
 var debugFlag = flag.Bool("d", false, "enable debugging features such as logging")
 var includesDirFlag = flag.String("i", "", "includes directory")
 var helpFlag = flag.Bool("h", false, "show help")
+var versionFlag = flag.Bool("v", false, "show version")
 
 func main() {
 	flag.Parse()
@@ -20,6 +23,10 @@ func main() {
 	flag.Usage = printUsage
 	if *helpFlag {
 		flag.Usage()
+		os.Exit(0)
+	}
+	if *versionFlag {
+		fmt.Println(version)
 		os.Exit(0)
 	}
 
@@ -40,7 +47,7 @@ func main() {
 func printUsage() {
 	fmt.Printf(`Language server for the 12d programming language
 
-Usage: 12d-auth-server [-dh]
+Usage: 12d-auth-server [-i includes_dir][-dhv]
 
 Flags:
 `)
