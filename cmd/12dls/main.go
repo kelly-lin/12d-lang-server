@@ -46,7 +46,7 @@ func main() {
 func printUsage() {
 	fmt.Printf(`Language server for the 12d programming language
 
-Usage: 12d-auth-server [-i includes_dir][-dhv]
+Usage: 12d-auth-server [-i includes_dir][-l log_filepath][-hv]
 
 Flags:
 `)
