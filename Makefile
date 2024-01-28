@@ -15,10 +15,6 @@ run:
 	go run ./cmd/12dls
 
 .PHONY:
-log:
-	tail -f -n 30 /tmp/12d-lang-server.log
-
-.PHONY:
 test:
 	go test ./...
 
