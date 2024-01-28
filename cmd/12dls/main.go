@@ -8,11 +8,10 @@ import (
 	"github.com/kelly-lin/12d-lang-server/server"
 )
 
+// Set by linker flag.
 var version string
 
-const logFilepath = "/tmp/12d-lang-server.log"
-
-var debugFlag = flag.Bool("d", false, "enable debugging features such as logging")
+var logFileFlag = flag.String("l", "", "server logs to file, useful for debugging")
 var includesDirFlag = flag.String("i", "", "includes directory")
 var helpFlag = flag.Bool("h", false, "show help")
 var versionFlag = flag.Bool("v", false, "show version")
@@ -30,7 +29,7 @@ func main() {
 		os.Exit(0)
 	}
 
-	log, cleanUp, err := setupLogging(*debugFlag)
+	log, cleanUp, err := setupLogging(*logFileFlag)
 	if err != nil {
 		log("failed to setup logging")
 	}
@@ -55,10 +54,10 @@ Flags:
 }
 
 // Since stdio is used for IPC, we need to log to a file instead of stdout.
-func setupLogging(debugModeEnabled bool) (func(msg string), func(), error) {
+func setupLogging(logFilepath string) (func(msg string), func(), error) {
 	log := func(msg string) {}
 	cleanUp := func() {}
-	if debugModeEnabled {
+	if logFilepath != "" {
 		_ = os.Remove(logFilepath)
 		file, err := os.OpenFile(logFilepath, os.O_CREATE|os.O_WRONLY, 0666)
 		if err != nil {
