@@ -3,6 +3,7 @@ package protocol
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 )
 
 const (
@@ -53,8 +54,14 @@ const (
 var NullResult = json.RawMessage("null")
 
 // Converts filepath into a URI.
-func FilepathURI(filepath string) string {
-	return fmt.Sprintf("file://%s", filepath)
+func URI(filepath string) string {
+	scheme := "file"
+	path := filepath
+	path = strings.ReplaceAll(path, "\\", "/")
+	if len(path) > 0 && path[0] != '/' {
+		path = "/" + path
+	}
+	return fmt.Sprintf("%s://%s", scheme, path)
 }
 
 func GetCompletionItemKind(kind string) *uint {
