@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"path"
+	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
@@ -31,7 +31,7 @@ func TestServer(t *testing.T) {
 	// Test command should be run in the root directory.
 	startDir, err := os.Getwd()
 	require.NoError(t, err)
-	includesDir := path.Join(startDir, "..", "lang/includes")
+	includesDir := filepath.Join(startDir, "..", "lang", "includes")
 	stubKeywordCompletion := protocol.CompletionItem{Label: "!sentinel-keyword-completion-item"}
 	stubTypeCompletion := protocol.CompletionItem{Label: "!sentinel-type-completion-item"}
 	stubTypeCompletions := []protocol.CompletionItem{stubTypeCompletion}
@@ -532,7 +532,7 @@ void main() {
 				Pos:         protocol.Position{Line: 3, Character: 19},
 				IncludesDir: includesDir,
 				Want: mustNewLocationResponseMessage(
-					fmt.Sprintf("file://%s", path.Join(includesDir, "set_ups.h")),
+					protocol.URI(filepath.Join(includesDir, "set_ups.h")),
 					protocol.Position{Line: 354, Character: 8},
 					protocol.Position{Line: 354, Character: 29},
 				),
@@ -1319,7 +1319,7 @@ func newNullResponseMessage(id int64) protocol.ResponseMessage {
 
 // Creates a new logging function for debugging.
 func newLogger() (func(msg string), error) {
-	file, err := os.Create(path.Join(os.TempDir(), "server_test.txt"))
+	file, err := os.Create(filepath.Join(os.TempDir(), "server_test.txt"))
 	if err != nil {
 		return nil, err
 	}

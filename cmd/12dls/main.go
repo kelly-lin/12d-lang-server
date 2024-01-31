@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/kelly-lin/12d-lang-server/server"
 )
@@ -35,7 +36,12 @@ func main() {
 	}
 	defer cleanUp()
 
-	langServer := server.NewServer(*includesDirFlag, &server.BuiltInLangCompletions, log)
+	includesDir, err := filepath.Abs(*includesDirFlag)
+	if err != nil {
+		log(fmt.Sprintf("failed to get absolute path to includes directory: %s\n", err.Error()))
+		os.Exit(1)
+	}
+	langServer := server.NewServer(includesDir, &server.BuiltInLangCompletions, log)
 	if err := langServer.Serve(os.Stdin, os.Stdout); err != nil {
 		log(fmt.Sprintf("%s\n", err.Error()))
 		os.Exit(1)

@@ -5,7 +5,6 @@ import (
 	"io"
 	"os"
 	"os/exec"
-	"path"
 	"path/filepath"
 	"reflect"
 	"testing"
@@ -18,22 +17,20 @@ import (
 // not been regenerated.
 func TestGeneratedLib(t *testing.T) {
 	assert := assert.New(t)
-	wd, err := os.Getwd()
-	assert.NoError(err)
 	cmd := exec.Command(
 		"go",
 		"run",
-		filepath.Join(wd, "..", "cmd", "gen_lib_doc", "main.go"),
-		filepath.Join(wd, "..", "doc", "4dm", "generated.json"),
+		filepath.Join("..", "cmd", "gen_lib_doc", "main.go"),
+		filepath.Join("..", "doc", "4dm", "generated.json"),
 	)
 	output := bytes.NewBuffer(nil)
 	cmd.Stdout = output
-	err = cmd.Run()
+	err := cmd.Run()
 	assert.NoError(err)
 	got := output.Bytes()
 
 	assert.NoError(err)
-	f, err := os.Open(path.Join(wd, "lib.go"))
+	f, err := os.Open("lib.go")
 	assert.NoError(err)
 	want, err := io.ReadAll(f)
 	assert.NoError(err)

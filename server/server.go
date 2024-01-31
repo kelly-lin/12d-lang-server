@@ -9,7 +9,7 @@ import (
 	"io"
 	"io/fs"
 	"os"
-	"path"
+	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
@@ -39,7 +39,7 @@ var BuiltInLangCompletions LangCompletions = LangCompletions{
 
 // Creates a new language server. The logger function parameter specifies the
 // function to call for logging. If the logger is nil, will default to a
-// function that does not log anything.
+// function that does not log anything. The includes directory is an absolute path.
 func NewServer(includesDir string, builtInCompletions *LangCompletions, logger func(msg string)) Server {
 	serverLogger := func(msg string) {}
 	if logger != nil {
@@ -59,14 +59,14 @@ func NewServer(includesDir string, builtInCompletions *LangCompletions, logger f
 		filesystem := os.DirFS(s.includesDir)
 		if includeFiles, err := fs.Glob(filesystem, "*.h"); err == nil {
 			for _, includeFile := range includeFiles {
-				filepath := path.Join(s.includesDir, includeFile)
+				filepath := filepath.Join(s.includesDir, includeFile)
 				contents, err := os.ReadFile(filepath)
 				if err != nil {
 					continue
 				}
 				// TODO: how do we handle this error? Should we signal to
 				// the user that we had issues updating the file?
-				_ = s.setDocument(fmt.Sprintf("file://%s", filepath), string(contents))
+				_ = s.setDocument(protocol.URI(filepath), string(contents))
 			}
 		}
 	}
@@ -948,7 +948,7 @@ func findDefinition(startNode *sitter.Node, identifier string, uri string, docum
 				if pathNode := currentChildNode.ChildByFieldName("path"); pathNode != nil {
 					pathQuoted := pathNode.Content(sourceCode)
 					pathUnquoted := pathQuoted[1 : len(pathQuoted)-1]
-					includeFilepath := path.Join(includesDir, pathUnquoted)
+					includeFilepath := filepath.Join(includesDir, pathUnquoted)
 					includeURI := protocol.URI(includeFilepath)
 					if includeDoc, ok := documents[includeURI]; ok {
 						includeRootNode := includeDoc.RootNode
