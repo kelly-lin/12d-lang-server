@@ -1319,7 +1319,7 @@ func newNullResponseMessage(id int64) protocol.ResponseMessage {
 
 // Creates a new logging function for debugging.
 func newLogger() (func(msg string), error) {
-	file, err := os.Create("/tmp/server_test.txt")
+	file, err := os.Create(path.Join(os.TempDir(), "server_test.txt"))
 	if err != nil {
 		return nil, err
 	}

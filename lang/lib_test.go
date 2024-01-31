@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"path/filepath"
 	"reflect"
 	"testing"
 
@@ -19,7 +20,12 @@ func TestGeneratedLib(t *testing.T) {
 	assert := assert.New(t)
 	wd, err := os.Getwd()
 	assert.NoError(err)
-	cmd := exec.Command("go", "run", path.Join(wd, "../cmd/gen_lib_doc/main.go"), path.Join(wd, "../doc/4dm/generated.json"))
+	cmd := exec.Command(
+		"go",
+		"run",
+		filepath.Join(wd, "..", "cmd", "gen_lib_doc", "main.go"),
+		filepath.Join(wd, "..", "doc", "4dm", "generated.json"),
+	)
 	output := bytes.NewBuffer(nil)
 	cmd.Stdout = output
 	err = cmd.Run()
@@ -43,7 +49,12 @@ func TestPatchesApplied(t *testing.T) {
 	wd, err := os.Getwd()
 	assert.NoError(err)
 	// The output of this command would be the patched documentation.
-	cmd := exec.Command("python3", "../doc/4dm/patch_doc.py", "../doc/4dm/patch.json", "../doc/4dm/generated.json")
+	cmd := exec.Command(
+		"python3",
+		filepath.Join("..", "doc", "4dm", "patch_doc.py"),
+		filepath.Join("..", "doc", "4dm", "patch.json"),
+		filepath.Join("..", "doc", "4dm", "generated.json"),
+	)
 	output := bytes.NewBuffer(nil)
 	cmd.Stdout = output
 	err = cmd.Run()
@@ -51,7 +62,7 @@ func TestPatchesApplied(t *testing.T) {
 	got := output.Bytes()
 
 	// The current documentation file.
-	f, err := os.Open(path.Join(wd, "../doc/4dm/generated.json"))
+	f, err := os.Open(filepath.Join("..", "doc", "4dm", "generated.json"))
 	assert.NoError(err)
 	want, err := io.ReadAll(f)
 	assert.NoError(err)
