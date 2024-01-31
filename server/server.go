@@ -949,7 +949,7 @@ func findDefinition(startNode *sitter.Node, identifier string, uri string, docum
 					pathQuoted := pathNode.Content(sourceCode)
 					pathUnquoted := pathQuoted[1 : len(pathQuoted)-1]
 					includeFilepath := path.Join(includesDir, pathUnquoted)
-					includeURI := protocol.FilepathURI(includeFilepath)
+					includeURI := protocol.URI(includeFilepath)
 					if includeDoc, ok := documents[includeURI]; ok {
 						includeRootNode := includeDoc.RootNode
 						// TODO: we should keep track of the includes we have
