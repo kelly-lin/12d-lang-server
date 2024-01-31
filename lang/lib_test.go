@@ -46,8 +46,6 @@ func TestGeneratedLib(t *testing.T) {
 // Tests to see if the patches have been applied to the generated manual file.
 func TestPatchesApplied(t *testing.T) {
 	assert := assert.New(t)
-	wd, err := os.Getwd()
-	assert.NoError(err)
 	// The output of this command would be the patched documentation.
 	cmd := exec.Command(
 		"python3",
@@ -57,7 +55,7 @@ func TestPatchesApplied(t *testing.T) {
 	)
 	output := bytes.NewBuffer(nil)
 	cmd.Stdout = output
-	err = cmd.Run()
+	err := cmd.Run()
 	assert.NoError(err)
 	got := output.Bytes()
 
