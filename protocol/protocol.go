@@ -166,10 +166,11 @@ type MarkupContent struct {
 }
 
 type ServerCapabilities struct {
-	CompletionProvider *CompletionOptions `json:"completionProvider,omitempty"`
-	DefinitionProvider *bool              `json:"definitionProvider,omitempty"`
-	HoverProvider      bool               `json:"hoverProvider"`
-	TextDocumentSync   *uint              `json:"textDocumentSync,omitempty"`
+	TextDocumentSync           *uint              `json:"textDocumentSync,omitempty"`
+	CompletionProvider         *CompletionOptions `json:"completionProvider,omitempty"`
+	DefinitionProvider         *bool              `json:"definitionProvider,omitempty"`
+	HoverProvider              bool               `json:"hoverProvider"`
+	DocumentFormattingProvider *bool              `json:"documentFormattingProvider,omitempty"`
 }
 
 type CompletionOptions struct {
@@ -255,4 +256,22 @@ type CompletionParams struct {
 type CompletionContext struct {
 	TriggerKind      int    `json:"triggerKind"`
 	TriggerCharacter string `json:"triggerCharacter,omitempty"`
+}
+
+type DocumentFormattingParams struct {
+	TextDocument TextDocumentIdentifier `json:"textDocument"`
+	Options      FormattingOptions      `json:"options"`
+}
+
+type FormattingOptions struct {
+	// Size of a tab in spaces.
+	TabSize uint `json:"tabSize"`
+	// Prefer spaces over tabs.
+	InsertSpaces bool `json:"insertSpaces"`
+	// Trim trailing whitespace on a line.
+	TrimTrailingWhitespace *bool `json:"trimTrailingWhitespace,omitempty"`
+	// Insert a newline character at the end of the file if one does not exist.
+	InsertFinalNewline *bool `json:"insertFinalNewline,omitempty"`
+	// Trim all newlines after the final newline at the end of the file.
+	TrimFinalNewlines *bool `json:"trimFinalNewlines,omitempty"`
 }
