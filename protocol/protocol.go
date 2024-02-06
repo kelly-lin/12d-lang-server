@@ -275,3 +275,8 @@ type FormattingOptions struct {
 	// Trim all newlines after the final newline at the end of the file.
 	TrimFinalNewlines *bool `json:"trimFinalNewlines,omitempty"`
 }
+
+type TextEdit struct {
+	Range   Range  `json:"range"`
+	NewText string `json:"newText"`
+}

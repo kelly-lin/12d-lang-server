@@ -44,6 +44,105 @@ func TestServer(t *testing.T) {
 		Type:    stubTypeCompletions,
 	}
 
+	t.Run("textDocument/formatting", func(t *testing.T) {
+		type TestCase struct {
+			Desc       string
+			SourceCode string
+			Want       []protocol.TextEdit
+		}
+		testCases := []TestCase{
+			{
+				Desc:       "insert first level indentation - declarations",
+				SourceCode: `void main() {
+Integer foo = 1;
+}`,
+				Want: []protocol.TextEdit{
+					{
+						Range: protocol.Range{
+							Start: protocol.Position{
+								Line:      1,
+								Character: 0,
+							},
+							End: protocol.Position{
+								Line:      1,
+								Character: 0,
+							},
+						},
+						NewText: "    ",
+					},
+				},
+			},
+			{
+				Desc:       "insert partial first level indentation - declarations",
+				SourceCode: `void main() {
+  Integer foo = 1;
+}`,
+				Want: []protocol.TextEdit{
+					{
+						Range: protocol.Range{
+							Start: protocol.Position{
+								Line:      1,
+								Character: 0,
+							},
+							End: protocol.Position{
+								Line:      1,
+								Character: 0,
+							},
+						},
+						NewText: "  ",
+					},
+				},
+			},
+			// {
+			// 	Desc:       "func param list separated by single comma and space",
+			// 	SourceCode: `Integer Add(Integer addend,  Integer augend){}`,
+			// 	Want: []protocol.TextEdit{
+			// 		{
+			// 			Range: protocol.Range{
+			// 				Start: protocol.Position{
+			// 					Line:      0,
+			// 					Character: 27,
+			// 				},
+			// 				End: protocol.Position{
+			// 					Line:      0,
+			// 					Character: 29,
+			// 				},
+			// 			},
+			// 			NewText: " ",
+			// 		},
+			// 	},
+			// },
+		}
+		for _, testCase := range testCases {
+			t.Run(testCase.Desc, func(t *testing.T) {
+				defer goleak.VerifyNone(t)
+				assert := assert.New(t)
+				assert.NoError(err)
+				in, out, cleanUp := startServer("", nil, nil)
+				defer cleanUp()
+
+				var id int64 = 1
+				didOpenMsgBytes, err := newDidOpenRequestMessageBytes(id, "file:///main.4dm", testCase.SourceCode)
+				assert.NoError(err)
+				_, err = in.Writer.Write([]byte(server.ToProtocolMessage(didOpenMsgBytes)))
+				assert.NoError(err)
+
+				msgBytes, err := newFormattingRequestMessageBytes(id, "file:///main.4dm")
+				assert.NoError(err)
+				_, err = in.Writer.Write([]byte(server.ToProtocolMessage(msgBytes)))
+				assert.NoError(err)
+
+				got, err := getReponseMessage(out.Reader)
+				assert.NoError(err)
+				assert.Equal(int64(1), got.ID)
+				var gotUnmarshalled []protocol.TextEdit
+				err = json.Unmarshal(got.Result, &gotUnmarshalled)
+				assert.NoError(err)
+				assert.Equal(testCase.Want, gotUnmarshalled)
+			})
+		}
+	})
+
 	t.Run("textDocument/completion", func(t *testing.T) {
 		// Helper returns the response message and fails if the test if the
 		// response message could not be created.
@@ -1204,6 +1303,35 @@ func newCompletionRequestMessageBytes(id int64, uri string, position protocol.Po
 	return msgBytes, nil
 }
 
+// Creates a new protocol request message with formatting params and returns the
+// wire representation.
+func newFormattingRequestMessageBytes(id int64, uri string) ([]byte, error) {
+	params := protocol.DocumentFormattingParams{
+		TextDocument: protocol.TextDocumentIdentifier{
+			URI: uri,
+		},
+		Options: protocol.FormattingOptions{
+			TabSize:      4,
+			InsertSpaces: true,
+		},
+	}
+	paramsBytes, err := json.Marshal(params)
+	if err != nil {
+		return nil, err
+	}
+	msg := protocol.RequestMessage{
+		JSONRPC: "2.0",
+		ID:      id,
+		Method:  "textDocument/formatting",
+		Params:  json.RawMessage(paramsBytes),
+	}
+	msgBytes, err := json.Marshal(msg)
+	if err != nil {
+		return nil, err
+	}
+	return msgBytes, nil
+}
+
 func newHoverRequestMessageBytes(id int64, uri string, position protocol.Position) ([]byte, error) {
 	hoverParams := protocol.HoverParams{
 		TextDocumentPositionParams: protocol.TextDocumentPositionParams{
@@ -1337,7 +1465,9 @@ func startServer(includesDir string, langCompletions *server.LangCompletions, lo
 	outReader, outWriter := io.Pipe()
 	go (func() {
 		if err := serv.Serve(inReader, outWriter); err != nil {
-			logger(fmt.Sprintf("%s\n", err))
+			if logger != nil {
+				logger(fmt.Sprintf("%s\n", err))
+			}
 			return
 		}
 	})()

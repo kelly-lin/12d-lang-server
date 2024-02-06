@@ -112,7 +112,7 @@ func (s *Server) Serve(rd io.Reader, w io.Writer) error {
 			continue
 		}
 		resMsg := ToProtocolMessage(contentBytes)
-		s.logger(fmt.Sprintf("response: \n%s", resMsg))
+		s.logger(fmt.Sprintf("[RESPONSE] \n%s", resMsg))
 		if _, err = fmt.Fprint(w, resMsg); err != nil {
 			s.logger(fmt.Sprintf("could print message to output %v: %s\n", msg, err))
 			continue
@@ -273,6 +273,69 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 		return protocol.ResponseMessage{}, 0, nil
 
 	case "textDocument/formatting":
+		var params protocol.DocumentFormattingParams
+		if err := json.Unmarshal(msg.Params, &params); err != nil {
+			return protocol.ResponseMessage{}, 0, err
+		}
+		doc, ok := s.documents[params.TextDocument.URI]
+		if !ok {
+			return newNullResponseMessage(msg.ID), len(protocol.NullResult), errors.New("source node not found")
+		}
+		var edits []protocol.TextEdit = []protocol.TextEdit{}
+		stack := parser.NewStack()
+		stack.Push(doc.RootNode)
+		for stack.HasItems() {
+			currentNode, _ := stack.Pop()
+			if currentNode.Type() == "declaration" {
+				indentLevel := 0
+				currentParent := currentNode.Parent()
+				for currentParent != nil {
+					if currentParent.Type() == "compound_statement" {
+						indentLevel++
+					}
+					currentParent = currentParent.Parent()
+				}
+				targetIndentation := indentLevel * 4
+				currentIndentation := currentNode.StartPoint().Column
+				numSpaces := targetIndentation - int(currentIndentation)
+				sb := strings.Builder{}
+				for i := 0; i < numSpaces; i++ {
+					sb.WriteRune(' ')
+				}
+				newText := sb.String()
+				if newText != "" {
+					edits = append(
+						edits,
+						protocol.TextEdit{
+							Range: protocol.Range{
+								Start: protocol.Position{
+									Line:      uint(currentNode.StartPoint().Row),
+									Character: 0,
+								},
+								End: protocol.Position{
+									Line:      uint(currentNode.StartPoint().Row),
+									Character: 0,
+								},
+							},
+							NewText: newText,
+						},
+					)
+				}
+			}
+			for i := 0; i < int(currentNode.ChildCount()); i++ {
+				stack.Push(currentNode.Child(i))
+			}
+		}
+		editsBytes, err := json.Marshal(edits)
+		if err != nil {
+			return protocol.ResponseMessage{}, 0, err
+		}
+		return protocol.ResponseMessage{
+				ID:     msg.ID,
+				Result: json.RawMessage(editsBytes),
+			},
+			len(editsBytes),
+			nil
 
 	case "textDocument/definition":
 		var params protocol.DefinitionParams
