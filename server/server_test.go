@@ -52,7 +52,7 @@ func TestServer(t *testing.T) {
 		}
 		testCases := []TestCase{
 			{
-				Desc:       "insert first level indentation - declarations",
+				Desc: "insert first level indentation - declarations",
 				SourceCode: `void main() {
 Integer foo = 1;
 }`,
@@ -73,7 +73,7 @@ Integer foo = 1;
 				},
 			},
 			{
-				Desc:       "insert partial first level indentation - declarations",
+				Desc: "insert partial first level indentation - declarations",
 				SourceCode: `void main() {
   Integer foo = 1;
 }`,
@@ -90,6 +90,57 @@ Integer foo = 1;
 							},
 						},
 						NewText: "  ",
+					},
+				},
+			},
+			{
+				Desc: "no edit when at correct indentation - declarations",
+				SourceCode: `void main() {
+    Integer foo = 1;
+}`,
+				Want: []protocol.TextEdit{},
+			},
+			{
+				Desc: "for loop - declarations",
+				SourceCode: `void main() {
+    for (Integer i = 1; i <= 2; i++) {
+Integer foo = 1;
+    }
+}`,
+				Want: []protocol.TextEdit{
+					{
+						Range: protocol.Range{
+							Start: protocol.Position{
+								Line:      2,
+								Character: 0,
+							},
+							End: protocol.Position{
+								Line:      2,
+								Character: 0,
+							},
+						},
+						NewText: "        ",
+					},
+				},
+			},
+			{
+				Desc: "insert first level indentation - declarations",
+				SourceCode: `void main() {
+Integer foo = 1, bar = 1;
+}`,
+				Want: []protocol.TextEdit{
+					{
+						Range: protocol.Range{
+							Start: protocol.Position{
+								Line:      1,
+								Character: 0,
+							},
+							End: protocol.Position{
+								Line:      1,
+								Character: 0,
+							},
+						},
+						NewText: "    ",
 					},
 				},
 			},
