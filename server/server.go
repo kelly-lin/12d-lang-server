@@ -272,6 +272,8 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 		}
 		return protocol.ResponseMessage{}, 0, nil
 
+	case "textDocument/formatting":
+
 	case "textDocument/definition":
 		var params protocol.DefinitionParams
 		if err := json.Unmarshal(msg.Params, &params); err != nil {
@@ -1101,13 +1103,15 @@ func newServerCapabilities() protocol.ServerCapabilities {
 	resolveProvider := false
 	definitionProvider := true
 	textDocumentSyncKind := protocol.TextDocumentSyncKindFull
+	documentFormattingProvider := true
 	result := protocol.ServerCapabilities{
 		CompletionProvider: &protocol.CompletionOptions{
 			ResolveProvider: &resolveProvider,
 		},
-		DefinitionProvider: &definitionProvider,
-		HoverProvider:      true,
-		TextDocumentSync:   &textDocumentSyncKind,
+		DefinitionProvider:         &definitionProvider,
+		DocumentFormattingProvider: &documentFormattingProvider,
+		HoverProvider:              true,
+		TextDocumentSync:           &textDocumentSyncKind,
 	}
 	return result
 }
