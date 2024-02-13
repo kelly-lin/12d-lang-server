@@ -52,7 +52,7 @@ func TestServer(t *testing.T) {
 		}
 		testCases := []TestCase{
 			{
-				Desc: "insert first level indentation - declarations",
+				Desc: "indentation - declarations - insert first level declarations",
 				SourceCode: `void main() {
 Integer foo = 1;
 }`,
@@ -73,7 +73,7 @@ Integer foo = 1;
 				},
 			},
 			{
-				Desc: "insert partial first level indentation - declarations",
+				Desc: "indentation - declarations - insert partial first level indentation",
 				SourceCode: `void main() {
   Integer foo = 1;
 }`,
@@ -94,14 +94,35 @@ Integer foo = 1;
 				},
 			},
 			{
-				Desc: "no edit when at correct indentation - declarations",
+				Desc: "indentation - declarations - no edit when at correct indentation",
 				SourceCode: `void main() {
     Integer foo = 1;
 }`,
 				Want: []protocol.TextEdit{},
 			},
 			{
-				Desc: "for loop - declarations",
+				Desc: "indentation - declarations - insert first level indentation",
+				SourceCode: `void main() {
+Integer foo = 1, bar = 1;
+}`,
+				Want: []protocol.TextEdit{
+					{
+						Range: protocol.Range{
+							Start: protocol.Position{
+								Line:      1,
+								Character: 0,
+							},
+							End: protocol.Position{
+								Line:      1,
+								Character: 0,
+							},
+						},
+						NewText: "    ",
+					},
+				},
+			},
+			{
+				Desc: "indentation - declarations - inside for loop",
 				SourceCode: `void main() {
     for (Integer i = 1; i <= 2; i++) {
 Integer foo = 1;
@@ -124,9 +145,51 @@ Integer foo = 1;
 				},
 			},
 			{
-				Desc: "insert first level indentation - declarations",
+				Desc: "indentation - statements - for",
 				SourceCode: `void main() {
-Integer foo = 1, bar = 1;
+for (Integer i = 1; i <= 2; i++) {}
+}`,
+				Want: []protocol.TextEdit{
+					{
+						Range: protocol.Range{
+							Start: protocol.Position{
+								Line:      1,
+								Character: 0,
+							},
+							End: protocol.Position{
+								Line:      1,
+								Character: 0,
+							},
+						},
+						NewText: "    ",
+					},
+				},
+			},
+			{
+				Desc: "indentation - statements - while",
+				SourceCode: `void main() {
+while (1) {}
+}`,
+				Want: []protocol.TextEdit{
+					{
+						Range: protocol.Range{
+							Start: protocol.Position{
+								Line:      1,
+								Character: 0,
+							},
+							End: protocol.Position{
+								Line:      1,
+								Character: 0,
+							},
+						},
+						NewText: "    ",
+					},
+				},
+			},
+			{
+				Desc: "indentation - statements - if",
+				SourceCode: `void main() {
+if (1) {}
 }`,
 				Want: []protocol.TextEdit{
 					{

@@ -286,7 +286,8 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 		stack.Push(doc.RootNode)
 		for stack.HasItems() {
 			currentNode, _ := stack.Pop()
-			if currentNode.Type() == "declaration" {
+			nodeType := currentNode.Type()
+			if nodeType == "declaration" || nodeType == "for_statement" || nodeType == "switch_statement" || nodeType == "while_statement" || nodeType == "if_statement" {
 				indentLevel := 0
 				currentParent := currentNode.Parent()
 				for currentParent != nil {
