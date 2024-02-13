@@ -52,6 +52,44 @@ func TestServer(t *testing.T) {
 		}
 		testCases := []TestCase{
 			{
+				Desc: "indentation - declarations - func declaration",
+				SourceCode: `    void main() {}`,
+				Want: []protocol.TextEdit{
+					{
+						Range: protocol.Range{
+							Start: protocol.Position{
+								Line:      0,
+								Character: 0,
+							},
+							End: protocol.Position{
+								Line:      0,
+								Character: 4,
+							},
+						},
+						NewText: "",
+					},
+				},
+			},
+			{
+				Desc: "indentation - declarations - func declaration",
+				SourceCode: `      void main() {}`,
+				Want: []protocol.TextEdit{
+					{
+						Range: protocol.Range{
+							Start: protocol.Position{
+								Line:      0,
+								Character: 0,
+							},
+							End: protocol.Position{
+								Line:      0,
+								Character: 6,
+							},
+						},
+						NewText: "",
+					},
+				},
+			},
+			{
 				Desc: "indentation - declarations - insert first level declarations",
 				SourceCode: `void main() {
 Integer foo = 1;
@@ -86,10 +124,10 @@ Integer foo = 1;
 							},
 							End: protocol.Position{
 								Line:      1,
-								Character: 0,
+								Character: 2,
 							},
 						},
-						NewText: "  ",
+						NewText: "    ",
 					},
 				},
 			},

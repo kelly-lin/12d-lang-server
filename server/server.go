@@ -287,7 +287,12 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 		for stack.HasItems() {
 			currentNode, _ := stack.Pop()
 			nodeType := currentNode.Type()
-			if nodeType == "declaration" || nodeType == "for_statement" || nodeType == "switch_statement" || nodeType == "while_statement" || nodeType == "if_statement" {
+			if nodeType == "declaration" || nodeType == "for_statement" || nodeType == "switch_statement" || nodeType == "while_statement" || nodeType == "if_statement" || nodeType == "function_definition" {
+				// HACK: we dont yet support formatting the children of for
+				// statement nodes. Skip the iteration for now.
+				if nodeType == "declaration" && currentNode.Parent() != nil && currentNode.Parent().Type() == "for_statement" {
+					continue
+				}
 				indentLevel := 0
 				currentParent := currentNode.Parent()
 				for currentParent != nil {
@@ -298,13 +303,12 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 				}
 				targetIndentation := indentLevel * 4
 				currentIndentation := currentNode.StartPoint().Column
-				numSpaces := targetIndentation - int(currentIndentation)
-				sb := strings.Builder{}
-				for i := 0; i < numSpaces; i++ {
-					sb.WriteRune(' ')
-				}
-				newText := sb.String()
-				if newText != "" {
+				if targetIndentation != int(currentIndentation) {
+					sb := strings.Builder{}
+					for i := 0; i < targetIndentation; i++ {
+						sb.WriteRune(' ')
+					}
+					newText := sb.String()
 					edits = append(
 						edits,
 						protocol.TextEdit{
@@ -315,7 +319,7 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 								},
 								End: protocol.Position{
 									Line:      uint(currentNode.StartPoint().Row),
-									Character: 0,
+									Character: uint(currentNode.StartPoint().Column),
 								},
 							},
 							NewText: newText,
