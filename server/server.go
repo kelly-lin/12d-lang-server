@@ -25,6 +25,8 @@ const contentLengthHeaderName = "Content-Length"
 // Unhandled LSP method error.
 var ErrUnhandledMethod = errors.New("unhandled method")
 
+var supportedIndentationNodeTypes = []string{"declaration", "for_statement", "switch_statement", "while_statement", "if_statement", "function_definition"}
+
 type LangCompletions struct {
 	Keyword []protocol.CompletionItem
 	Lib     []protocol.CompletionItem
@@ -287,7 +289,7 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 		for stack.HasItems() {
 			currentNode, _ := stack.Pop()
 			nodeType := currentNode.Type()
-			if nodeType == "declaration" || nodeType == "for_statement" || nodeType == "switch_statement" || nodeType == "while_statement" || nodeType == "if_statement" || nodeType == "function_definition" {
+			if isSupportedIndentationNodeType(nodeType) {
 				// HACK: we dont yet support formatting the children of for
 				// statement nodes. Skip the iteration for now.
 				if nodeType == "declaration" && currentNode.Parent() != nil && currentNode.Parent().Type() == "for_statement" {
@@ -1189,4 +1191,13 @@ func newNullResponseMessage(id int64) protocol.ResponseMessage {
 		ID:     id,
 		Result: json.RawMessage(protocol.NullResult),
 	}
+}
+
+func isSupportedIndentationNodeType(nodeType string) bool {
+	for _, supportedType := range supportedIndentationNodeTypes {
+		if nodeType == supportedType {
+			return true
+		}
+	}
+	return false
 }
