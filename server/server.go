@@ -451,6 +451,18 @@ func getCompletionItems(rootNode *sitter.Node, sourceCode []byte, position proto
 			break
 		}
 	}
+	isFuncIdentifier := nearestNode.Parent() != nil &&
+		nearestNode.Parent().Parent() != nil &&
+		nearestNode.Type() == "identifier" &&
+		nearestNode.Parent().Parent().Type() == "source_file"
+	if isFuncIdentifier {
+		return nil
+	}
+	isParameterDeclaration := nearestNode.Parent() != nil &&
+		nearestNode.Parent().Type() == "parameter_declaration"
+	if isParameterDeclaration {
+		return nil
+	}
 
 	isCursorOnDeclaration := func() bool {
 		if parent := nearestNode.Parent(); parent != nil && nearestNode.Parent().Type() == "declaration" {
@@ -526,40 +538,13 @@ func getCompletionItems(rootNode *sitter.Node, sourceCode []byte, position proto
 		}
 	}
 
-	currentNode = nearestNode
-	for currentNode.Parent() != nil {
-		currentNode = currentNode.Parent()
-		if currentNode.Type() == "function_definition" && currentNode.ChildByFieldName("declarator").ChildByFieldName("parameters") != nil {
-			paramsNode := currentNode.ChildByFieldName("declarator").ChildByFieldName("parameters")
-			for i := 0; i < int(paramsNode.ChildCount()); i++ {
-				currentChild := paramsNode.Child(i)
-				if currentChild.Type() == "parameter_declaration" {
-					varType := currentChild.ChildByFieldName("type").Content(sourceCode)
-					identifier := currentChild.ChildByFieldName("declarator").Content(sourceCode)
-					item := protocol.CompletionItem{
-						Label:  identifier,
-						Detail: fmt.Sprintf("(parameter) %s", varType),
-						Kind:   protocol.GetCompletionItemKind(protocol.CompletionItemKindVariable),
-					}
-					declarations = append(declarations, item)
-				}
-			}
-			break
-		}
+	if funcDefNode := getParentFuncDefinitionNode(nearestNode); funcDefNode != nil &&
+		funcDefNode.ChildByFieldName("declarator").ChildByFieldName("parameters") != nil {
+		paramsNode := funcDefNode.ChildByFieldName("declarator").ChildByFieldName("parameters")
+		paramCompletions := getFuncParamCompletions(paramsNode, sourceCode)
+		declarations = append(declarations, paramCompletions...)
 	}
 
-	isFuncIdentifier := nearestNode.Parent() != nil &&
-		nearestNode.Parent().Parent() != nil &&
-		nearestNode.Type() == "identifier" &&
-		nearestNode.Parent().Parent().Type() == "source_file"
-	if isFuncIdentifier {
-		return nil
-	}
-	isParameterDeclaration := nearestNode.Parent() != nil &&
-		nearestNode.Parent().Type() == "parameter_declaration"
-	if isParameterDeclaration {
-		return nil
-	}
 	// TODO: refactor this, especially the parent chaining.
 	isInFuncParamList := nearestNode.Parent() != nil &&
 		nearestNode.Parent().Parent() != nil &&
@@ -590,6 +575,39 @@ func getCompletionItems(rootNode *sitter.Node, sourceCode []byte, position proto
 		result = append(result, declarations...)
 		result = append(result, builtInCompletions.Keyword...)
 		result = append(result, builtInCompletions.Type...)
+	}
+	return result
+}
+
+// Traverse up start node's parents and return the first which is of type
+// "function definition".
+func getParentFuncDefinitionNode(startNode *sitter.Node) *sitter.Node {
+	var result *sitter.Node
+	currentNode := startNode
+	for currentNode.Parent() != nil {
+		currentNode = currentNode.Parent()
+		if currentNode.Type() == "function_definition" {
+			result = currentNode
+			break
+		}
+	}
+	return result
+}
+
+func getFuncParamCompletions(paramsNode *sitter.Node, sourceCode []byte) []protocol.CompletionItem {
+	var result []protocol.CompletionItem
+	for i := 0; i < int(paramsNode.ChildCount()); i++ {
+		currentChild := paramsNode.Child(i)
+		if currentChild.Type() == "parameter_declaration" {
+			varType := currentChild.ChildByFieldName("type").Content(sourceCode)
+			identifier := currentChild.ChildByFieldName("declarator").Content(sourceCode)
+			item := protocol.CompletionItem{
+				Label:  identifier,
+				Detail: fmt.Sprintf("(parameter) %s", varType),
+				Kind:   protocol.GetCompletionItemKind(protocol.CompletionItemKindVariable),
+			}
+			result = append(result, item)
+		}
 	}
 	return result
 }
