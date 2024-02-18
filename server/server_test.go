@@ -52,7 +52,7 @@ func TestServer(t *testing.T) {
 		}
 		testCases := []TestCase{
 			{
-				Desc: "indentation - declarations - func declaration",
+				Desc:       "indentation - declarations - func declaration",
 				SourceCode: `    void main() {}`,
 				Want: []protocol.TextEdit{
 					{
@@ -71,7 +71,7 @@ func TestServer(t *testing.T) {
 				},
 			},
 			{
-				Desc: "indentation - declarations - func declaration",
+				Desc:       "indentation - declarations - func declaration",
 				SourceCode: `      void main() {}`,
 				Want: []protocol.TextEdit{
 					{
@@ -360,6 +360,32 @@ if (1) {}
 						},
 						mainFuncItem,
 					}),
+				),
+			},
+			{
+				Desc: "func params completion",
+				SourceCode: `void Add(Integer augend, Integer addend) {
+    a
+}`,
+				Pos: protocol.Position{Line: 1, Character: 5},
+				Want: mustNewCompletionResponseMessage(
+					withTypes(withLib(withKeywords([]protocol.CompletionItem{
+						{
+							Label:  "Add",
+							Detail: "void Add(Integer augend, Integer addend)",
+							Kind:   protocol.GetCompletionItemKind(protocol.CompletionItemKindFunction),
+						},
+						{
+							Label:  "augend",
+							Detail: "(parameter) Integer",
+							Kind:   protocol.GetCompletionItemKind(protocol.CompletionItemKindVariable),
+						},
+						{
+							Label:  "addend",
+							Detail: "(parameter) Integer",
+							Kind:   protocol.GetCompletionItemKind(protocol.CompletionItemKindVariable),
+						},
+					}))),
 				),
 			},
 			{

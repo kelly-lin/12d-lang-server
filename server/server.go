@@ -463,8 +463,8 @@ func getCompletionItems(rootNode *sitter.Node, sourceCode []byte, position proto
 		return nil
 	}
 
-	// Walk up the tree and look for reachable declarators.
 	var reachableDeclarators []*sitter.Node
+	// Walk up the tree and look for reachable declarators.
 	currentNode := nearestNode
 	for currentNode.Parent() != nil {
 		currentNode = currentNode.Parent()
@@ -523,6 +523,28 @@ func getCompletionItems(rootNode *sitter.Node, sourceCode []byte, position proto
 				}
 				declarations = append(declarations, item)
 			}
+		}
+	}
+
+	currentNode = nearestNode
+	for currentNode.Parent() != nil {
+		currentNode = currentNode.Parent()
+		if currentNode.Type() == "function_definition" && currentNode.ChildByFieldName("declarator").ChildByFieldName("parameters") != nil {
+			paramsNode := currentNode.ChildByFieldName("declarator").ChildByFieldName("parameters")
+			for i := 0; i < int(paramsNode.ChildCount()); i++ {
+				currentChild := paramsNode.Child(i)
+				if currentChild.Type() == "parameter_declaration" {
+					varType := currentChild.ChildByFieldName("type").Content(sourceCode)
+					identifier := currentChild.ChildByFieldName("declarator").Content(sourceCode)
+					item := protocol.CompletionItem{
+						Label:  identifier,
+						Detail: fmt.Sprintf("(parameter) %s", varType),
+						Kind:   protocol.GetCompletionItemKind(protocol.CompletionItemKindVariable),
+					}
+					declarations = append(declarations, item)
+				}
+			}
+			break
 		}
 	}
 
