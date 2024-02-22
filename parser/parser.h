@@ -1,4 +1,4 @@
-// Vendored commit 5ec9ed5a17f697b7affe8995f81665e186455d95
+// Vendored commit 17ac2235d88ad932e9687f3c4d1694be27f7e33e
 #ifndef TREE_SITTER_PARSER_H_
 #define TREE_SITTER_PARSER_H_
 
