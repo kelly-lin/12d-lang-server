@@ -675,8 +675,12 @@ func getHoverContents(identifierNode *sitter.Node, identifier string, uri string
 	switch node.Parent().Type() {
 	case "array_declarator":
 		nodeType = strings.TrimSuffix(nodeType, "[]")
+		identifier := canonicalIdentifier + "[]"
+		if node.Parent().Parent().Type() == "pointer_declarator" {
+			identifier = fmt.Sprintf("&%s", identifier)
+		}
 		// TODO: refactor this, it is ugly.
-		contents = append(contents, createHoverDeclarationDocString(nodeType, canonicalIdentifier+"[]", "", prefix))
+		contents = append(contents, createHoverDeclarationDocString(nodeType, identifier, "", prefix))
 
 	case "preproc_def":
 		signature := strings.TrimSpace(node.Parent().Content(sourceCode))
@@ -815,6 +819,10 @@ func getDefinitionType(node *sitter.Node, sourceCode []byte) (string, error) {
 		typeNode := node.Parent().Parent().ChildByFieldName("type")
 		varType = typeNode.Content(sourceCode) + "[]"
 	}
+	if node.Parent().Type() == "array_declarator" && node.Parent().Parent().Type() == "pointer_declarator" && node.Parent().Parent().Parent().ChildByFieldName("type") != nil {
+		typeNode := node.Parent().Parent().Parent().ChildByFieldName("type")
+		varType = typeNode.Content(sourceCode) + "[]"
+	}
 	if varType == "" {
 		return "", errors.New("definition type not found for node")
 	}
@@ -827,6 +835,9 @@ func getDefinitionType(node *sitter.Node, sourceCode []byte) (string, error) {
 // where the idenitifer node is the node which represents "num", returns true and
 // the idenitifer node which represents "augend" returns false.
 func isParameterDeclaration(node *sitter.Node) bool {
+	if node.Parent().Type() == "array_declarator" && node.Parent().Parent().Type() == "pointer_declarator" && node.Parent().Parent().Parent().Type() == "parameter_declaration" {
+		return true
+	}
 	return node.Parent().Type() == "pointer_declarator" || node.Parent().Type() == "parameter_declaration"
 }
 
@@ -1110,6 +1121,9 @@ func findParameterNode(paramsNode *sitter.Node, identifier string, sourceCode []
 		}
 		if paramDeclaratorNode.Type() == "pointer_declarator" {
 			identifierNode := paramDeclaratorNode.ChildByFieldName("declarator")
+			if identifierNode.Type() == "array_declarator" {
+				identifierNode = identifierNode.ChildByFieldName("declarator")
+			}
 			if identifierNode != nil {
 				if identifierNode.Content(sourceCode) == identifier {
 					return identifierNode, nil

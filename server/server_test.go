@@ -1261,6 +1261,22 @@ void main() {
 					Pattern:  []string{"```12dpl\n(parameter) Dynamic_Text &items\n```"},
 				},
 				{
+					Desc: "reference param hover (static array)",
+					SourceCode: `void Identity(Dynamic_Text &items[]) {
+    return items;
+}`,
+					Position: protocol.Position{Line: 1, Character: 11},
+					Pattern:  []string{"```12dpl\n(parameter) Dynamic_Text &items[]\n```"},
+				},
+// 				{
+// 					Desc: "param hover (static array)",
+// 					SourceCode: `void Identity(Dynamic_Text items[]) {
+//     return items;
+// }`,
+// 					Position: protocol.Position{Line: 1, Character: 11},
+// 					Pattern:  []string{"```12dpl\n(parameter) Dynamic_Text items[]\n```"},
+// 				},
+				{
 					Desc: "user defined func - no doc",
 					SourceCode: `void Hello() {
     Print("hello\n");
@@ -1372,6 +1388,16 @@ void main() {
 					Position:    protocol.Position{Line: 3, Character: 9},
 					IncludesDir: includesDir,
 					Pattern:     []string{"```12dpl\n#define TRUE  1\n```"},
+				},
+				{
+					Desc: "static array of dynamic array",
+					SourceCode: `void main() {
+    Dynamic_Text foo[2];
+    foo;
+}`,
+					Position:    protocol.Position{Line: 2, Character: 5},
+					IncludesDir: includesDir,
+					Pattern:     []string{"```12dpl\nDynamic_Text foo[]\n```"},
 				},
 			}
 			for _, testCase := range testCases {
