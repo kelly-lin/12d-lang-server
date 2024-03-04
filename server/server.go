@@ -1122,7 +1122,7 @@ func findParameterNode(paramsNode *sitter.Node, identifier string, sourceCode []
 		if paramDeclaratorNode.Type() == "pointer_declarator" {
 			identifierNode := paramDeclaratorNode.ChildByFieldName("declarator")
 			if identifierNode.Type() == "array_declarator" {
-				identifierNode = identifierNode.ChildByFieldName("declarator")
+				identifierNode = identifierNode.ChildByFieldName("identifier")
 			}
 			if identifierNode != nil {
 				if identifierNode.Content(sourceCode) == identifier {
@@ -1171,16 +1171,16 @@ func findDeclaration(node *sitter.Node, identifier string, sourceCode []byte) (p
 		case "init_declarator":
 			identifierDeclarationNode := declaratorNode.ChildByFieldName("declarator")
 			if identifierDeclarationNode == nil {
-				continue
+				break
 			}
 			if identifierDeclarationNode.Content(sourceCode) == identifier {
 				return parser.NewParserRange(identifierDeclarationNode), identifierDeclarationNode, nil
 			}
 
 		case "array_declarator":
-			identifierDeclarationNode := declaratorNode.ChildByFieldName("declarator")
+			identifierDeclarationNode := declaratorNode.ChildByFieldName("identifier")
 			if identifierDeclarationNode == nil {
-				continue
+				break
 			}
 			if identifierDeclarationNode.Content(sourceCode) == identifier {
 				return parser.NewParserRange(identifierDeclarationNode), identifierDeclarationNode, nil
