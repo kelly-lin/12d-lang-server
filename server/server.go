@@ -835,10 +835,11 @@ func getDefinitionType(node *sitter.Node, sourceCode []byte) (string, error) {
 // where the idenitifer node is the node which represents "num", returns true and
 // the idenitifer node which represents "augend" returns false.
 func isParameterDeclaration(node *sitter.Node) bool {
-	if node.Parent().Type() == "array_declarator" && node.Parent().Parent().Type() == "pointer_declarator" && node.Parent().Parent().Parent().Type() == "parameter_declaration" {
-		return true
-	}
-	return node.Parent().Type() == "pointer_declarator" || node.Parent().Type() == "parameter_declaration"
+	isPointerArrayParam := node.Parent().Type() == "array_declarator" && node.Parent().Parent().Type() == "pointer_declarator" && node.Parent().Parent().Parent().Type() == "parameter_declaration"
+	isArrayParam := node.Parent().Parent().Type() == "parameter_declaration" && node.Parent().Type() == "array_declarator"
+	isPointerDeclaratorChild := node.Parent().Type() == "pointer_declarator"
+	isParameterDeclarationChild := node.Parent().Type() == "parameter_declaration"
+	return isPointerDeclaratorChild || isParameterDeclarationChild || isArrayParam || isPointerArrayParam
 }
 
 // Create the hover documentation docstring from the provided variable type,
@@ -1125,6 +1126,13 @@ func findParameterNode(paramsNode *sitter.Node, identifier string, sourceCode []
 				identifierNode = identifierNode.ChildByFieldName("identifier")
 			}
 			if identifierNode != nil {
+				if identifierNode.Content(sourceCode) == identifier {
+					return identifierNode, nil
+				}
+			}
+		}
+		if paramDeclaratorNode.Type() == "array_declarator" {
+			if identifierNode := paramDeclaratorNode.ChildByFieldName("identifier"); identifierNode != nil {
 				if identifierNode.Content(sourceCode) == identifier {
 					return identifierNode, nil
 				}
