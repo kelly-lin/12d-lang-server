@@ -814,6 +814,22 @@ void main() {
 					protocol.Position{Line: 354, Character: 29},
 				),
 			},
+			{
+				Desc: "preproc definition after include file",
+				SourceCode: `#include "set_ups.h"
+#define HELLO "hello"
+
+void main() {
+    Text hello = HELLO;
+}`,
+				Pos:         protocol.Position{Line: 4, Character: 17},
+				IncludesDir: includesDir,
+				Want: mustNewLocationResponseMessage(
+					"file:///main.4dm",
+					protocol.Position{Line: 1, Character: 8},
+					protocol.Position{Line: 1, Character: 13},
+				),
+			},
 			// TODO: preproc def as subscript expression index e.g. arr[INDEX]
 			// where INDEX is "#define INDEX 1".
 			// TODO: go to def of include file.

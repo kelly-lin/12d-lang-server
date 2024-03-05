@@ -1080,7 +1080,9 @@ func findDefinition(startNode *sitter.Node, identifier string, uri string, docum
 						// already visited and put a limit on the number of
 						// recursions we can allow. Otherwise we will blow the
 						// stack if the user has authored an import cycle.
-						return findDefinition(includeRootNode, identifier, includeURI, documents, includesDir)
+						if def, err := findDefinition(includeRootNode, identifier, includeURI, documents, includesDir); err == nil {
+							return def, nil
+						}
 					}
 				}
 			}
