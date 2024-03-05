@@ -615,55 +615,73 @@ func getFuncParamCompletions(paramsNode *sitter.Node, sourceCode []byte) []proto
 // Gets the hover items for the provided node and identifier. The hover items
 // are strings of documentation to send to the client.
 func getHoverContents(identifierNode *sitter.Node, identifier string, uri string, documents map[string]Document, includesDir string) []string {
-	var contents []string
+	var result []string
+
 	doc, ok := documents[uri]
 	if !ok {
-		return contents
+		return []string{}
 	}
+
 	if identifierNode.Parent().Type() == "call_expression" {
-		def, err := findDefinition(identifierNode, identifier, uri, documents, includesDir)
-		if err != nil {
-			// We cannot find the definition, try find it in the library
-			// items.
-			libItems, ok := lang.Lib[identifier]
-			if !ok || len(libItems) == 0 {
-				return []string{}
-			}
-			contents = filterLibItems(identifierNode, libItems, uri, documents, includesDir)
-			return contents
-		}
-		// We found the definition, get the signature.
-		node := def.Node
-		if isFuncDefinition(node) {
-			funcDefNode := node.Parent().Parent()
-			sourceCode := doc.SourceCode
-			if varType, declaration, desc, err := getFuncDocComponents(funcDefNode, sourceCode); err == nil {
-				contents = append(contents, createHoverDeclarationDocString(varType, declaration, desc, ""))
-				return contents
-			}
-		}
-		return contents
+		result = getFuncHoverContents(identifierNode, identifier, uri, documents, includesDir, doc.SourceCode)
+		return result
 	}
 
 	def, err := findDefinition(identifierNode, identifier, uri, documents, includesDir)
 	node := def.Node
 	if err != nil || node == nil || node.Type() != "identifier" {
-		return contents
+		return []string{}
 	}
 	sourceCode := documents[def.URI].SourceCode
-	nodeType, err := getDefinitionType(node, sourceCode)
-	if err != nil {
-		return contents
-	}
-	prefix := ""
-	canonicalIdentifier := node.Content(sourceCode)
-	if isParameterDeclaration(node) {
-		prefix = "parameter"
-		if node.Parent().Type() == "pointer_declarator" {
-			canonicalIdentifier = node.Parent().Content(sourceCode)
+	if isFuncDefinition(node) {
+		funcDefNode := node.Parent().Parent()
+		if varType, declaration, desc, err := getFuncDocComponents(funcDefNode, sourceCode); err == nil {
+			result = append(result, createHoverDeclarationDocString(varType, declaration, desc, ""))
+			return result
 		}
 	}
 
+	nodeType, err := getDefinitionType(node, sourceCode)
+	if err != nil {
+		return []string{}
+	}
+	prefix := getHoverPrefix(node)
+	hoverIdentifier := getHoverIdentifier(node, sourceCode)
+	switch node.Parent().Type() {
+	case "array_declarator":
+		nodeType = strings.TrimSuffix(nodeType, "[]")
+		identifier := hoverIdentifier + "[]"
+		if node.Parent().Parent().Type() == "pointer_declarator" {
+			identifier = fmt.Sprintf("&%s", identifier)
+		}
+		result = append(result, createHoverDeclarationDocString(nodeType, identifier, "", prefix))
+
+	case "preproc_def":
+		signature := strings.TrimSpace(node.Parent().Content(sourceCode))
+		result = append(result, protocol.CreateDocMarkdownString(signature, ""))
+
+	default:
+		result = append(result, createHoverDeclarationDocString(nodeType, hoverIdentifier, "", prefix))
+	}
+	return result
+}
+
+// Find the definition of the identifier node which is a function call
+// expression and return the documentation contents.
+func getFuncHoverContents(identifierNode *sitter.Node, identifier string, uri string, documents map[string]Document, includesDir string, sourceCode []byte) []string {
+	var contents []string
+	def, err := findDefinition(identifierNode, identifier, uri, documents, includesDir)
+	// We cannot find the definition, try find it in the library items.
+	if err != nil {
+		libItems, ok := lang.Lib[identifier]
+		if !ok || len(libItems) == 0 {
+			return []string{}
+		}
+		contents = filterLibItems(identifierNode, libItems, uri, documents, includesDir)
+		return contents
+	}
+	// We found the definition, get the signature.
+	node := def.Node
 	if isFuncDefinition(node) {
 		funcDefNode := node.Parent().Parent()
 		if varType, declaration, desc, err := getFuncDocComponents(funcDefNode, sourceCode); err == nil {
@@ -671,25 +689,29 @@ func getHoverContents(identifierNode *sitter.Node, identifier string, uri string
 			return contents
 		}
 	}
-
-	switch node.Parent().Type() {
-	case "array_declarator":
-		nodeType = strings.TrimSuffix(nodeType, "[]")
-		identifier := canonicalIdentifier + "[]"
-		if node.Parent().Parent().Type() == "pointer_declarator" {
-			identifier = fmt.Sprintf("&%s", identifier)
-		}
-		// TODO: refactor this, it is ugly.
-		contents = append(contents, createHoverDeclarationDocString(nodeType, identifier, "", prefix))
-
-	case "preproc_def":
-		signature := strings.TrimSpace(node.Parent().Content(sourceCode))
-		contents = append(contents, protocol.CreateDocMarkdownString(signature, ""))
-
-	default:
-		contents = append(contents, createHoverDeclarationDocString(nodeType, canonicalIdentifier, "", prefix))
-	}
 	return contents
+}
+
+// Hover documentation can have a prefix to give more context on the identifier,
+// for example an identifier can be a parameter which should have a prefix of
+// "parameter".
+func getHoverPrefix(node *sitter.Node) string {
+	result := ""
+	if isParameterDeclaration(node) {
+		result = "parameter"
+	}
+	return result
+}
+
+// The identifier that is shown on hover documentation.
+func getHoverIdentifier(node *sitter.Node, sourceCode []byte) string {
+	result := node.Content(sourceCode)
+	if isParameterDeclaration(node) {
+		if node.Parent().Type() == "pointer_declarator" {
+			result = node.Parent().Content(sourceCode)
+		}
+	}
+	return result
 }
 
 // Formats the function declaration for display as documentation.
