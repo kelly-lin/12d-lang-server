@@ -360,7 +360,7 @@ var Lib = map[string][]string{
 		"```12dpl\nInteger Convert_colour(Integer value, Integer &red, Integer &green, Integer &blue)\n```\n---\nConvert the colour number value to its red, green and blue components (0-255) and return themin red, green and blue respectively. A function return value of zero indicates the colour was successfully converted.",
 	},
 	"Convert_escape_characters": {
-		"```12dpl\nText Convert_escape_characters(Text text)\n```\n---\nConvert all escape characters in the Text text; i. e a backslash character followed by thecharacter n, r, or t; to the equivalent embedded characters i. e new line, return, tab. The converted Text is the returned result of the function call.",
+		"```12dpl\nText Convert_escape_characters(Text text)\n```\n---\nConvert all escape characters in the Text text; i.e a backslash character followed by thecharacter n, r, or t; to the equivalent embedded characters i. e new line, return, tab. The converted Text is the returned result of the function call.",
 	},
 	"Convert_grid_string_to_grid_tin": {
 		"```12dpl\nInteger Convert_grid_string_to_grid_tin(Element elt, Text tin_name, Tin &tin)\n```\n---\nCreate a new grid Tin tin with name tin_name according to the grid data of element elt. A return value of 10 indicates there already a tin named tin_name. A return value of 11 indicates the creation failed. A return value of zero indicates the function call was successful.",
@@ -866,7 +866,7 @@ var Lib = map[string][]string{
 		"```12dpl\nInteger Create_water_node_diagram_plot_parameter_file(Plot_Parameter_File ppf)\n```\n---\nSet the Plot_Parameter_File ppf to be of type water_node_diagram_plot, and clear out anyinformation already contained in ppf. Hence if ppf already contained plot information, then all that information will be lost. A function return value of zero indicates the type is successfully set.",
 	},
 	"Create_widget_pages": {
-		"```12dpl\nWidget_Pages Create_widget_pages()\n```\n---\nA Widget_Pages object allows a number of controls to exist in the same physical location on adialog.  This is very handy if you want a field to change between a Model_Box, View_Box or thelike. A bit of sample code might look like,Vertical_Group vgroup1 = Create_vertical_group(0);Model_Box mbox = Create_model_box(...);Append(mbox,vgroup1);Vertical_Group vgroup2 = Create_vertical_group(0);View_Box vbox = Create_view_box(...);Append(vbox,vgroup2);Widget_Pages pages = Create_widget_pages();Append(vgroup1,pages);Append(vgroup2,pages);Set_page(page,1)// this shows the 1st page - vgroup1The function return value is the created Widget_pages.",
+		"```12dpl\nWidget_Pages Create_widget_pages()\n```\n---\nA Widget_Pages object allows a number of controls to exist in the same physical location on adialog.  This is very handy if you want a field to change between a Model_Box, View_Box or the like. The function return value is the created Widget_pages.",
 	},
 	"Create_xyz_box": {
 		"```12dpl\nXYZ_Box Create_xyz_box(Text title_text, Message_Box message)\n```\n---\nCreate an input Widget of type XYZ_Box.  See 5. 61. 10. 47 XYZ_Box. The XYZ_Box is created with the title title_text. The Message_Box message is used to display the XYZ information. The function return value is the created XYZ_Box.",
@@ -1370,8 +1370,8 @@ var Lib = map[string][]string{
 		"```12dpl\nInteger Execute(Connection connection, Manual_Query query, Database_Result &result)\n```\n---\nThis call will execute a created Manual_Query against the data provider to perform a customoperation.  If the Manual Query returns results, they will be stored in the result argument. This call will return 0 if successful.",
 	},
 	"Exit": {
-		"```12dpl\nvoid Exit(Integer exit_code)\n```\n---\nImmediately exit the program and write the messagemacro exited with code exit_codeto the information/error message area of the macro console panel.",
-		"```12dpl\nvoid Exit(Text msg)\n```\n---\nImmediately exit the program and write the messagemacro exited with message msgto the information/error message area of the macro console panel.",
+		"```12dpl\nvoid Exit(Integer exit_code)\n```\n---\nImmediately exit the program and write the message macro exited with code exit_code to the information/error message area of the macro console panel.",
+		"```12dpl\nvoid Exit(Text msg)\n```\n---\nImmediately exit the program and write the message macro exited with message msgto the information/error message area of the macro console panel.",
 	},
 	"Exp": {
 		"```12dpl\nReal Exp(Real value)\n```",
@@ -1502,7 +1502,7 @@ var Lib = map[string][]string{
 		"```12dpl\nText Find_system_file_quiet(Text new_file_name, Text old_file_name, Text env)\n```\n---\nIdentical to Find_system_file call except there is no error message on output windows when nofile found.",
 	},
 	"Find_text": {
-		"```12dpl\nInteger Find_text(Text text, Text tofind)\n```\n---\nFind the first occurrence of the Text tofind within the Text text. If tofind exists within text, the start position of tofind is returned as the function return value. If tofind does not exist within text, a start position of zero is returned as the function return value. Hence a function return value of zero indicates the Text tofind does not exist within the Texttext.",
+		"```12dpl\nInteger Find_text(Text text, Text tofind)\n```\n---\nFind the first occurrence of the Text tofind within the Text text. If tofind exists within text, the start position of tofind is returned as the function return value. If tofind does not exist within text, a start position of zero is returned as the function return value. Hence a function return value of zero indicates the Text tofind does not exist within the Text text.",
 	},
 	"Find_tins": {
 		"```12dpl\nInteger Find_tins(Text name_match, Dynamic_Text &tin_names)\n```\n---\nFind all tins with names matching wild card pattern name_match and set the tin names to the listof Text tin_names. A function return value of zero indicates the call was successful.",
@@ -1923,7 +1923,7 @@ var Lib = map[string][]string{
 		"```12dpl\nInteger Get_colour(Element elt, Integer &colour)\n```\n---\nGet the colour of the Element elt. Elements The colour (as a number) is returned as the Integer colour. A function return value of zero indicates the Element colour was successfully returned. NoteThere are 12dPL functions to convert the colour number to a colour name and vice-versa.",
 	},
 	"Get_command_argument": {
-		"```12dpl\nInteger Get_command_argument(Integer i, Text &argument)\n```\n---\nGet the i'th token from the command-line. The token is returned by the Text argument. The arguments start from 1. A function return value of zero indicates the i'th argument was successfully returned. For some example code, see 5. 4 Command Line-Arguments.",
+		"```12dpl\nInteger Get_command_argument(Integer i, Text &argument)\n```\n---\nGet the i'th token from the command-line. The token is returned by the Text argument. The arguments start from 1. A function return value of zero indicates the i'th argument was successfully returned. For some example code, see 5.4 Command Line-Arguments.",
 	},
 	"Get_console_position": {
 		"```12dpl\nInteger Get_console_position(Integer &x,Integer &y,Integer &w,Integer &h)\n```",
@@ -2405,7 +2405,7 @@ var Lib = map[string][]string{
 		"```12dpl\nInteger Get_drainage_pit_angle(Element drain, Integer p, Real &ang, Integer trunk)\n```\n---\nFor the Element drain, which must of type Drainage, for the pth pit, get the angle betweenincoming pipe and the outgoing pipe, and return it as ang.  ang is in radians. If the drainage string is using connection points, the direction of the pipes at the connectionpoints are used. If the drainage string is NOT using connection points, the direction of the pipes at the pit centreare used. trunk controls the action to be taken when the pit is at the downstream end of the drainagestring. If trunk in non-zero, then a trunk line will be searched for to obtain the outgoing pipe.  If no trunkline is found, ang = 0. If trunk is zero, ang = 0. If drain is not an Element of type Drainage then a non zero function return code is returned. A function return value of zero indicates the data was successfully returned.",
 	},
 	"Get_drainage_pit_area": {
-		"```12dpl\nInteger Get_drainage_pit_area(Element drain, Integer p, Integer elev, Real &sump_area, Dynamic_Real Page 634 Drainage String Element  &depth-elev, Dynamic_Real &area, Integer &ret_num)\n```\n---\nGet the plan area for the pth pit of the string Element drain at the sump [1] for all pits and \\\\, top ofchamber[2] and bottom of riser[3] for extended pits. Integer Get_drainage_pit_area(Element element,Integer pit,Integer elev,Real\\u0026sump_area,Dynamic_Real \\u0026de,Dynamic_Real \\u0026area,Integer \\u0026ret_num)elev set to a value other than zero will return elev data Dynamic_Real \\u0026depth-elevsump_area returns the same value as area[1].  This is for easy access when ret_num = 1. depth-elev return a Dynamic_Real with either depth or elevation values as specified in Integerelev above. area returns area values at the level specified in depth-elevret_num return the number of values in the Dynamic_Reals above.  For extended nodes the areachanges with elevation and the ret_num will be greater than 1If drain is not an Element of type Drainage then a non zero function return code is returned. A function return value of zero indicates the data was successfully returned.",
+		"```12dpl\nInteger Get_drainage_pit_area(Element drain, Integer p, Integer elev, Real &sump_area, Dynamic_Real   &depth-elev, Dynamic_Real &area, Integer &ret_num)\n```\n---\nGet the plan area for the pth pit of the string Element drain at the sump [1] for all pits and \\\\, top ofchamber[2] and bottom of riser[3] for extended pits. Integer Get_drainage_pit_area(Element element,Integer pit,Integer elev,Real\\u0026sump_area,Dynamic_Real \\u0026de,Dynamic_Real \\u0026area,Integer \\u0026ret_num)elev set to a value other than zero will return elev data Dynamic_Real \\u0026depth-elevsump_area returns the same value as area[1].  This is for easy access when ret_num = 1. depth-elev return a Dynamic_Real with either depth or elevation values as specified in Integerelev above. area returns area values at the level specified in depth-elevret_num return the number of values in the Dynamic_Reals above.  For extended nodes the areachanges with elevation and the ret_num will be greater than 1If drain is not an Element of type Drainage then a non zero function return code is returned. A function return value of zero indicates the data was successfully returned.",
 	},
 	"Get_drainage_pit_attribute": {
 		"```12dpl\nInteger Get_drainage_pit_attribute(Element drain, Integer pit, Integer att_no, Real &real)\n```\n---\nFor the Element drain, get the attribute with number att_no for the pit number pit and return theattribute value in real.  The attribute must be of type Real. If the Element is not of type Drainage or the attribute is not of type Real then a non-zero returnvalue is returned. A function return value of zero indicates the attribute value is successfully returned. Note - the Get_drainage_pit_attribute_type call can be used to get the type of the attribute withattribute number att_no.",
@@ -3141,7 +3141,7 @@ var Lib = map[string][]string{
 		"```12dpl\nInteger Get_number_of_attributes(Element elt, Integer &no_atts)\n```\n---\nGet the total number of user attributes for Element elt. The total number of attributes is returned in Integer no_atts. A function return value of zero indicates the attribute was successfully returned.",
 	},
 	"Get_number_of_command_arguments": {
-		"```12dpl\nInteger Get_number_of_command_arguments()\n```\n---\nGet the number of tokens in the program command-line. The number of tokens is returned as the function return value. For some example code, see 5. 4 Command Line-Arguments.",
+		"```12dpl\nInteger Get_number_of_command_arguments()\n```\n---\nGet the number of tokens in the program command-line. The number of tokens is returned as the function return value. For some example code, see 5.4 Command Line-Arguments.",
 	},
 	"Get_number_of_dependancies": {
 		"```12dpl\nInteger Get_number_of_dependancies(Macro_Function func, Integer &count)\n```\n---\nFor the Macro_Function func, return the number of dependencies that exist for func and returnthe number in count. A function return value of zero indicates the count was successfully returned.",
@@ -3701,7 +3701,7 @@ var Lib = map[string][]string{
 		"```12dpl\nInteger Get_sub_trimesh(Element trimesh, Dynamic_Integer &sub_faces_ix, Element &sub_mesh)\n```\n---\nForm a new Element sub_mesh from a given trimesh Element trimesh based on given patch offace indices Dynamic_Integer sub_face_ix. A return value of zero indicates the function call was successful.",
 	},
 	"Get_subtext": {
-		"```12dpl\nText Get_subtext(Text text, Integer start, Integer end)\n```\n---\nFrom the Text text, create a new Text from character position start to character position endinclusive. The function return value is the sub-Text. ",
+		"```12dpl\nText Get_subtext(Text text, Integer start, Integer end)\n```\n---\nFrom the Text text, create a new Text from character position start to character position endinclusive. The function return value is the sub-Text.",
 	},
 	"Get_super_2d_level": {
 		"```12dpl\nInteger Get_super_2d_level(Element elt, Real &level)\n```\n---\nFor the Element elt, if the height dimension Att_ZCoord_Value is set and Att_ZCoord_Array isnot set, then the z-value for the entire string is returned in level. See Height Dimensions for information on Height dimensions or 5. 38. 1 Super StringDimensionsfor information on all dimensions. If the Element elt is not of type Super, or the dimension Att_ZCoord_Value is not set, this callfails and a non zero return value is returned. A return value of zero indicates the function call was successful.",
@@ -4811,7 +4811,7 @@ var Lib = map[string][]string{
 	"Helmert_3d_Transform": {
 		"```12dpl\nInteger Helmert_3d_Transform(Real rx, Real ry, Real rz, Real scale, Real tx, Real ty, Real tz, Real ox, Real oy, Real oz, Integer call_inverse, Element &ele)\n```\n---\nApply to element ele the Helmert 3d transformation with parameters:X axis rotation rx (in radians)Y axis rotation ry (in radians)Z axis rotation rz (in radians)scale factorscaleTranslation(tx,ty,tz)Origin(ox,oy,oz)If Integer call_inverse is not zero, then the reserve of the given transformation will be useinstead. A function return value of zero indicates the transformation was successful.",
 		"```12dpl\nInteger Helmert_3d_Transform(Real rx, Real ry, Real rz, Real scale, Real tx, Real ty, Real tz, Real ox, Real oy, Real oz, Integer call_inverse, Dynamic_Element &elements)\n```\n---\nApply to all the elements in the Dynamic_Element elements, the Helmert 3d transformation withparameters:X axis rotation rx (in radians)Y axis rotation ry (in radians)Z axis rotation rz (in radians)scale factorscaleTranslation(tx,ty,tz)Origin(ox,oy,oz)If Integer call_inverse is not zero, then the reserve of the given transformation will be useinstead. A function return value of zero indicates the transformation was successful.",
-		"```12dpl\nInteger Helmert_3d_Transform(Real rx, Real ry, Real rz, Real scale, Real tx, Real ty, Real tz, Real ox, Real Utilities Page 1183 12d Model Programming Language Manual oy, Real oz, Integer call_inverse, Real &x, Real &y, Real &z)\n```\n---\nApply to the 3D point with xyz-coordinate (x,y,z), the Helmert 3d transformation with parameters:X axis rotation rx (in radians)Y axis rotation ry (in radians)Z axis rotation rz (in radians)scale factorscaleTranslation(tx,ty,tz)Origin(ox,oy,oz)If Integer call_inverse is not zero, then the reserve of the given transformation will be useinstead. A function return value of zero indicates the transformation was successful.",
+		"```12dpl\nInteger Helmert_3d_Transform(Real rx, Real ry, Real rz, Real scale, Real tx, Real ty, Real tz, Real ox, Real Utilities  oy, Real oz, Integer call_inverse, Real &x, Real &y, Real &z)\n```\n---\nApply to the 3D point with xyz-coordinate (x,y,z), the Helmert 3d transformation with parameters:X axis rotation rx (in radians)Y axis rotation ry (in radians)Z axis rotation rz (in radians)scale factorscaleTranslation(tx,ty,tz)Origin(ox,oy,oz)If Integer call_inverse is not zero, then the reserve of the given transformation will be useinstead. A function return value of zero indicates the transformation was successful.",
 		"```12dpl\nInteger Helmert_3d_Transform(Real rx, Real ry, Real rz, Real scale, Real tx, Real ty, Real tz, Real ox, Real oy, Real oz, Integer call_inverse, Dynamic_Real &x, Dynamic_Real &y, Dynamic_Real &z)\n```\n---\nApply to the list 3D points with xyz-coordinates in three lists x,y,z , the Helmert 3d transformationwith parameters:X axis rotation rx (in radians)Y axis rotation ry (in radians)Z axis rotation rz (in radians)scale factorscaleTranslation(tx,ty,tz)Origin(ox,oy,oz)If Integer call_inverse is not zero, then the reserve of the given transformation will be useinstead. A function return value of zero indicates the transformation was successful.",
 	},
 	"Hide_widget": {
@@ -4928,7 +4928,7 @@ var Lib = map[string][]string{
 		"```12dpl\nInteger Insert_super_vertex_attribute_at_position(Element elt,Integer vert,Text att_name,Integer position,Guid att)\n```",
 	},
 	"Insert_text": {
-		"```12dpl\nvoid Insert_text(Text &text, Integer start, Text sub)\n```\n---\nInsert the Text sub into Text text starting at position start.  The displaced characters of text areplaced after sub. The Text text is automatically extended to fit sub and no characters of text are lost. There is no function return value.",
+		"```12dpl\nvoid Insert_text(Text &text, Integer start, Text sub)\n```\n---\nInsert the Text sub into Text text starting at position start. The displaced characters of text areplaced after sub. The Text text is automatically extended to fit sub and no characters of text are lost. There is no function return value.",
 	},
 	"Insert_vip": {
 		"```12dpl\nInteger Insert_vip(Element elt, Integer i, Real ch, Real ht)\n```\n---\nInsert a new vip with chainage-height co-ordinates (ch,ht) before the existing i'th vip point. The parabolic curve length is set to zero. The inserted vip becomes the ith vip and the position of all subsequent vips increases by one. If i is greater than number of vips, then the new vip is appended to the string. If i is less than one, then the new vip is prepended to the string. A function return value of zero indicates that the vip was successfully inserted.",
@@ -5658,7 +5658,7 @@ var Lib = map[string][]string{
 		"```12dpl\nInteger Set_angle3(Textstyle_Data textdata, Real angle3)\n```\n---\nFor the Textstyle_Data textdata, set the 3D gamma angle to be angle3. angle3 is in radians. A function return value of zero indicates the angle was successfully set.",
 	},
 	"Set_apply_many_function_properties": {
-		"```12dpl\nInteger Set_apply_many_function_properties(Apply_Many_Function function, Page 1250 12d Model Macro_Functions Chapter Function_Property_Collection properties, Text &msg)\n```\n---\nFor the Apply_Many_Function function, set the values of function to be those in theFunction_Property_Collection properties. For more information on which properties are available, please see Apply Many FunctionProperties. Any errors such as missing properties, or properties of an incorrect type, will be reported in theText msg. A non zero function return value indicates that there was a problem creating the Apply Manyfunction. A function return value of zero indicates the Apply Many was successfully created.",
+		"```12dpl\nInteger Set_apply_many_function_properties(Apply_Many_Function function,  Function_Property_Collection properties, Text &msg)\n```\n---\nFor the Apply_Many_Function function, set the values of function to be those in theFunction_Property_Collection properties. For more information on which properties are available, please see Apply Many FunctionProperties. Any errors such as missing properties, or properties of an incorrect type, will be reported in theText msg. A non zero function return value indicates that there was a problem creating the Apply Manyfunction. A function return value of zero indicates the Apply Many was successfully created.",
 	},
 	"Set_arc": {
 		"```12dpl\nInteger Set_arc(Segment &segment, Arc arc)\n```\n---\nSets the Segment type to 3 and the Arc of the Segment to arc. A function return value of zero indicates the Segment was successfully set.",
@@ -6174,7 +6174,7 @@ var Lib = map[string][]string{
 		"```12dpl\nInteger Set_drainage_pit_riser_offset_xy(Element e, Integer p, Real pit_riser_offset_x, Real pit_riser_offset_y)\n```\n---\nFor the Element drain, which must of type Drainage, set the x-y offsets for the riser for the pth pitto pit_riser_offset_x, pit_riser_offset_yIf drain is not an Element of type Drainage then a non zero function return code is returned. A function return value of zero indicates the data was successfully set.",
 	},
 	"Set_drainage_pit_riser_thickness": {
-		"```12dpl\nInteger Set_drainage_pit_riser_thickness(Element e, Integer p, Real pit_riser_thickness, Real Drainage String Element Page 655 12d Model Programming Language Manual pit_riser_thickness_back, Real pit_riser_thickness_left, Real pit_riser_thickness_right)\n```\n---\nFor the Element drain, which must of type Drainage, set the riser thicknesses for the pth pit topit_riser_thickness, pit_riser_thickness_back, pit_riser_thickness_left,pit_riser_thickness_right. If drain is not an Element of type Drainage then a non zero function return code is returned. A function return value of zero indicates the data was successfully set.",
+		"```12dpl\nInteger Set_drainage_pit_riser_thickness(Element e, Integer p, Real pit_riser_thickness, Real Drainage String Element  pit_riser_thickness_back, Real pit_riser_thickness_left, Real pit_riser_thickness_right)\n```\n---\nFor the Element drain, which must of type Drainage, set the riser thicknesses for the pth pit topit_riser_thickness, pit_riser_thickness_back, pit_riser_thickness_left,pit_riser_thickness_right. If drain is not an Element of type Drainage then a non zero function return code is returned. A function return value of zero indicates the data was successfully set.",
 	},
 	"Set_drainage_pit_riser_width": {
 		"```12dpl\nInteger Set_drainage_pit_riser_width(Element e, Integer p, Real pit_riser_width)\n```\n---\nFor the Element drain, which must of type Drainage, set the width for the riser for the pth pit topit_riser_widthIf drain is not an Element of type Drainage then a non zero function return code is returned. A function return value of zero indicates the data was successfully set.",
@@ -6813,7 +6813,7 @@ var Lib = map[string][]string{
 		"```12dpl\nInteger Set_select_snap_mode(Select_Box select, Integer snap_control)\n```\n---\nSet the snap control for the Select_Box select to snap_control. snap_controlcontrol valueIgnore_SnapUser_SnapProgram_Snap=0=1=2A function return value of zero indicates the snap control was successfully set.",
 		"```12dpl\nInteger Set_select_snap_mode(Select_Box select, Integer snap_mode, Integer snap_control, Text snap_text)\n```\n---\nSet the snap mode snap_mode and snap control snap_control for the Select_Box select. Where snap_mode is:Failed_Snap = -1No_Snap=0Point_Snap=1Line_Snap=2Grid_Snap=3Intersection_Snap = 4Cursor_Snap=5Name_Snap=6Panels and Widgets Tin_SnapModel_SnapHeight_SnapSegment_SnapText_SnapFast_SnapFast_Accept=7=8=9= 11= 12= 13= 14and snap_control isIgnore_Snap=0User_Snap=1Program_Snap = 2The snap_text must be string name; tin name, model name respectively, otherwise, leave thesnap_text blank (\\\"c\\\"d). A function return value of zero indicates the snap mode was successfully set.",
 		"```12dpl\nInteger Set_select_snap_mode(Select_Boxes select, Integer n, Integer control)\n```\n---\nSet the snap control for n'th box of the Select_Boxes select to control. snap controlIgnore_SnapUser_SnapProgram_Snapcontrol value02A function return value of zero indicates the snap control was successfully set.",
-		"```12dpl\nInteger Set_select_snap_mode(Select_Boxes select, Integer n, Integer snap_mode, Integer snap_control, Text Panels and Widgets Page 1037 12d Model Programming Language Manual snap_text)\n```\n---\nSet the snap mode mode and snap control snap_control for the nth box of the Select_Boxesselect. When snap mode is:Name_SnapTin_SnapModel_Snap678the snap_text must be string name; tin name, model name respectively, otherwise, leave thesnap_text blank (\\\"c\\\"d). A function return value of zero indicates the snap mode was successfully set.",
+		"```12dpl\nInteger Set_select_snap_mode(Select_Boxes select, Integer n, Integer snap_mode, Integer snap_control, Text Panels and Widgets  snap_text)\n```\n---\nSet the snap mode mode and snap control snap_control for the nth box of the Select_Boxesselect. When snap mode is:Name_SnapTin_SnapModel_Snap678the snap_text must be string name; tin name, model name respectively, otherwise, leave thesnap_text blank (\\\"c\\\"d). A function return value of zero indicates the snap mode was successfully set.",
 		"```12dpl\nInteger Set_select_snap_mode(Select_Button select, Integer snap_control)\n```\n---\nSet the snap control snap_control for the Select_Button select. modevalueIgnore_Snap0User_Snap1Program_Snap2A function return value of zero indicates the type was successfully set.",
 		"```12dpl\nInteger Set_select_snap_mode(Select_Button select, Integer mode, Integer control, Text text)\n```\n---\nSet the snap mode mode and snap control controlfor the Select_Button select. When snap mode is:Name_SnapTin_SnapModel_Snap678the snap_text must be string name; tin name, model name accordingly, otherwise, leave thesnap_text blank \\\"c\\\"d. A function return value of zero indicates the type was successfully set. Get_select_coordinate(Select_Button select,Real \\u0026x,Real \\u0026y,Real \\u0026z,Real\\u0026ch,Real \\u0026ht)Get the coordinate of the selected snap point. The return value of x, y, z, ch and ht must be type of Real. A function return value of zero indicates the coordinate was successfully returned.",
 		"```12dpl\nInteger Set_select_snap_mode(Select_Box select,Integer snap_mode,Integer snap_control,Text snap_text)\n```",
@@ -8500,7 +8500,7 @@ var Lib = map[string][]string{
 	"Tunnel_profile_3d": {
 		"```12dpl\nInteger Tunnel_profile_3d(Element ref_str, Text tunnel_def, Dynamic_Real point_x, Dynamic_Real point_y, Dynamic_Real point_z, Dynamic_Text &e_tun_ele_name, Dynamic_Integer &e_tun_ele_idx, Dynamic_Real &e_tun_ele_dist, Dynamic_Real &e_tun_ele_per, Dynamic_Real &e_tun_ele_dir, Dynamic_Real &e_tun_ele_prev_dir, Dynamic_Real &e_tun_ele_next_dir, Dynamic_Real &e_tun_ele_radius, Dynamic_Real &e_tun_ele_os, Dynamic_Real &e_tun_prf_ch, Dynamic_Real &e_ex, Dynamic_Real &e_ey, Dynamic_Real &e_ez, Dynamic_Integer &pd_status_3d, Dynamic_Integer &pd_status_2d, Dynamic_Real &pd_dist_3d, Dynamic_Real &pd_dist_2d, Dynamic_Real &pd_sqr_vt_ch, Dynamic_Real &pd_plm_vt_ch, Dynamic_Real &pd_sqr_hz_ch, Dynamic_Real &pd_plm_hz_ch, Dynamic_Real &pd_ref_ch, Dynamic_Real &pd_sqr_zd, Dynamic_Real &pd_sqr_di, Dynamic_Real &pd_plm_zd, Dynamic_Real &pd_ref_zd, Dynamic_Real &pd_plm_os, Dynamic_Real &pd_sqr_os, Dynamic_Real &pd_ref_os, Dynamic_Real &pd_cl_grd, Text &message)\n```\n---\nSome warning and error message would be set to the Text message. A return value of zero indicates the function call was successful.",
 		"```12dpl\nInteger Tunnel_profile_3d(Element ref_str, Text tunnel_def, Dynamic_Real point_x, Dynamic_Real point_y, Dynamic_Real point_z, Dynamic_Text &e_tun_ele_name, Dynamic_Integer &e_tun_ele_idx, Dynamic_Real &e_tun_ele_dist, Dynamic_Real &e_tun_ele_per, Dynamic_Real &e_tun_ele_radius, Dynamic_Real &e_tun_ele_os, Dynamic_Real &e_tun_prf_ch, Dynamic_Real &e_ex, Dynamic_Real &e_ey, Dynamic_Real &e_ez, Dynamic_Integer &pd_status_3d, Dynamic_Integer &pd_status_2d, Dynamic_Real &pd_ref_ch, Text &message)\n```\n---\nSome warning and error message would be set to the Text message. A return value of zero indicates the function call was successful.",
-		"```12dpl\nInteger Tunnel_profile_3d(Element ref_str, Text tunnel_def, Element trimesh, Real inner_extent, Real outer_extent, Dynamic_Real point_x, Dynamic_Real point_y, Dynamic_Real point_z, Dynamic_Text &e_tun_ele_name, Dynamic_Integer &e_tun_ele_idx, Dynamic_Real &e_tun_ele_dist, Dynamic_Real &e_tun_ele_per, Dynamic_Real &e_tun_ele_dir, Dynamic_Real &e_tun_ele_prev_dir, Dynamic_Real &e_tun_ele_next_dir, Dynamic_Real &e_tun_ele_radius, Dynamic_Real &e_tun_ele_os, Dynamic_Real &e_tun_prf_ch, Dynamic_Real &e_ex, Dynamic_Real &e_ey, Dynamic_Real &e_ez, Dynamic_Integer &pd_status_3d, Dynamic_Integer &pd_status_2d, Dynamic_Real &pd_dist_3d, Dynamic_Real &pd_dist_2d, Dynamic_Real &pd_sqr_vt_ch, Dynamic_Real &pd_plm_vt_ch, Dynamic_Real &pd_sqr_hz_ch, Dynamic_Real &pd_plm_hz_ch, Dynamic_Real &pd_ref_ch, Dynamic_Real &pd_sqr_zd, Dynamic_Real &pd_sqr_di, Dynamic_Real &pd_plm_zd, Dynamic_Real &pd_ref_zd, Dynamic_Real &pd_plm_os, Dynamic_Real &pd_sqr_os, Dynamic_Real Utilities Page 1179 12d Model Programming Language Manual &pd_ref_os, Dynamic_Real &pd_cl_grd, Dynamic_Real &trimesh_offset, Text &message)\n```\n---\nSome warning and error message would be set to the Text message. A return value of zero indicates the function call was successful.",
+		"```12dpl\nInteger Tunnel_profile_3d(Element ref_str, Text tunnel_def, Element trimesh, Real inner_extent, Real outer_extent, Dynamic_Real point_x, Dynamic_Real point_y, Dynamic_Real point_z, Dynamic_Text &e_tun_ele_name, Dynamic_Integer &e_tun_ele_idx, Dynamic_Real &e_tun_ele_dist, Dynamic_Real &e_tun_ele_per, Dynamic_Real &e_tun_ele_dir, Dynamic_Real &e_tun_ele_prev_dir, Dynamic_Real &e_tun_ele_next_dir, Dynamic_Real &e_tun_ele_radius, Dynamic_Real &e_tun_ele_os, Dynamic_Real &e_tun_prf_ch, Dynamic_Real &e_ex, Dynamic_Real &e_ey, Dynamic_Real &e_ez, Dynamic_Integer &pd_status_3d, Dynamic_Integer &pd_status_2d, Dynamic_Real &pd_dist_3d, Dynamic_Real &pd_dist_2d, Dynamic_Real &pd_sqr_vt_ch, Dynamic_Real &pd_plm_vt_ch, Dynamic_Real &pd_sqr_hz_ch, Dynamic_Real &pd_plm_hz_ch, Dynamic_Real &pd_ref_ch, Dynamic_Real &pd_sqr_zd, Dynamic_Real &pd_sqr_di, Dynamic_Real &pd_plm_zd, Dynamic_Real &pd_ref_zd, Dynamic_Real &pd_plm_os, Dynamic_Real &pd_sqr_os, Dynamic_Real Utilities  &pd_ref_os, Dynamic_Real &pd_cl_grd, Dynamic_Real &trimesh_offset, Text &message)\n```\n---\nSome warning and error message would be set to the Text message. A return value of zero indicates the function call was successful.",
 		"```12dpl\nInteger Tunnel_profile_3d(Element ref_str, Text tunnel_def, Element trimesh, Real inner_extent, Real outer_extent, Dynamic_Real point_x, Dynamic_Real point_y, Dynamic_Real point_z, Dynamic_Text &e_tun_ele_name, Dynamic_Integer &e_tun_ele_idx, Dynamic_Real &e_tun_ele_dist, Dynamic_Real &e_tun_ele_per, Dynamic_Real &e_tun_ele_radius, Dynamic_Real &e_tun_ele_os, Dynamic_Real &e_tun_prf_ch, Dynamic_Real &e_ex, Dynamic_Real &e_ey, Dynamic_Real &e_ez, Dynamic_Integer &pd_status_3d, Dynamic_Integer &pd_status_2d, Dynamic_Real &pd_ref_ch, Dynamic_Real &trimesh_offset, Text &message)\n```\n---\nSome warning and error message would be set to the Text message. A return value of zero indicates the function call was successful.",
 	},
 	"Two_pi": {
@@ -10310,7 +10310,7 @@ var LibCompletionItems = []protocol.CompletionItem{
 		Kind:   protocol.GetCompletionItemKind(protocol.CompletionItemKindFunction),
 		Documentation: &protocol.MarkupContent{
 			Kind:  protocol.MarkupKindPlainText,
-			Value: "Convert all escape characters in the Text text; i. e a backslash character followed by thecharacter n, r, or t; to the equivalent embedded characters i. e new line, return, tab. The converted Text is the returned result of the function call.",
+			Value: "Convert all escape characters in the Text text; i.e a backslash character followed by thecharacter n, r, or t; to the equivalent embedded characters i. e new line, return, tab. The converted Text is the returned result of the function call.",
 		},
 	},
 	{
@@ -12218,7 +12218,7 @@ var LibCompletionItems = []protocol.CompletionItem{
 		Kind:   protocol.GetCompletionItemKind(protocol.CompletionItemKindFunction),
 		Documentation: &protocol.MarkupContent{
 			Kind:  protocol.MarkupKindPlainText,
-			Value: "A Widget_Pages object allows a number of controls to exist in the same physical location on adialog.  This is very handy if you want a field to change between a Model_Box, View_Box or thelike. A bit of sample code might look like,Vertical_Group vgroup1 = Create_vertical_group(0);Model_Box mbox = Create_model_box(...);Append(mbox,vgroup1);Vertical_Group vgroup2 = Create_vertical_group(0);View_Box vbox = Create_view_box(...);Append(vbox,vgroup2);Widget_Pages pages = Create_widget_pages();Append(vgroup1,pages);Append(vgroup2,pages);Set_page(page,1)// this shows the 1st page - vgroup1The function return value is the created Widget_pages.",
+			Value: "A Widget_Pages object allows a number of controls to exist in the same physical location on adialog.  This is very handy if you want a field to change between a Model_Box, View_Box or the like. The function return value is the created Widget_pages.",
 		},
 	},
 	{
@@ -14000,7 +14000,7 @@ var LibCompletionItems = []protocol.CompletionItem{
 		Kind:   protocol.GetCompletionItemKind(protocol.CompletionItemKindFunction),
 		Documentation: &protocol.MarkupContent{
 			Kind:  protocol.MarkupKindPlainText,
-			Value: "Immediately exit the program and write the messagemacro exited with code exit_codeto the information/error message area of the macro console panel.",
+			Value: "Immediately exit the program and write the message macro exited with code exit_code to the information/error message area of the macro console panel.",
 		},
 	},
 	{
@@ -14009,7 +14009,7 @@ var LibCompletionItems = []protocol.CompletionItem{
 		Kind:   protocol.GetCompletionItemKind(protocol.CompletionItemKindFunction),
 		Documentation: &protocol.MarkupContent{
 			Kind:  protocol.MarkupKindPlainText,
-			Value: "Immediately exit the program and write the messagemacro exited with message msgto the information/error message area of the macro console panel.",
+			Value: "Immediately exit the program and write the message macro exited with message msgto the information/error message area of the macro console panel.",
 		},
 	},
 	{
@@ -14486,7 +14486,7 @@ var LibCompletionItems = []protocol.CompletionItem{
 		Kind:   protocol.GetCompletionItemKind(protocol.CompletionItemKindFunction),
 		Documentation: &protocol.MarkupContent{
 			Kind:  protocol.MarkupKindPlainText,
-			Value: "Find the first occurrence of the Text tofind within the Text text. If tofind exists within text, the start position of tofind is returned as the function return value. If tofind does not exist within text, a start position of zero is returned as the function return value. Hence a function return value of zero indicates the Text tofind does not exist within the Texttext.",
+			Value: "Find the first occurrence of the Text tofind within the Text text. If tofind exists within text, the start position of tofind is returned as the function return value. If tofind does not exist within text, a start position of zero is returned as the function return value. Hence a function return value of zero indicates the Text tofind does not exist within the Text text.",
 		},
 	},
 	{
@@ -16313,7 +16313,7 @@ var LibCompletionItems = []protocol.CompletionItem{
 		Kind:   protocol.GetCompletionItemKind(protocol.CompletionItemKindFunction),
 		Documentation: &protocol.MarkupContent{
 			Kind:  protocol.MarkupKindPlainText,
-			Value: "Get the i'th token from the command-line. The token is returned by the Text argument. The arguments start from 1. A function return value of zero indicates the i'th argument was successfully returned. For some example code, see 5. 4 Command Line-Arguments.",
+			Value: "Get the i'th token from the command-line. The token is returned by the Text argument. The arguments start from 1. A function return value of zero indicates the i'th argument was successfully returned. For some example code, see 5.4 Command Line-Arguments.",
 		},
 	},
 	{
@@ -18325,7 +18325,7 @@ var LibCompletionItems = []protocol.CompletionItem{
 	},
 	{
 		Label:  "Get_drainage_pit_area",
-		Detail: "Integer Get_drainage_pit_area(Element drain, Integer p, Integer elev, Real &sump_area, Dynamic_Real Page 634 Drainage String Element  &depth-elev, Dynamic_Real &area, Integer &ret_num)",
+		Detail: "Integer Get_drainage_pit_area(Element drain, Integer p, Integer elev, Real &sump_area, Dynamic_Real   &depth-elev, Dynamic_Real &area, Integer &ret_num)",
 		Kind:   protocol.GetCompletionItemKind(protocol.CompletionItemKindFunction),
 		Documentation: &protocol.MarkupContent{
 			Kind:  protocol.MarkupKindPlainText,
@@ -21605,7 +21605,7 @@ var LibCompletionItems = []protocol.CompletionItem{
 		Kind:   protocol.GetCompletionItemKind(protocol.CompletionItemKindFunction),
 		Documentation: &protocol.MarkupContent{
 			Kind:  protocol.MarkupKindPlainText,
-			Value: "Get the number of tokens in the program command-line. The number of tokens is returned as the function return value. For some example code, see 5. 4 Command Line-Arguments.",
+			Value: "Get the number of tokens in the program command-line. The number of tokens is returned as the function return value. For some example code, see 5.4 Command Line-Arguments.",
 		},
 	},
 	{
@@ -23999,7 +23999,7 @@ var LibCompletionItems = []protocol.CompletionItem{
 		Kind:   protocol.GetCompletionItemKind(protocol.CompletionItemKindFunction),
 		Documentation: &protocol.MarkupContent{
 			Kind:  protocol.MarkupKindPlainText,
-			Value: "From the Text text, create a new Text from character position start to character position endinclusive. The function return value is the sub-Text. ",
+			Value: "From the Text text, create a new Text from character position start to character position endinclusive. The function return value is the sub-Text.",
 		},
 	},
 	{
@@ -28117,7 +28117,7 @@ var LibCompletionItems = []protocol.CompletionItem{
 	},
 	{
 		Label:  "Helmert_3d_Transform",
-		Detail: "Integer Helmert_3d_Transform(Real rx, Real ry, Real rz, Real scale, Real tx, Real ty, Real tz, Real ox, Real Utilities Page 1183 12d Model Programming Language Manual oy, Real oz, Integer call_inverse, Real &x, Real &y, Real &z)",
+		Detail: "Integer Helmert_3d_Transform(Real rx, Real ry, Real rz, Real scale, Real tx, Real ty, Real tz, Real ox, Real Utilities  oy, Real oz, Integer call_inverse, Real &x, Real &y, Real &z)",
 		Kind:   protocol.GetCompletionItemKind(protocol.CompletionItemKindFunction),
 		Documentation: &protocol.MarkupContent{
 			Kind:  protocol.MarkupKindPlainText,
@@ -28886,7 +28886,7 @@ var LibCompletionItems = []protocol.CompletionItem{
 		Kind:   protocol.GetCompletionItemKind(protocol.CompletionItemKindFunction),
 		Documentation: &protocol.MarkupContent{
 			Kind:  protocol.MarkupKindPlainText,
-			Value: "Insert the Text sub into Text text starting at position start.  The displaced characters of text areplaced after sub. The Text text is automatically extended to fit sub and no characters of text are lost. There is no function return value.",
+			Value: "Insert the Text sub into Text text starting at position start. The displaced characters of text areplaced after sub. The Text text is automatically extended to fit sub and no characters of text are lost. There is no function return value.",
 		},
 	},
 	{
@@ -31600,7 +31600,7 @@ var LibCompletionItems = []protocol.CompletionItem{
 	},
 	{
 		Label:  "Set_apply_many_function_properties",
-		Detail: "Integer Set_apply_many_function_properties(Apply_Many_Function function, Page 1250 12d Model Macro_Functions Chapter Function_Property_Collection properties, Text &msg)",
+		Detail: "Integer Set_apply_many_function_properties(Apply_Many_Function function,  Function_Property_Collection properties, Text &msg)",
 		Kind:   protocol.GetCompletionItemKind(protocol.CompletionItemKindFunction),
 		Documentation: &protocol.MarkupContent{
 			Kind:  protocol.MarkupKindPlainText,
@@ -34192,7 +34192,7 @@ var LibCompletionItems = []protocol.CompletionItem{
 	},
 	{
 		Label:  "Set_drainage_pit_riser_thickness",
-		Detail: "Integer Set_drainage_pit_riser_thickness(Element e, Integer p, Real pit_riser_thickness, Real Drainage String Element Page 655 12d Model Programming Language Manual pit_riser_thickness_back, Real pit_riser_thickness_left, Real pit_riser_thickness_right)",
+		Detail: "Integer Set_drainage_pit_riser_thickness(Element e, Integer p, Real pit_riser_thickness, Real Drainage String Element  pit_riser_thickness_back, Real pit_riser_thickness_left, Real pit_riser_thickness_right)",
 		Kind:   protocol.GetCompletionItemKind(protocol.CompletionItemKindFunction),
 		Documentation: &protocol.MarkupContent{
 			Kind:  protocol.MarkupKindPlainText,
@@ -37135,7 +37135,7 @@ var LibCompletionItems = []protocol.CompletionItem{
 	},
 	{
 		Label:  "Set_select_snap_mode",
-		Detail: "Integer Set_select_snap_mode(Select_Boxes select, Integer n, Integer snap_mode, Integer snap_control, Text Panels and Widgets Page 1037 12d Model Programming Language Manual snap_text)",
+		Detail: "Integer Set_select_snap_mode(Select_Boxes select, Integer n, Integer snap_mode, Integer snap_control, Text Panels and Widgets  snap_text)",
 		Kind:   protocol.GetCompletionItemKind(protocol.CompletionItemKindFunction),
 		Documentation: &protocol.MarkupContent{
 			Kind:  protocol.MarkupKindPlainText,
@@ -43138,7 +43138,7 @@ var LibCompletionItems = []protocol.CompletionItem{
 	},
 	{
 		Label:  "Tunnel_profile_3d",
-		Detail: "Integer Tunnel_profile_3d(Element ref_str, Text tunnel_def, Element trimesh, Real inner_extent, Real outer_extent, Dynamic_Real point_x, Dynamic_Real point_y, Dynamic_Real point_z, Dynamic_Text &e_tun_ele_name, Dynamic_Integer &e_tun_ele_idx, Dynamic_Real &e_tun_ele_dist, Dynamic_Real &e_tun_ele_per, Dynamic_Real &e_tun_ele_dir, Dynamic_Real &e_tun_ele_prev_dir, Dynamic_Real &e_tun_ele_next_dir, Dynamic_Real &e_tun_ele_radius, Dynamic_Real &e_tun_ele_os, Dynamic_Real &e_tun_prf_ch, Dynamic_Real &e_ex, Dynamic_Real &e_ey, Dynamic_Real &e_ez, Dynamic_Integer &pd_status_3d, Dynamic_Integer &pd_status_2d, Dynamic_Real &pd_dist_3d, Dynamic_Real &pd_dist_2d, Dynamic_Real &pd_sqr_vt_ch, Dynamic_Real &pd_plm_vt_ch, Dynamic_Real &pd_sqr_hz_ch, Dynamic_Real &pd_plm_hz_ch, Dynamic_Real &pd_ref_ch, Dynamic_Real &pd_sqr_zd, Dynamic_Real &pd_sqr_di, Dynamic_Real &pd_plm_zd, Dynamic_Real &pd_ref_zd, Dynamic_Real &pd_plm_os, Dynamic_Real &pd_sqr_os, Dynamic_Real Utilities Page 1179 12d Model Programming Language Manual &pd_ref_os, Dynamic_Real &pd_cl_grd, Dynamic_Real &trimesh_offset, Text &message)",
+		Detail: "Integer Tunnel_profile_3d(Element ref_str, Text tunnel_def, Element trimesh, Real inner_extent, Real outer_extent, Dynamic_Real point_x, Dynamic_Real point_y, Dynamic_Real point_z, Dynamic_Text &e_tun_ele_name, Dynamic_Integer &e_tun_ele_idx, Dynamic_Real &e_tun_ele_dist, Dynamic_Real &e_tun_ele_per, Dynamic_Real &e_tun_ele_dir, Dynamic_Real &e_tun_ele_prev_dir, Dynamic_Real &e_tun_ele_next_dir, Dynamic_Real &e_tun_ele_radius, Dynamic_Real &e_tun_ele_os, Dynamic_Real &e_tun_prf_ch, Dynamic_Real &e_ex, Dynamic_Real &e_ey, Dynamic_Real &e_ez, Dynamic_Integer &pd_status_3d, Dynamic_Integer &pd_status_2d, Dynamic_Real &pd_dist_3d, Dynamic_Real &pd_dist_2d, Dynamic_Real &pd_sqr_vt_ch, Dynamic_Real &pd_plm_vt_ch, Dynamic_Real &pd_sqr_hz_ch, Dynamic_Real &pd_plm_hz_ch, Dynamic_Real &pd_ref_ch, Dynamic_Real &pd_sqr_zd, Dynamic_Real &pd_sqr_di, Dynamic_Real &pd_plm_zd, Dynamic_Real &pd_ref_zd, Dynamic_Real &pd_plm_os, Dynamic_Real &pd_sqr_os, Dynamic_Real Utilities  &pd_ref_os, Dynamic_Real &pd_cl_grd, Dynamic_Real &trimesh_offset, Text &message)",
 		Kind:   protocol.GetCompletionItemKind(protocol.CompletionItemKindFunction),
 		Documentation: &protocol.MarkupContent{
 			Kind:  protocol.MarkupKindPlainText,

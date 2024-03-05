@@ -11,7 +11,7 @@
       "names": [
         "Integer Get_command_argument(Integer i, Text &argument)"
       ],
-      "description": "Get the i'th token from the command-line. The token is returned by the Text argument. The arguments start from 1. A function return value of zero indicates the i'th argument was successfully returned. For some example code, see 5. 4 Command Line-Arguments.",
+      "description": "Get the i'th token from the command-line. The token is returned by the Text argument. The arguments start from 1. A function return value of zero indicates the i'th argument was successfully returned. For some example code, see 5.4 Command Line-Arguments.",
       "id": "433"
     },
     {
@@ -33,7 +33,7 @@
       "names": [
         "Text Get_subtext(Text text, Integer start, Integer end)"
       ],
-      "description": "From the Text text, create a new Text from character position start to character position endinclusive. The function return value is the sub-Text. ",
+      "description": "From the Text text, create a new Text from character position start to character position endinclusive. The function return value is the sub-Text.",
       "id": "379"
     },
     {
@@ -2076,7 +2076,7 @@
     },
     {
       "names": [
-        "Integer Get_drainage_pit_area(Element drain, Integer p, Integer elev, Real &sump_area, Dynamic_Real Page 634 Drainage String Element  &depth-elev, Dynamic_Real &area, Integer &ret_num)"
+        "Integer Get_drainage_pit_area(Element drain, Integer p, Integer elev, Real &sump_area, Dynamic_Real   &depth-elev, Dynamic_Real &area, Integer &ret_num)"
       ],
       "description": "Get the plan area for the pth pit of the string Element drain at the sump [1] for all pits and \\, top ofchamber[2] and bottom of riser[3] for extended pits. Integer Get_drainage_pit_area(Element element,Integer pit,Integer elev,Real&sump_area,Dynamic_Real &de,Dynamic_Real &area,Integer &ret_num)elev set to a value other than zero will return elev data Dynamic_Real &depth-elevsump_area returns the same value as area[1].  This is for easy access when ret_num = 1. depth-elev return a Dynamic_Real with either depth or elevation values as specified in Integerelev above. area returns area values at the level specified in depth-elevret_num return the number of values in the Dynamic_Reals above.  For extended nodes the areachanges with elevation and the ret_num will be greater than 1If drain is not an Element of type Drainage then a non zero function return code is returned. A function return value of zero indicates the data was successfully returned.",
       "id": "3796"
@@ -3279,7 +3279,7 @@
       "names": [
         "Widget_Pages Create_widget_pages()"
       ],
-      "description": "A Widget_Pages object allows a number of controls to exist in the same physical location on adialog.  This is very handy if you want a field to change between a Model_Box, View_Box or thelike. A bit of sample code might look like,Vertical_Group vgroup1 = Create_vertical_group(0);Model_Box mbox = Create_model_box(...);Append(mbox,vgroup1);Vertical_Group vgroup2 = Create_vertical_group(0);View_Box vbox = Create_view_box(...);Append(vbox,vgroup2);Widget_Pages pages = Create_widget_pages();Append(vgroup1,pages);Append(vgroup2,pages);Set_page(page,1)// this shows the 1st page - vgroup1The function return value is the created Widget_pages.",
+      "description": "A Widget_Pages object allows a number of controls to exist in the same physical location on adialog.  This is very handy if you want a field to change between a Model_Box, View_Box or the like. The function return value is the created Widget_pages.",
       "id": "1243"
     },
     {
@@ -3592,7 +3592,7 @@
     },
     {
       "names": [
-        "Integer Set_select_snap_mode(Select_Boxes select, Integer n, Integer snap_mode, Integer snap_control, Text Panels and Widgets Page 1037 12d Model Programming Language Manual snap_text)"
+        "Integer Set_select_snap_mode(Select_Boxes select, Integer n, Integer snap_mode, Integer snap_control, Text Panels and Widgets  snap_text)"
       ],
       "description": "Set the snap mode mode and snap control snap_control for the nth box of the Select_Boxesselect. When snap mode is:Name_SnapTin_SnapModel_Snap678the snap_text must be string name; tin name, model name respectively, otherwise, leave thesnap_text blank (\"c\"d). A function return value of zero indicates the snap mode was successfully set.",
       "id": "1055"
@@ -4378,6 +4378,76 @@
       ],
       "description": "Set the macro attribute at position att_no to the Integer att. The macro attribute must be of type IntegerA function return value of zero indicates the attribute was successfully set.",
       "id": "7562"
+    },
+    {
+      "names": [
+        "Integer Get_number_of_command_arguments()"
+      ],
+      "description": "Get the number of tokens in the program command-line. The number of tokens is returned as the function return value. For some example code, see 5.4 Command Line-Arguments.",
+      "id": "432"
+    },
+    {
+      "names": [
+        "void Exit(Integer exit_code)"
+      ],
+      "description": "Immediately exit the program and write the message macro exited with code exit_code to the information/error message area of the macro console panel.",
+      "id": "417"
+    },
+    {
+      "names": [
+        "void Exit(Text msg)"
+      ],
+      "description": "Immediately exit the program and write the message macro exited with message msgto the information/error message area of the macro console panel.",
+      "id": "418"
+    },
+    {
+      "names": [
+        "Integer Find_text(Text text, Text tofind)"
+      ],
+      "description": "Find the first occurrence of the Text tofind within the Text text. If tofind exists within text, the start position of tofind is returned as the function return value. If tofind does not exist within text, a start position of zero is returned as the function return value. Hence a function return value of zero indicates the Text tofind does not exist within the Text text.",
+      "id": "380"
+    },
+    {
+      "names": [
+        "void Insert_text(Text &text, Integer start, Text sub)"
+      ],
+      "description": "Insert the Text sub into Text text starting at position start. The displaced characters of text areplaced after sub. The Text text is automatically extended to fit sub and no characters of text are lost. There is no function return value.",
+      "id": "390"
+    },
+    {
+      "names": [
+        "Text Convert_escape_characters(Text text)"
+      ],
+      "description": "Convert all escape characters in the Text text; i.e a backslash character followed by thecharacter n, r, or t; to the equivalent embedded characters i. e new line, return, tab. The converted Text is the returned result of the function call.",
+      "id": "2810"
+    },
+    {
+      "names": [
+        "Integer Set_drainage_pit_riser_thickness(Element e, Integer p, Real pit_riser_thickness, Real Drainage String Element  pit_riser_thickness_back, Real pit_riser_thickness_left, Real pit_riser_thickness_right)"
+      ],
+      "description": "For the Element drain, which must of type Drainage, set the riser thicknesses for the pth pit topit_riser_thickness, pit_riser_thickness_back, pit_riser_thickness_left,pit_riser_thickness_right. If drain is not an Element of type Drainage then a non zero function return code is returned. A function return value of zero indicates the data was successfully set.",
+      "id": "3975"
+    },
+    {
+      "names": [
+        "Integer Tunnel_profile_3d(Element ref_str, Text tunnel_def, Element trimesh, Real inner_extent, Real outer_extent, Dynamic_Real point_x, Dynamic_Real point_y, Dynamic_Real point_z, Dynamic_Text &e_tun_ele_name, Dynamic_Integer &e_tun_ele_idx, Dynamic_Real &e_tun_ele_dist, Dynamic_Real &e_tun_ele_per, Dynamic_Real &e_tun_ele_dir, Dynamic_Real &e_tun_ele_prev_dir, Dynamic_Real &e_tun_ele_next_dir, Dynamic_Real &e_tun_ele_radius, Dynamic_Real &e_tun_ele_os, Dynamic_Real &e_tun_prf_ch, Dynamic_Real &e_ex, Dynamic_Real &e_ey, Dynamic_Real &e_ez, Dynamic_Integer &pd_status_3d, Dynamic_Integer &pd_status_2d, Dynamic_Real &pd_dist_3d, Dynamic_Real &pd_dist_2d, Dynamic_Real &pd_sqr_vt_ch, Dynamic_Real &pd_plm_vt_ch, Dynamic_Real &pd_sqr_hz_ch, Dynamic_Real &pd_plm_hz_ch, Dynamic_Real &pd_ref_ch, Dynamic_Real &pd_sqr_zd, Dynamic_Real &pd_sqr_di, Dynamic_Real &pd_plm_zd, Dynamic_Real &pd_ref_zd, Dynamic_Real &pd_plm_os, Dynamic_Real &pd_sqr_os, Dynamic_Real Utilities  &pd_ref_os, Dynamic_Real &pd_cl_grd, Dynamic_Real &trimesh_offset, Text &message)"
+      ],
+      "description": "Some warning and error message would be set to the Text message. A return value of zero indicates the function call was successful.",
+      "id": "3533"
+    },
+    {
+      "names": [
+        "Integer Helmert_3d_Transform(Real rx, Real ry, Real rz, Real scale, Real tx, Real ty, Real tz, Real ox, Real Utilities  oy, Real oz, Integer call_inverse, Real &x, Real &y, Real &z)"
+      ],
+      "description": "Apply to the 3D point with xyz-coordinate (x,y,z), the Helmert 3d transformation with parameters:X axis rotation rx (in radians)Y axis rotation ry (in radians)Z axis rotation rz (in radians)scale factorscaleTranslation(tx,ty,tz)Origin(ox,oy,oz)If Integer call_inverse is not zero, then the reserve of the given transformation will be useinstead. A function return value of zero indicates the transformation was successful.",
+      "id": "3487"
+    },
+    {
+      "names": [
+        "Integer Set_apply_many_function_properties(Apply_Many_Function function,  Function_Property_Collection properties, Text &msg)"
+      ],
+      "description": "For the Apply_Many_Function function, set the values of function to be those in theFunction_Property_Collection properties. For more information on which properties are available, please see Apply Many FunctionProperties. Any errors such as missing properties, or properties of an incorrect type, will be reported in theText msg. A non zero function return value indicates that there was a problem creating the Apply Manyfunction. A function return value of zero indicates the Apply Many was successfully created.",
+      "id": "2735"
     }
   ]
 }
