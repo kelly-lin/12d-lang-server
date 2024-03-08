@@ -1049,22 +1049,20 @@ type DefinitionResult struct {
 	URI   string
 }
 
-// Find the definition of the node reprepsented by start node and
-// identifier. The start node is the identifier node representing the
-// identifier.
+// Find the definition of the node reprepsented by start node and identifier.
+// The start node is the identifier node representing the identifier.
 func findDefinition(startNode *sitter.Node, identifier string, uri string, documents map[string]Document, includesDir string) (DefinitionResult, error) {
 	doc, ok := documents[uri]
 	if !ok {
 		return DefinitionResult{}, errors.New("document not found")
 	}
+
 	sourceCode := doc.SourceCode
 	if startNode.Parent() != nil && startNode.Parent().Type() == "call_expression" {
-		// Is this byte slice conversion expensive? If it is, we might need to
-		// find a way so that we do not have to do the conversion. Ideally we
-		// should just need to parse the source code once and cache it.
 		locRange, node, err := parser.FindFuncDefinition(identifier, sourceCode)
 		return DefinitionResult{Range: locRange, Node: node, URI: uri}, err
 	}
+
 	// No point looking at nodes past the identifier node.
 	isNodeRowAfterIdentifierNode := func(node *sitter.Node) bool {
 		return node.StartPoint().Row > startNode.EndPoint().Row
@@ -1072,12 +1070,12 @@ func findDefinition(startNode *sitter.Node, identifier string, uri string, docum
 	currentNode := startNode
 	for currentNode != nil {
 		if currentNode.Type() == "function_definition" {
-			funcIdentifierMode := currentNode.ChildByFieldName("declarator").ChildByFieldName("declarator")
-			if funcIdentifierMode != nil && funcIdentifierMode.Content(sourceCode) == identifier {
-				return DefinitionResult{Range: parser.NewParserRange(funcIdentifierMode), Node: funcIdentifierMode, URI: uri}, nil
+			funcDefIdentifierNode := getFuncDefIdentifierNode(currentNode)
+			if funcDefIdentifierNode != nil && funcDefIdentifierNode.Content(sourceCode) == identifier {
+				return DefinitionResult{Range: parser.NewParserRange(funcDefIdentifierNode), Node: funcDefIdentifierNode, URI: uri}, nil
 			}
-			paramsNode := currentNode.ChildByFieldName("declarator").ChildByFieldName("parameters")
-			if paramNode, err := findParameterNode(paramsNode, identifier, sourceCode); err == nil {
+			paramsNode := getFuncDefParamsNode(currentNode)
+			if paramNode, err := getParamNode(paramsNode, identifier, sourceCode); err == nil {
 				return DefinitionResult{Range: parser.NewParserRange(paramNode), Node: paramNode, URI: uri}, nil
 			}
 		}
@@ -1092,9 +1090,7 @@ func findDefinition(startNode *sitter.Node, identifier string, uri string, docum
 			}
 			if currentChildNode.Type() == "preproc_include" {
 				if pathNode := currentChildNode.ChildByFieldName("path"); pathNode != nil {
-					pathQuoted := pathNode.Content(sourceCode)
-					pathUnquoted := pathQuoted[1 : len(pathQuoted)-1]
-					includeFilepath := filepath.Join(includesDir, pathUnquoted)
+					includeFilepath := getIncludeFilepath(pathNode, sourceCode, includesDir)
 					includeURI := protocol.URI(includeFilepath)
 					if includeDoc, ok := documents[includeURI]; ok {
 						includeRootNode := includeDoc.RootNode
@@ -1135,9 +1131,27 @@ func findDefinition(startNode *sitter.Node, identifier string, uri string, docum
 	return DefinitionResult{}, errors.New("parent function definition not found")
 }
 
+// Get the full filepath of the include file described by path node.
+func getIncludeFilepath(pathNode *sitter.Node, sourceCode []byte, includesDir string) string {
+	pathQuoted := pathNode.Content(sourceCode)
+	pathUnquoted := pathQuoted[1 : len(pathQuoted)-1]
+	includeFilepath := filepath.Join(includesDir, pathUnquoted)
+	return includeFilepath
+}
+
+// Get the identifier node of the provided function definition node.
+func getFuncDefIdentifierNode(node *sitter.Node) *sitter.Node {
+	return node.ChildByFieldName("declarator").ChildByFieldName("declarator")
+}
+
+// Get the function definition parameters node.
+func getFuncDefParamsNode(node *sitter.Node) *sitter.Node {
+	return node.ChildByFieldName("declarator").ChildByFieldName("parameters")
+}
+
 // Find the parameter node with the provided identifier name in the parameters
 // node. Returns an error if the node with the identifier cannot be found.
-func findParameterNode(paramsNode *sitter.Node, identifier string, sourceCode []byte) (*sitter.Node, error) {
+func getParamNode(paramsNode *sitter.Node, identifier string, sourceCode []byte) (*sitter.Node, error) {
 	for i := 0; i < int(paramsNode.ChildCount()); i++ {
 		paramNode := paramsNode.Child(i)
 		paramDeclaratorNode := paramNode.ChildByFieldName("declarator")
