@@ -846,9 +846,20 @@ void main() {
 					protocol.Position{Line: 0, Character: 13},
 				),
 			},
-			// TODO: preproc def as subscript expression index e.g. arr[INDEX]
-			// where INDEX is "#define INDEX 1".
-			// TODO: go to def of include file.
+			{
+				Desc: "preproc definition as array index",
+				SourceCode: `#define SIZE 1
+
+void main() {
+    Integer list[SIZE];
+}`,
+				Pos:         protocol.Position{Line: 3, Character: 17},
+				Want: mustNewLocationResponseMessage(
+					"file:///main.4dm",
+					protocol.Position{Line: 0, Character: 8},
+					protocol.Position{Line: 0, Character: 12},
+				),
+			},
 		}
 		for _, testCase := range testCases {
 			t.Run(testCase.Desc, func(t *testing.T) {
