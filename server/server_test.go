@@ -853,7 +853,7 @@ void main() {
 void main() {
     Integer list[SIZE];
 }`,
-				Pos:         protocol.Position{Line: 3, Character: 17},
+				Pos: protocol.Position{Line: 3, Character: 17},
 				Want: mustNewLocationResponseMessage(
 					"file:///main.4dm",
 					protocol.Position{Line: 0, Character: 8},
@@ -1159,7 +1159,7 @@ void main() {
 					Pattern:  []string{createFuncSignaturePattern("Print", []string{"Text"})},
 				},
 				{
-					Desc: "call expression as arg",
+					Desc: "call expression as arg - user defined func",
 					SourceCode: `Integer Ok() {
     return 1;
 }
@@ -1168,6 +1168,14 @@ void main() {
     Exit(Ok());
 }`,
 					Position: protocol.Position{Line: 5, Character: 4},
+					Pattern:  []string{createFuncSignaturePattern("Exit", []string{"Integer"})},
+				},
+				{
+					Desc: "call expression as arg - library func",
+					SourceCode: `void main() {
+    Exit(Text_length("1"));
+}`,
+					Position: protocol.Position{Line: 1, Character: 4},
 					Pattern:  []string{createFuncSignaturePattern("Exit", []string{"Integer"})},
 				},
 				{

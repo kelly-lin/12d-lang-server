@@ -615,13 +615,12 @@ func getFuncParamCompletions(paramsNode *sitter.Node, sourceCode []byte) []proto
 // Gets the hover items for the provided node and identifier. The hover items
 // are strings of documentation to send to the client.
 func getHoverContents(identifierNode *sitter.Node, identifier string, uri string, documents map[string]Document, includesDir string) []string {
-	var result []string
-
 	doc, ok := documents[uri]
 	if !ok {
 		return []string{}
 	}
 
+	var result []string
 	if identifierNode.Parent().Type() == "call_expression" {
 		result = getFuncHoverContents(identifierNode, identifier, uri, documents, includesDir, doc.SourceCode)
 		return result
@@ -958,15 +957,23 @@ func filterLibItems(identifierNode *sitter.Node, libItems []string, uri string, 
 				if funcIdentifierNode == nil {
 					break
 				}
-				def, err := findDefinition(funcIdentifierNode, funcIdentifierNode.Content(sourceCode), uri, documents, includesDir)
+				if def, err := findDefinition(funcIdentifierNode, funcIdentifierNode.Content(sourceCode), uri, documents, includesDir); err == nil {
+					varType, err := getDefinitionType(def.Node, sourceCode)
+					if err != nil {
+						break
+					}
+					types = append(types, varType)
+					break
+				}
+				libItems, ok := lang.Lib[funcIdentifierNode.Content(sourceCode)]
+				if !ok || len(libItems) == 0 {
+					break
+				}
+				returnType, err := lang.GetReturnType(libItems[0])
 				if err != nil {
 					break
 				}
-				varType, err := getDefinitionType(def.Node, sourceCode)
-				if err != nil {
-					break
-				}
-				types = append(types, varType)
+				types = append(types, returnType)
 			}
 		}
 		return types
