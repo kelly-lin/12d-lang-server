@@ -1328,6 +1328,14 @@ void main() {
 					Pattern:  []string{"```12dpl\n(parameter) Dynamic_Text items[]\n```"},
 				},
 				{
+					Desc: "param hover (static array pointer)",
+					SourceCode: `void Identity(Dynamic_Text &items[]) {
+    return items;
+}`,
+					Position: protocol.Position{Line: 1, Character: 11},
+					Pattern:  []string{"```12dpl\n(parameter) Dynamic_Text &items[]\n```"},
+				},
+				{
 					Desc: "user defined func - no doc",
 					SourceCode: `void Hello() {
     Print("hello\n");
