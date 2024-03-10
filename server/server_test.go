@@ -1049,7 +1049,7 @@ void main() {
 				),
 			},
 			{
-				Desc: "user defined func - param - include declaration",
+				Desc: "global param - include declaration",
 				SourceCode: `{
     Integer ONE = 1;
 }
@@ -1079,7 +1079,7 @@ Integer AddOne(Integer subject) {
 				),
 			},
 			{
-				Desc: "user defined func - param - no include declaration",
+				Desc: "global param - no include declaration",
 				SourceCode: `{
     Integer ONE = 1;
 }
@@ -1101,8 +1101,55 @@ Integer AddOne(Integer subject) {
 					},
 				),
 			},
-			// TODO: global scope.
-			// TODO: preproc def.
+			{
+				Desc: "preproc def - include declaration",
+				SourceCode: `#define ONE 1
+
+Integer AddOne(Integer subject) {
+    return subject + ONE;
+}`,
+				Pos:                protocol.Position{Line: 3, Character: 21},
+				IncludeDeclaration: true,
+				Want: mustNewLocationsResponseMessage(
+					[]protocol.Location{
+						{
+							URI: "file:///main.4dm",
+							Range: protocol.Range{
+								Start: protocol.Position{Line: 0, Character: 8},
+								End:   protocol.Position{Line: 0, Character: 11},
+							},
+						},
+						{
+							URI: "file:///main.4dm",
+							Range: protocol.Range{
+								Start: protocol.Position{Line: 3, Character: 21},
+								End:   protocol.Position{Line: 3, Character: 24},
+							},
+						},
+					},
+				),
+			},
+			{
+				Desc: "preproc def - no include declaration",
+				SourceCode: `#define ONE 1
+
+Integer AddOne(Integer subject) {
+    return subject + ONE;
+}`,
+				Pos:                protocol.Position{Line: 3, Character: 21},
+				IncludeDeclaration: false,
+				Want: mustNewLocationsResponseMessage(
+					[]protocol.Location{
+						{
+							URI: "file:///main.4dm",
+							Range: protocol.Range{
+								Start: protocol.Position{Line: 3, Character: 21},
+								End:   protocol.Position{Line: 3, Character: 24},
+							},
+						},
+					},
+				),
+			},
 			// TODO: lib func.
 			// TODO: references in include files.
 		}
