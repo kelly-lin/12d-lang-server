@@ -418,13 +418,13 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 				nil
 		}
 		locations := []protocol.Location{}
-		// if params.Context.IncludeDeclaration {
-		declarationLocation := protocol.Location{
-			URI:   def.URI,
-			Range: ToProtocolRange(def.Range),
+		if params.Context.IncludeDeclaration {
+			declarationLocation := protocol.Location{
+				URI:   def.URI,
+				Range: ToProtocolRange(def.Range),
+			}
+			locations = append(locations, declarationLocation)
 		}
-		locations = append(locations, declarationLocation)
-		// }
 		// Traverse up the tree and find the nearest compound statement (this
 		// is our scope).
 		var compoundStatementNode *sitter.Node

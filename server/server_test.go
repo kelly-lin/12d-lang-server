@@ -904,7 +904,7 @@ void main() {
 		}
 		testCases := []TestCase{
 			{
-				Desc: "local var",
+				Desc: "local var - include declaration",
 				SourceCode: `void main() {
     Integer a = 1;
     Integer result = a;
@@ -920,6 +920,26 @@ void main() {
 								End:   protocol.Position{Line: 1, Character: 13},
 							},
 						},
+						{
+							URI: "file:///main.4dm",
+							Range: protocol.Range{
+								Start: protocol.Position{Line: 2, Character: 21},
+								End:   protocol.Position{Line: 2, Character: 22},
+							},
+						},
+					},
+				),
+			},
+			{
+				Desc: "local var - no include declaration",
+				SourceCode: `void main() {
+    Integer a = 1;
+    Integer result = a;
+}`,
+				Pos:                protocol.Position{Line: 2, Character: 21},
+				IncludeDeclaration: false,
+				Want: mustNewLocationsResponseMessage(
+					[]protocol.Location{
 						{
 							URI: "file:///main.4dm",
 							Range: protocol.Range{
