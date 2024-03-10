@@ -429,7 +429,7 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 		// is our scope).
 		scopeNode := def.Node.Parent()
 		for scopeNode.Parent() != nil {
-			if scopeNode.Type() == "compound_statement" {
+			if scopeNode.Type() == "compound_statement" && scopeNode.Parent().Type() != "source_file" {
 				break
 			}
 			if scopeNode.Parent() == nil {

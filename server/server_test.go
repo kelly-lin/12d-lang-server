@@ -1048,8 +1048,61 @@ void main() {
 					},
 				),
 			},
-			// TODO: preproc def.
+			{
+				Desc: "user defined func - param - include declaration",
+				SourceCode: `{
+    Integer ONE = 1;
+}
+
+Integer AddOne(Integer subject) {
+    return subject + ONE;
+}`,
+				Pos:                protocol.Position{Line: 5, Character: 21},
+				IncludeDeclaration: true,
+				Want: mustNewLocationsResponseMessage(
+					[]protocol.Location{
+						{
+							URI: "file:///main.4dm",
+							Range: protocol.Range{
+								Start: protocol.Position{Line: 1, Character: 12},
+								End:   protocol.Position{Line: 1, Character: 15},
+							},
+						},
+						{
+							URI: "file:///main.4dm",
+							Range: protocol.Range{
+								Start: protocol.Position{Line: 5, Character: 21},
+								End:   protocol.Position{Line: 5, Character: 24},
+							},
+						},
+					},
+				),
+			},
+			{
+				Desc: "user defined func - param - no include declaration",
+				SourceCode: `{
+    Integer ONE = 1;
+}
+
+Integer AddOne(Integer subject) {
+    return subject + ONE;
+}`,
+				Pos:                protocol.Position{Line: 5, Character: 21},
+				IncludeDeclaration: false,
+				Want: mustNewLocationsResponseMessage(
+					[]protocol.Location{
+						{
+							URI: "file:///main.4dm",
+							Range: protocol.Range{
+								Start: protocol.Position{Line: 5, Character: 21},
+								End:   protocol.Position{Line: 5, Character: 24},
+							},
+						},
+					},
+				),
+			},
 			// TODO: global scope.
+			// TODO: preproc def.
 			// TODO: lib func.
 			// TODO: references in include files.
 		}
