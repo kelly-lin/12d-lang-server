@@ -166,11 +166,12 @@ type MarkupContent struct {
 }
 
 type ServerCapabilities struct {
-	TextDocumentSync           *uint              `json:"textDocumentSync,omitempty"`
 	CompletionProvider         *CompletionOptions `json:"completionProvider,omitempty"`
 	DefinitionProvider         *bool              `json:"definitionProvider,omitempty"`
-	HoverProvider              bool               `json:"hoverProvider"`
 	DocumentFormattingProvider *bool              `json:"documentFormattingProvider,omitempty"`
+	HoverProvider              bool               `json:"hoverProvider"`
+	ReferencesProvider         bool               `json:"referencesProvider"`
+	TextDocumentSync           *uint              `json:"textDocumentSync,omitempty"`
 }
 
 type CompletionOptions struct {
@@ -279,4 +280,14 @@ type FormattingOptions struct {
 type TextEdit struct {
 	Range   Range  `json:"range"`
 	NewText string `json:"newText"`
+}
+
+type ReferenceParams struct {
+	TextDocumentPositionParams
+	Context ReferenceContext `json:"context"`
+}
+
+type ReferenceContext struct {
+	// Include the declaration of the current symbol.
+	IncludeDeclaration bool `json:"includeDeclaration"`
 }

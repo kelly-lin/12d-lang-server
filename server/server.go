@@ -388,12 +388,113 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 			len(locationBytes),
 			nil
 
+	case "textDocument/references":
+		var params protocol.ReferenceParams
+		if err := json.Unmarshal(msg.Params, &params); err != nil {
+			return protocol.ResponseMessage{}, 0, err
+		}
+		doc, ok := s.documents[params.TextDocument.URI]
+		if !ok {
+			return newNullResponseMessage(msg.ID), len(protocol.NullResult), errors.New("source node not found")
+		}
+		rootNode := doc.RootNode
+		sourceCode := doc.SourceCode
+		identifierNode, err := parser.FindIdentifierNode(rootNode, params.Position.Line, params.Position.Character)
+		if errors.Is(err, parser.ErrNoDefinition) {
+			return newNullResponseMessage(msg.ID),
+				len(protocol.NullResult),
+				nil
+		}
+		if err != nil {
+			return newNullResponseMessage(msg.ID),
+				len(protocol.NullResult),
+				err
+		}
+		identifier := identifierNode.Content(sourceCode)
+		def, err := findDefinition(identifierNode, identifier, params.TextDocument.URI, s.documents, s.includesDir)
+		if err != nil {
+			return newNullResponseMessage(msg.ID),
+				len(protocol.NullResult),
+				nil
+		}
+		locations := []protocol.Location{}
+		// if params.Context.IncludeDeclaration {
+		declarationLocation := protocol.Location{
+			URI:   def.URI,
+			Range: ToProtocolRange(def.Range),
+		}
+		locations = append(locations, declarationLocation)
+		// }
+		// Traverse up the tree and find the nearest compound statement (this
+		// is our scope).
+		var compoundStatementNode *sitter.Node
+		currNode := def.Node.Parent()
+		for currNode != nil {
+			if currNode.Type() == "compound_statement" {
+				compoundStatementNode = currNode
+				break
+			}
+			currNode = currNode.Parent()
+		}
+		if compoundStatementNode != nil {
+			// For all children and their children inside of scope, if there is an
+			// identifier who's value is equal to our definition identifier, get it's
+			// location.
+			referenceNodes := getReferenceNodes(compoundStatementNode, def.Node, identifier, sourceCode)
+			for _, node := range referenceNodes {
+				locations = append(
+					locations,
+					protocol.Location{
+						URI: params.TextDocument.URI,
+						Range: protocol.Range{
+							Start: protocol.Position{
+								Line:      uint(node.StartPoint().Row),
+								Character: uint(node.StartPoint().Column),
+							},
+							End: protocol.Position{
+								Line:      uint(node.EndPoint().Row),
+								Character: uint(node.EndPoint().Column),
+							},
+						},
+					},
+				)
+			}
+		}
+		locationsBytes, err := json.Marshal(locations)
+		if err != nil {
+			return protocol.ResponseMessage{}, 0, err
+		}
+		return protocol.ResponseMessage{
+				ID:     msg.ID,
+				Result: json.RawMessage(locationsBytes),
+			},
+			len(locationsBytes),
+			nil
+
 	case "initialized":
 		return protocol.ResponseMessage{}, 0, nil
 
 	default:
 		return protocol.ResponseMessage{}, 0, ErrUnhandledMethod
 	}
+}
+
+func getReferenceNodes(scopeNode, declarationNode *sitter.Node, identifier string, sourceCode []byte) []*sitter.Node {
+	var result []*sitter.Node
+	stack := parser.NewStack()
+	stack.Push(scopeNode)
+	for stack.HasItems() {
+		currNode, _ := stack.Pop()
+		if currNode != declarationNode &&
+			currNode.Type() == "identifier" &&
+			currNode.Content(sourceCode) == identifier {
+			result = append(result, currNode)
+		}
+		for i := 0; i < int(currNode.ChildCount()); i++ {
+			stack.Push(currNode.Child(i))
+		}
+	}
+	return result
 }
 
 // Update the document stored on the server identified by the uri with provided
@@ -1288,6 +1389,7 @@ func newServerCapabilities() protocol.ServerCapabilities {
 		DefinitionProvider:         &definitionProvider,
 		DocumentFormattingProvider: &documentFormattingProvider,
 		HoverProvider:              true,
+		ReferencesProvider:         true,
 		TextDocumentSync:           &textDocumentSyncKind,
 	}
 	return result

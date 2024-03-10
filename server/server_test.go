@@ -28,6 +28,11 @@ func TestServer(t *testing.T) {
 		require.NoError(t, err)
 		return msg
 	}
+	mustNewLocationsResponseMessage := func(locations []protocol.Location) protocol.ResponseMessage {
+		msg, err := newLocationsResponseMessage(1, locations)
+		require.NoError(t, err)
+		return msg
+	}
 	// Test command should be run in the root directory.
 	startDir, err := os.Getwd()
 	require.NoError(t, err)
@@ -888,6 +893,71 @@ void main() {
 		}
 	})
 
+	t.Run("textDocument/references", func(t *testing.T) {
+		type TestCase struct {
+			Desc               string
+			SourceCode         string
+			IncludesDir        string
+			IncludeDeclaration bool
+			Pos                protocol.Position
+			Want               protocol.ResponseMessage
+		}
+		testCases := []TestCase{
+			{
+				Desc: "local var",
+				SourceCode: `void main() {
+    Integer a = 1;
+    Integer result = a;
+}`,
+				Pos:                protocol.Position{Line: 2, Character: 21},
+				IncludeDeclaration: true,
+				Want: mustNewLocationsResponseMessage(
+					[]protocol.Location{
+						{
+							URI: "file:///main.4dm",
+							Range: protocol.Range{
+								Start: protocol.Position{Line: 1, Character: 12},
+								End:   protocol.Position{Line: 1, Character: 13},
+							},
+						},
+						{
+							URI: "file:///main.4dm",
+							Range: protocol.Range{
+								Start: protocol.Position{Line: 2, Character: 21},
+								End:   protocol.Position{Line: 2, Character: 22},
+							},
+						},
+					},
+				),
+			},
+		}
+		for _, testCase := range testCases {
+			t.Run(testCase.Desc, func(t *testing.T) {
+				defer goleak.VerifyNone(t)
+				assert := assert.New(t)
+				logger, err := newLogger()
+				assert.NoError(err)
+				in, out, cleanUp := startServer(testCase.IncludesDir, langCompletions, logger)
+				defer cleanUp()
+
+				var id int64 = 1
+				didOpenMsgBytes, err := newDidOpenRequestMessageBytes(id, "file:///main.4dm", testCase.SourceCode)
+				assert.NoError(err)
+				_, err = in.Writer.Write([]byte(server.ToProtocolMessage(didOpenMsgBytes)))
+				assert.NoError(err)
+
+				reqMsgBytes, err := newReferencesRequestMessageBytes(id, "file:///main.4dm", testCase.Pos, testCase.IncludeDeclaration)
+				assert.NoError(err)
+				_, err = in.Writer.Write([]byte(server.ToProtocolMessage(reqMsgBytes)))
+				assert.NoError(err)
+
+				got, err := getReponseMessage(out.Reader)
+				assert.NoError(err)
+				assertResponseMessageEqual(t, testCase.Want, got)
+			})
+		}
+	})
+
 	// This is essentially a go to definition test but the source gets updated]
 	// after the initial did open request.
 	t.Run("textDocument/didChange", func(t *testing.T) {
@@ -1538,6 +1608,37 @@ func newDefinitionRequestMessageBytes(id int64, uri string, position protocol.Po
 	return definitionMsgBytes, nil
 }
 
+// Creates a new protocol request message with references params and returns the
+// wire representation.
+func newReferencesRequestMessageBytes(id int64, uri string, position protocol.Position, includeDeclaration bool) ([]byte, error) {
+	params := protocol.ReferenceParams{
+		Context: protocol.ReferenceContext{
+			IncludeDeclaration: includeDeclaration,
+		},
+		TextDocumentPositionParams: protocol.TextDocumentPositionParams{
+			TextDocument: protocol.TextDocumentIdentifier{
+				URI: uri,
+			},
+			Position: position,
+		},
+	}
+	paramsBytes, err := json.Marshal(params)
+	if err != nil {
+		return nil, err
+	}
+	msg := protocol.RequestMessage{
+		JSONRPC: "2.0",
+		ID:      id,
+		Method:  "textDocument/references",
+		Params:  json.RawMessage(paramsBytes),
+	}
+	msgBytes, err := json.Marshal(msg)
+	if err != nil {
+		return nil, err
+	}
+	return msgBytes, nil
+}
+
 // Creates a new protocol request message with definition params and returns the
 // wire representation.
 func newCompletionRequestMessageBytes(id int64, uri string, position protocol.Position) ([]byte, error) {
@@ -1684,6 +1785,17 @@ func newLocationResponseMessage(id int64, uri string, start, end protocol.Positi
 		URI:   uri,
 		Range: protocol.Range{Start: start, End: end},
 	})
+	if err != nil {
+		return protocol.ResponseMessage{}, err
+	}
+	msg := protocol.ResponseMessage{ID: id, Result: json.RawMessage(locationBytes)}
+	return msg, nil
+}
+
+// Creates a new protocol response message with document locations and returns
+// the wire representation.
+func newLocationsResponseMessage(id int64, locations []protocol.Location) (protocol.ResponseMessage, error) {
+	locationBytes, err := json.Marshal(locations)
 	if err != nil {
 		return protocol.ResponseMessage{}, err
 	}
