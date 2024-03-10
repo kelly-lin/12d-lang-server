@@ -1150,7 +1150,33 @@ Integer AddOne(Integer subject) {
 					},
 				),
 			},
-			// TODO: lib func.
+			{
+				Desc: "lib func",
+				SourceCode: `void main() {
+    Print("hello");
+    Print("world");
+}`,
+				Pos:                protocol.Position{Line: 2, Character: 4},
+				IncludeDeclaration: false,
+				Want: mustNewLocationsResponseMessage(
+					[]protocol.Location{
+						{
+							URI: "file:///main.4dm",
+							Range: protocol.Range{
+								Start: protocol.Position{Line: 2, Character: 4},
+								End:   protocol.Position{Line: 2, Character: 9},
+							},
+						},
+						{
+							URI: "file:///main.4dm",
+							Range: protocol.Range{
+								Start: protocol.Position{Line: 1, Character: 4},
+								End:   protocol.Position{Line: 1, Character: 9},
+							},
+						},
+					},
+				),
+			},
 			// TODO: references in include files.
 		}
 		for _, testCase := range testCases {

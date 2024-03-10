@@ -400,11 +400,6 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 		rootNode := doc.RootNode
 		sourceCode := doc.SourceCode
 		identifierNode, err := parser.FindIdentifierNode(rootNode, params.Position.Line, params.Position.Character)
-		if errors.Is(err, parser.ErrNoDefinition) {
-			return newNullResponseMessage(msg.ID),
-				len(protocol.NullResult),
-				nil
-		}
 		if err != nil {
 			return newNullResponseMessage(msg.ID),
 				len(protocol.NullResult),
@@ -413,12 +408,14 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 		identifier := identifierNode.Content(sourceCode)
 		def, err := findDefinition(identifierNode, identifier, params.TextDocument.URI, s.documents, s.includesDir)
 		if err != nil {
-			return newNullResponseMessage(msg.ID),
-				len(protocol.NullResult),
-				nil
+			if _, ok := lang.Lib[identifier]; !ok {
+				return newNullResponseMessage(msg.ID),
+					len(protocol.NullResult),
+					nil
+			}
 		}
 		locations := []protocol.Location{}
-		if params.Context.IncludeDeclaration {
+		if params.Context.IncludeDeclaration && err == nil {
 			declarationLocation := protocol.Location{
 				URI:   def.URI,
 				Range: ToProtocolRange(def.Range),
@@ -427,15 +424,18 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 		}
 		// Traverse up the tree and find the nearest compound statement (this
 		// is our scope).
-		scopeNode := def.Node.Parent()
-		for scopeNode.Parent() != nil {
-			if scopeNode.Type() == "compound_statement" && scopeNode.Parent().Type() != "source_file" {
-				break
+		scopeNode := rootNode
+		if err == nil {
+			scopeNode = def.Node.Parent()
+			for scopeNode.Parent() != nil {
+				if scopeNode.Type() == "compound_statement" && scopeNode.Parent().Type() != "source_file" {
+					break
+				}
+				if scopeNode.Parent() == nil {
+					break
+				}
+				scopeNode = scopeNode.Parent()
 			}
-			if scopeNode.Parent() == nil {
-				break
-			}
-			scopeNode = scopeNode.Parent()
 		}
 		// For all children and their children inside of scope, if there is an
 		// identifier who's value is equal to our definition identifier, get it's
