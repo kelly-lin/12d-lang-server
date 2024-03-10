@@ -1003,9 +1003,55 @@ void main() {
 					},
 				),
 			},
-			// TODO: func param.
+			{
+				Desc: "user defined func - param - include declaration",
+				SourceCode: `Integer Identity(Integer subject) {
+    return subject;
+}`,
+				Pos:                protocol.Position{Line: 1, Character: 11},
+				IncludeDeclaration: true,
+				Want: mustNewLocationsResponseMessage(
+					[]protocol.Location{
+						{
+							URI: "file:///main.4dm",
+							Range: protocol.Range{
+								Start: protocol.Position{Line: 0, Character: 25},
+								End:   protocol.Position{Line: 0, Character: 32},
+							},
+						},
+						{
+							URI: "file:///main.4dm",
+							Range: protocol.Range{
+								Start: protocol.Position{Line: 1, Character: 11},
+								End:   protocol.Position{Line: 1, Character: 18},
+							},
+						},
+					},
+				),
+			},
+			{
+				Desc: "user defined func - param - no include declaration",
+				SourceCode: `Integer Identity(Integer subject) {
+    return subject;
+}`,
+				Pos:                protocol.Position{Line: 1, Character: 11},
+				IncludeDeclaration: false,
+				Want: mustNewLocationsResponseMessage(
+					[]protocol.Location{
+						{
+							URI: "file:///main.4dm",
+							Range: protocol.Range{
+								Start: protocol.Position{Line: 1, Character: 11},
+								End:   protocol.Position{Line: 1, Character: 18},
+							},
+						},
+					},
+				),
+			},
 			// TODO: preproc def.
 			// TODO: global scope.
+			// TODO: lib func.
+			// TODO: references in include files.
 		}
 		for _, testCase := range testCases {
 			t.Run(testCase.Desc, func(t *testing.T) {
