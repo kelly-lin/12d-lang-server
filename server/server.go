@@ -427,38 +427,37 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 		}
 		// Traverse up the tree and find the nearest compound statement (this
 		// is our scope).
-		var compoundStatementNode *sitter.Node
-		currNode := def.Node.Parent()
-		for currNode != nil {
-			if currNode.Type() == "compound_statement" {
-				compoundStatementNode = currNode
+		scopeNode := def.Node.Parent()
+		for scopeNode.Parent() != nil {
+			if scopeNode.Type() == "compound_statement" {
 				break
 			}
-			currNode = currNode.Parent()
+			if scopeNode.Parent() == nil {
+				break
+			}
+			scopeNode = scopeNode.Parent()
 		}
-		if compoundStatementNode != nil {
-			// For all children and their children inside of scope, if there is an
-			// identifier who's value is equal to our definition identifier, get it's
-			// location.
-			referenceNodes := getReferenceNodes(compoundStatementNode, def.Node, identifier, sourceCode)
-			for _, node := range referenceNodes {
-				locations = append(
-					locations,
-					protocol.Location{
-						URI: params.TextDocument.URI,
-						Range: protocol.Range{
-							Start: protocol.Position{
-								Line:      uint(node.StartPoint().Row),
-								Character: uint(node.StartPoint().Column),
-							},
-							End: protocol.Position{
-								Line:      uint(node.EndPoint().Row),
-								Character: uint(node.EndPoint().Column),
-							},
+		// For all children and their children inside of scope, if there is an
+		// identifier who's value is equal to our definition identifier, get it's
+		// location.
+		referenceNodes := getReferenceNodes(scopeNode, def.Node, identifier, sourceCode)
+		for _, node := range referenceNodes {
+			locations = append(
+				locations,
+				protocol.Location{
+					URI: params.TextDocument.URI,
+					Range: protocol.Range{
+						Start: protocol.Position{
+							Line:      uint(node.StartPoint().Row),
+							Character: uint(node.StartPoint().Column),
+						},
+						End: protocol.Position{
+							Line:      uint(node.EndPoint().Row),
+							Character: uint(node.EndPoint().Column),
 						},
 					},
-				)
-			}
+				},
+			)
 		}
 		locationsBytes, err := json.Marshal(locations)
 		if err != nil {

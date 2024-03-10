@@ -950,6 +950,62 @@ void main() {
 					},
 				),
 			},
+			{
+				Desc: "user defined func - include declaration",
+				SourceCode: `Integer One() {
+    return 1;
+}
+
+void main() {
+    Integer one = One();
+}`,
+				Pos:                protocol.Position{Line: 5, Character: 18},
+				IncludeDeclaration: true,
+				Want: mustNewLocationsResponseMessage(
+					[]protocol.Location{
+						{
+							URI: "file:///main.4dm",
+							Range: protocol.Range{
+								Start: protocol.Position{Line: 0, Character: 8},
+								End:   protocol.Position{Line: 0, Character: 11},
+							},
+						},
+						{
+							URI: "file:///main.4dm",
+							Range: protocol.Range{
+								Start: protocol.Position{Line: 5, Character: 18},
+								End:   protocol.Position{Line: 5, Character: 21},
+							},
+						},
+					},
+				),
+			},
+			{
+				Desc: "user defined func - no include declaration",
+				SourceCode: `Integer One() {
+    return 1;
+}
+
+void main() {
+    Integer one = One();
+}`,
+				Pos:                protocol.Position{Line: 5, Character: 18},
+				IncludeDeclaration: false,
+				Want: mustNewLocationsResponseMessage(
+					[]protocol.Location{
+						{
+							URI: "file:///main.4dm",
+							Range: protocol.Range{
+								Start: protocol.Position{Line: 5, Character: 18},
+								End:   protocol.Position{Line: 5, Character: 21},
+							},
+						},
+					},
+				),
+			},
+			// TODO: func param.
+			// TODO: preproc def.
+			// TODO: global scope.
 		}
 		for _, testCase := range testCases {
 			t.Run(testCase.Desc, func(t *testing.T) {
