@@ -277,7 +277,7 @@ if (1) {}
 				},
 			},
 			{
-				Desc:       "func def - spacing - type-identifer",
+				Desc:       "func def - spacing - type-identifer - trim space",
 				SourceCode: `void  main() {}`,
 				Want: []protocol.TextEdit{
 					{
@@ -289,6 +289,25 @@ if (1) {}
 							End: protocol.Position{
 								Line:      0,
 								Character: 6,
+							},
+						},
+						NewText: " ",
+					},
+				},
+			},
+			{
+				Desc:       "func def - spacing - parameter list-opening body - trim space",
+				SourceCode: `void main()  {}`,
+				Want: []protocol.TextEdit{
+					{
+						Range: protocol.Range{
+							Start: protocol.Position{
+								Line:      0,
+								Character: 11,
+							},
+							End: protocol.Position{
+								Line:      0,
+								Character: 13,
 							},
 						},
 						NewText: " ",

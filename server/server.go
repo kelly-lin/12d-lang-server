@@ -378,26 +378,53 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 				}
 				returnTypeNode := currentNode.ChildByFieldName("type")
 				funcDeclarationNode := currentNode.ChildByFieldName("declarator")
-				numSpaces := funcDeclarationNode.StartPoint().Column - returnTypeNode.EndPoint().Column
-				if numSpaces != 1 {
-					lineNum := uint(returnTypeNode.StartPoint().Row)
-					result = append(
-						result,
-						protocol.TextEdit{
-							Range: protocol.Range{
-								Start: protocol.Position{
-									Line:      lineNum,
-									Character: uint(returnTypeNode.EndPoint().Column),
+				bodyNode := currentNode.ChildByFieldName("body")
+				formatReturnTypeAndDeclarationSpacing := func() {
+					numSpaces := funcDeclarationNode.StartPoint().Column - returnTypeNode.EndPoint().Column
+					if numSpaces != 1 {
+						lineNum := uint(returnTypeNode.StartPoint().Row)
+						result = append(
+							result,
+							protocol.TextEdit{
+								Range: protocol.Range{
+									Start: protocol.Position{
+										Line:      lineNum,
+										Character: uint(returnTypeNode.EndPoint().Column),
+									},
+									End: protocol.Position{
+										Line:      lineNum,
+										Character: uint(funcDeclarationNode.StartPoint().Column),
+									},
 								},
-								End: protocol.Position{
-									Line:      lineNum,
-									Character: uint(funcDeclarationNode.StartPoint().Column),
-								},
+								NewText: " ",
 							},
-							NewText: " ",
-						},
-					)
+						)
+					}
 				}
+				formatDeclarationAndBodySpacing := func() {
+					numSpaces := bodyNode.StartPoint().Column - funcDeclarationNode.EndPoint().Column
+					if numSpaces != 1 {
+						lineNum := uint(returnTypeNode.StartPoint().Row)
+						result = append(
+							result,
+							protocol.TextEdit{
+								Range: protocol.Range{
+									Start: protocol.Position{
+										Line:      lineNum,
+										Character: uint(funcDeclarationNode.EndPoint().Column),
+									},
+									End: protocol.Position{
+										Line:      lineNum,
+										Character: uint(bodyNode.StartPoint().Column),
+									},
+								},
+								NewText: " ",
+							},
+						)
+					}
+				}
+				formatReturnTypeAndDeclarationSpacing()
+				formatDeclarationAndBodySpacing()
 			}
 			return result
 		}
