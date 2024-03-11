@@ -94,4 +94,3 @@ Contribute to the project directly by fixing bugs and opening a pull request.
 compiled in`
   You have a c compiler which does not support 32 and 64 bit. Install [tdm-gcc](https://jmeubank.github.io/tdm-gcc/).
   to fix.
-
