@@ -428,6 +428,9 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 		if err == nil {
 			scopeNode = def.Node.Parent()
 			for scopeNode.Parent() != nil {
+				if scopeNode.Type() == "function_definition" && def.Node.Parent().Type() == "parameter_declaration" {
+					break
+				}
 				if scopeNode.Type() == "compound_statement" && scopeNode.Parent().Type() != "source_file" {
 					break
 				}

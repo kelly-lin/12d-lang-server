@@ -1049,6 +1049,37 @@ void main() {
 				),
 			},
 			{
+				Desc: "user defined func - param in scope - include declaration",
+				SourceCode: `Integer Identity(Integer subject) {
+    return subject;
+}
+
+void main(){
+    Integer subject = 1;
+	Integer result = subject + 1;
+}`,
+				Pos:                protocol.Position{Line: 1, Character: 11},
+				IncludeDeclaration: true,
+				Want: mustNewLocationsResponseMessage(
+					[]protocol.Location{
+						{
+							URI: "file:///main.4dm",
+							Range: protocol.Range{
+								Start: protocol.Position{Line: 0, Character: 25},
+								End:   protocol.Position{Line: 0, Character: 32},
+							},
+						},
+						{
+							URI: "file:///main.4dm",
+							Range: protocol.Range{
+								Start: protocol.Position{Line: 1, Character: 11},
+								End:   protocol.Position{Line: 1, Character: 18},
+							},
+						},
+					},
+				),
+			},
+			{
 				Desc: "global param - include declaration",
 				SourceCode: `{
     Integer ONE = 1;
