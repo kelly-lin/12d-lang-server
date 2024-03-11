@@ -52,6 +52,8 @@ The language server can be configured by passing in the below options to the
 - Hover support.
   - User defined function documentation in markdown.
     TODO: add gif
+- Rename symbol.
+- Find references.
 
 ## Planned features
 
