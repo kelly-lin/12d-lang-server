@@ -337,7 +337,7 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 			}
 			return result
 		}
-		getWhitespaceEdits := func() []protocol.TextEdit {
+		getTrailingWhitespaceEdits := func() []protocol.TextEdit {
 			result := []protocol.TextEdit{}
 			sourceCode := doc.SourceCode
 			lines := strings.Split(string(sourceCode), "\n")
@@ -369,8 +369,41 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 			}
 			return result
 		}
+		getFuncDefEdits := func() []protocol.TextEdit {
+			result := []protocol.TextEdit{}
+			for i := 0; i < int(doc.RootNode.ChildCount()); i++ {
+				currentNode := doc.RootNode.Child(i)
+				if currentNode.Type() != "function_definition" {
+					continue
+				}
+				returnTypeNode := currentNode.ChildByFieldName("type")
+				funcDeclarationNode := currentNode.ChildByFieldName("declarator")
+				numSpaces := funcDeclarationNode.StartPoint().Column - returnTypeNode.EndPoint().Column
+				if numSpaces != 1 {
+					lineNum := uint(returnTypeNode.StartPoint().Row)
+					result = append(
+						result,
+						protocol.TextEdit{
+							Range: protocol.Range{
+								Start: protocol.Position{
+									Line:      lineNum,
+									Character: uint(returnTypeNode.EndPoint().Column),
+								},
+								End: protocol.Position{
+									Line:      lineNum,
+									Character: uint(funcDeclarationNode.StartPoint().Column),
+								},
+							},
+							NewText: " ",
+						},
+					)
+				}
+			}
+			return result
+		}
 		edits = append(edits, getIndentationEdits()...)
-		edits = append(edits, getWhitespaceEdits()...)
+		edits = append(edits, getTrailingWhitespaceEdits()...)
+		edits = append(edits, getFuncDefEdits()...)
 		editsBytes, err := json.Marshal(edits)
 		if err != nil {
 			return protocol.ResponseMessage{}, 0, err

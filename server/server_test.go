@@ -256,7 +256,7 @@ if (1) {}
 				},
 			},
 			{
-				Desc: "trailing white space",
+				Desc: "whitespace - trailing whitespace",
 				SourceCode: `void main() {
     Integer a = 1;    
 }`,
@@ -273,6 +273,25 @@ if (1) {}
 							},
 						},
 						NewText: "",
+					},
+				},
+			},
+			{
+				Desc:       "func def - spacing - type-identifer",
+				SourceCode: `void  main() {}`,
+				Want: []protocol.TextEdit{
+					{
+						Range: protocol.Range{
+							Start: protocol.Position{
+								Line:      0,
+								Character: 4,
+							},
+							End: protocol.Position{
+								Line:      0,
+								Character: 6,
+							},
+						},
+						NewText: " ",
 					},
 				},
 			},
