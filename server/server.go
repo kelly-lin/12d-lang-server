@@ -443,6 +443,29 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 			len(locationsBytes),
 			nil
 
+	case "textDocument/rename":
+		var params protocol.RenameParams
+		if err := json.Unmarshal(msg.Params, &params); err != nil {
+			return protocol.ResponseMessage{}, 0, err
+		}
+		workspaceEdit := protocol.WorkspaceEdit{
+			Changes: map[string][]protocol.TextEdit{},
+		}
+		workspaceEdit.Changes[params.TextDocument.URI] = []protocol.TextEdit{
+			{Range: protocol.Range{Start: protocol.Position{Line: 1, Character: 12}, End: protocol.Position{Line: 1, Character: 13}}, NewText: params.NewName},
+			{Range: protocol.Range{Start: protocol.Position{Line: 2, Character: 21}, End: protocol.Position{Line: 2, Character: 22}}, NewText: params.NewName},
+		}
+		editsBytes, err := json.Marshal(workspaceEdit)
+		if err != nil {
+			return protocol.ResponseMessage{}, 0, err
+		}
+		return protocol.ResponseMessage{
+				ID:     msg.ID,
+				Result: json.RawMessage(editsBytes),
+			},
+			len(editsBytes),
+			nil
+
 	case "initialized":
 		return protocol.ResponseMessage{}, 0, nil
 
@@ -1405,6 +1428,7 @@ func newServerCapabilities() protocol.ServerCapabilities {
 		DocumentFormattingProvider: &documentFormattingProvider,
 		HoverProvider:              true,
 		ReferencesProvider:         true,
+		RenameProvider:             true,
 		TextDocumentSync:           &textDocumentSyncKind,
 	}
 	return result

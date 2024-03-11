@@ -171,6 +171,7 @@ type ServerCapabilities struct {
 	DocumentFormattingProvider *bool              `json:"documentFormattingProvider,omitempty"`
 	HoverProvider              bool               `json:"hoverProvider"`
 	ReferencesProvider         bool               `json:"referencesProvider"`
+	RenameProvider             bool               `json:"renameProvider"`
 	TextDocumentSync           *uint              `json:"textDocumentSync,omitempty"`
 }
 
@@ -290,4 +291,13 @@ type ReferenceParams struct {
 type ReferenceContext struct {
 	// Include the declaration of the current symbol.
 	IncludeDeclaration bool `json:"includeDeclaration"`
+}
+
+type RenameParams struct {
+	NewName string `json:"newName"`
+	TextDocumentPositionParams
+}
+
+type WorkspaceEdit struct {
+	Changes map[string][]TextEdit `json:"changes"`
 }
