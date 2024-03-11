@@ -422,46 +422,16 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 			}
 			locations = append(locations, declarationLocation)
 		}
-		// Traverse up the tree and find the nearest compound statement (this
-		// is our scope).
 		scopeNode := rootNode
 		if err == nil {
-			scopeNode = def.Node.Parent()
-			for scopeNode.Parent() != nil {
-				if scopeNode.Type() == "function_definition" && (def.Node.Parent().Type() == "parameter_declaration" || def.Node.Parent().Type() == "pointer_declarator") {
-					break
-				}
-				if scopeNode.Type() == "compound_statement" && scopeNode.Parent().Type() != "source_file" {
-					break
-				}
-				if scopeNode.Parent() == nil {
-					break
-				}
-				scopeNode = scopeNode.Parent()
-			}
+			scopeNode = getScopeNode(def.Node)
 		}
 		// For all children and their children inside of scope, if there is an
 		// identifier who's value is equal to our definition identifier, get it's
 		// location.
 		referenceNodes := getReferenceNodes(scopeNode, def.Node, identifier, sourceCode)
-		for _, node := range referenceNodes {
-			locations = append(
-				locations,
-				protocol.Location{
-					URI: params.TextDocument.URI,
-					Range: protocol.Range{
-						Start: protocol.Position{
-							Line:      uint(node.StartPoint().Row),
-							Character: uint(node.StartPoint().Column),
-						},
-						End: protocol.Position{
-							Line:      uint(node.EndPoint().Row),
-							Character: uint(node.EndPoint().Column),
-						},
-					},
-				},
-			)
-		}
+		referenceLocations := ToLocations(referenceNodes, params.TextDocument.URI)
+		locations = append(locations, referenceLocations...)
 		locationsBytes, err := json.Marshal(locations)
 		if err != nil {
 			return protocol.ResponseMessage{}, 0, err
@@ -479,6 +449,49 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 	default:
 		return protocol.ResponseMessage{}, 0, ErrUnhandledMethod
 	}
+}
+
+// Traverse up the tree and find the node which represents the scope of the
+// provided identifier node.
+func getScopeNode(identifierNode *sitter.Node) *sitter.Node {
+	result := identifierNode.Parent()
+	for result.Parent() != nil {
+		if result.Type() == "function_definition" && isParamDeclaration(identifierNode) {
+			break
+		}
+		if result.Type() == "compound_statement" && result.Parent().Type() != "source_file" {
+			break
+		}
+		if result.Parent() == nil {
+			break
+		}
+		result = result.Parent()
+	}
+	return result
+}
+
+// Convert the nodes into LSP protocol locations.
+func ToLocations(referenceNodes []*sitter.Node, uri string) []protocol.Location {
+	var locations []protocol.Location
+	for _, node := range referenceNodes {
+		locations = append(
+			locations,
+			protocol.Location{
+				URI: uri,
+				Range: protocol.Range{
+					Start: protocol.Position{
+						Line:      uint(node.StartPoint().Row),
+						Character: uint(node.StartPoint().Column),
+					},
+					End: protocol.Position{
+						Line:      uint(node.EndPoint().Row),
+						Character: uint(node.EndPoint().Column),
+					},
+				},
+			},
+		)
+	}
+	return locations
 }
 
 func getReferenceNodes(scopeNode, declarationNode *sitter.Node, identifier string, sourceCode []byte) []*sitter.Node {
@@ -799,7 +812,7 @@ func getFuncHoverContents(identifierNode *sitter.Node, identifier string, uri st
 // "parameter".
 func getHoverPrefix(node *sitter.Node) string {
 	result := ""
-	if isParameterDeclaration(node) {
+	if isParamDeclaration(node) {
 		result = "parameter"
 	}
 	return result
@@ -808,7 +821,7 @@ func getHoverPrefix(node *sitter.Node) string {
 // The identifier that is shown on hover documentation.
 func getHoverIdentifier(node *sitter.Node, sourceCode []byte) string {
 	result := node.Content(sourceCode)
-	if isParameterDeclaration(node) {
+	if isParamDeclaration(node) {
 		if node.Parent().Type() == "pointer_declarator" {
 			result = node.Parent().Content(sourceCode)
 		}
@@ -958,7 +971,7 @@ func getDefinitionType(node *sitter.Node, sourceCode []byte) (string, error) {
 // "Integer AddOne(Integer num) { Integer augend = 1; return num + augend; }",
 // where the idenitifer node is the node which represents "num", returns true and
 // the idenitifer node which represents "augend" returns false.
-func isParameterDeclaration(node *sitter.Node) bool {
+func isParamDeclaration(node *sitter.Node) bool {
 	isPointerArrayParam := node.Parent().Type() == "array_declarator" && node.Parent().Parent().Type() == "pointer_declarator" && node.Parent().Parent().Parent().Type() == "parameter_declaration"
 	isArrayParam := node.Parent().Parent().Type() == "parameter_declaration" && node.Parent().Type() == "array_declarator"
 	isPointerDeclaratorChild := node.Parent().Type() == "pointer_declarator"

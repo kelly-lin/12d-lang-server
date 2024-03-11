@@ -865,6 +865,7 @@ void main() {
 					protocol.Position{Line: 0, Character: 12},
 				),
 			},
+			// TODO: func overloads.
 		}
 		for _, testCase := range testCases {
 			t.Run(testCase.Desc, func(t *testing.T) {
