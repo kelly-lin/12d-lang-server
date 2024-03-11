@@ -448,12 +448,41 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 		if err := json.Unmarshal(msg.Params, &params); err != nil {
 			return protocol.ResponseMessage{}, 0, err
 		}
+		doc, ok := s.documents[params.TextDocument.URI]
+		if !ok {
+			return newNullResponseMessage(msg.ID), len(protocol.NullResult), errors.New("source node not found")
+		}
+		rootNode := doc.RootNode
+		sourceCode := doc.SourceCode
+		identifierNode, err := parser.FindIdentifierNode(rootNode, params.Position.Line, params.Position.Character)
+		if err != nil {
+			return newNullResponseMessage(msg.ID),
+				len(protocol.NullResult),
+				err
+		}
+		identifier := identifierNode.Content(sourceCode)
+		def, err := findDefinition(identifierNode, identifier, params.TextDocument.URI, s.documents, s.includesDir)
+		if err != nil {
+			return newNullResponseMessage(msg.ID),
+				len(protocol.NullResult),
+				err
+		}
+		scopeNode := rootNode
+		if err == nil {
+			scopeNode = getScopeNode(def.Node)
+		}
+		referenceNodes := getReferenceNodes(scopeNode, def.Node, identifier, sourceCode)
+		nodes := []*sitter.Node{def.Node}
+		nodes = append(nodes, referenceNodes...)
+		ranges := ToRanges(nodes)
 		workspaceEdit := protocol.WorkspaceEdit{
 			Changes: map[string][]protocol.TextEdit{},
 		}
-		workspaceEdit.Changes[params.TextDocument.URI] = []protocol.TextEdit{
-			{Range: protocol.Range{Start: protocol.Position{Line: 1, Character: 12}, End: protocol.Position{Line: 1, Character: 13}}, NewText: params.NewName},
-			{Range: protocol.Range{Start: protocol.Position{Line: 2, Character: 21}, End: protocol.Position{Line: 2, Character: 22}}, NewText: params.NewName},
+		for _, textRange := range ranges {
+			workspaceEdit.Changes[params.TextDocument.URI] = append(
+				workspaceEdit.Changes[params.TextDocument.URI],
+				protocol.TextEdit{Range: textRange, NewText: params.NewName},
+			)
 		}
 		editsBytes, err := json.Marshal(workspaceEdit)
 		if err != nil {
@@ -510,6 +539,27 @@ func ToLocations(referenceNodes []*sitter.Node, uri string) []protocol.Location 
 						Line:      uint(node.EndPoint().Row),
 						Character: uint(node.EndPoint().Column),
 					},
+				},
+			},
+		)
+	}
+	return locations
+}
+
+// Convert the nodes into LSP protocol ranges.
+func ToRanges(nodes []*sitter.Node) []protocol.Range {
+	var locations []protocol.Range
+	for _, node := range nodes {
+		locations = append(
+			locations,
+			protocol.Range{
+				Start: protocol.Position{
+					Line:      uint(node.StartPoint().Row),
+					Character: uint(node.StartPoint().Column),
+				},
+				End: protocol.Position{
+					Line:      uint(node.EndPoint().Row),
+					Character: uint(node.EndPoint().Column),
 				},
 			},
 		)
