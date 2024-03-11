@@ -357,21 +357,15 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 		sourceCode := doc.SourceCode
 		identifierNode, err := parser.FindIdentifierNode(rootNode, params.Position.Line, params.Position.Character)
 		if errors.Is(err, parser.ErrNoDefinition) {
-			return newNullResponseMessage(msg.ID),
-				len(protocol.NullResult),
-				nil
+			return newNullResponseMessage(msg.ID), len(protocol.NullResult), nil
 		}
 		if err != nil {
-			return newNullResponseMessage(msg.ID),
-				len(protocol.NullResult),
-				err
+			return newNullResponseMessage(msg.ID), len(protocol.NullResult), err
 		}
 		identifier := identifierNode.Content(sourceCode)
 		def, err := findDefinition(identifierNode, identifier, params.TextDocument.URI, s.documents, s.includesDir)
 		if err != nil {
-			return newNullResponseMessage(msg.ID),
-				len(protocol.NullResult),
-				nil
+			return newNullResponseMessage(msg.ID), len(protocol.NullResult), nil
 		}
 		location := protocol.Location{
 			URI:   def.URI,
@@ -401,17 +395,13 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 		sourceCode := doc.SourceCode
 		identifierNode, err := parser.FindIdentifierNode(rootNode, params.Position.Line, params.Position.Character)
 		if err != nil {
-			return newNullResponseMessage(msg.ID),
-				len(protocol.NullResult),
-				err
+			return newNullResponseMessage(msg.ID), len(protocol.NullResult), err
 		}
 		identifier := identifierNode.Content(sourceCode)
 		def, err := findDefinition(identifierNode, identifier, params.TextDocument.URI, s.documents, s.includesDir)
 		if err != nil {
 			if _, ok := lang.Lib[identifier]; !ok {
-				return newNullResponseMessage(msg.ID),
-					len(protocol.NullResult),
-					nil
+				return newNullResponseMessage(msg.ID), len(protocol.NullResult), nil
 			}
 		}
 		locations := []protocol.Location{}
@@ -456,16 +446,12 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 		sourceCode := doc.SourceCode
 		identifierNode, err := parser.FindIdentifierNode(rootNode, params.Position.Line, params.Position.Character)
 		if err != nil {
-			return newNullResponseMessage(msg.ID),
-				len(protocol.NullResult),
-				err
+			return newNullResponseMessage(msg.ID), len(protocol.NullResult), err
 		}
 		identifier := identifierNode.Content(sourceCode)
 		def, err := findDefinition(identifierNode, identifier, params.TextDocument.URI, s.documents, s.includesDir)
 		if err != nil {
-			return newNullResponseMessage(msg.ID),
-				len(protocol.NullResult),
-				err
+			return newNullResponseMessage(msg.ID), len(protocol.NullResult), err
 		}
 		scopeNode := rootNode
 		if err == nil {
