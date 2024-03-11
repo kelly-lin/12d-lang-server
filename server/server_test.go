@@ -255,6 +255,27 @@ if (1) {}
 					},
 				},
 			},
+			{
+				Desc: "trailing white space",
+				SourceCode: `void main() {
+    Integer a = 1;    
+}`,
+				Want: []protocol.TextEdit{
+					{
+						Range: protocol.Range{
+							Start: protocol.Position{
+								Line:      1,
+								Character: 18,
+							},
+							End: protocol.Position{
+								Line:      1,
+								Character: 22,
+							},
+						},
+						NewText: "",
+					},
+				},
+			},
 			// {
 			// 	Desc:       "func param list separated by single comma and space",
 			// 	SourceCode: `Integer Add(Integer addend,  Integer augend){}`,

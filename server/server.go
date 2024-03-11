@@ -283,56 +283,94 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 		if !ok {
 			return newNullResponseMessage(msg.ID), len(protocol.NullResult), errors.New("source node not found")
 		}
-		var edits []protocol.TextEdit = []protocol.TextEdit{}
-		stack := parser.NewStack()
-		stack.Push(doc.RootNode)
-		for stack.HasItems() {
-			currentNode, _ := stack.Pop()
-			nodeType := currentNode.Type()
-			if isSupportedIndentationNodeType(nodeType) {
-				// HACK: we dont yet support formatting the children of for
-				// statement nodes. Skip the iteration for now.
-				if nodeType == "declaration" && currentNode.Parent() != nil && currentNode.Parent().Type() == "for_statement" {
-					continue
-				}
-				indentLevel := 0
-				currentParent := currentNode.Parent()
-				for currentParent != nil {
-					if currentParent.Type() == "compound_statement" {
-						indentLevel++
+		edits := []protocol.TextEdit{}
+		getIndentationEdits := func() []protocol.TextEdit {
+			result := []protocol.TextEdit{}
+			stack := parser.NewStack()
+			stack.Push(doc.RootNode)
+			for stack.HasItems() {
+				currentNode, _ := stack.Pop()
+				nodeType := currentNode.Type()
+				if isSupportedIndentationNodeType(nodeType) {
+					// HACK: we dont yet support formatting the children of for
+					// statement nodes. Skip the iteration for now.
+					if nodeType == "declaration" && currentNode.Parent() != nil && currentNode.Parent().Type() == "for_statement" {
+						continue
 					}
-					currentParent = currentParent.Parent()
-				}
-				targetIndentation := indentLevel * 4
-				currentIndentation := currentNode.StartPoint().Column
-				if targetIndentation != int(currentIndentation) {
-					sb := strings.Builder{}
-					for i := 0; i < targetIndentation; i++ {
-						sb.WriteRune(' ')
+					indentLevel := 0
+					currentParent := currentNode.Parent()
+					for currentParent != nil {
+						if currentParent.Type() == "compound_statement" {
+							indentLevel++
+						}
+						currentParent = currentParent.Parent()
 					}
-					newText := sb.String()
-					edits = append(
-						edits,
+					targetIndentation := indentLevel * 4
+					currentIndentation := currentNode.StartPoint().Column
+					if targetIndentation != int(currentIndentation) {
+						sb := strings.Builder{}
+						for i := 0; i < targetIndentation; i++ {
+							sb.WriteRune(' ')
+						}
+						newText := sb.String()
+						result = append(
+							result,
+							protocol.TextEdit{
+								Range: protocol.Range{
+									Start: protocol.Position{
+										Line:      uint(currentNode.StartPoint().Row),
+										Character: 0,
+									},
+									End: protocol.Position{
+										Line:      uint(currentNode.StartPoint().Row),
+										Character: uint(currentNode.StartPoint().Column),
+									},
+								},
+								NewText: newText,
+							},
+						)
+					}
+				}
+				for i := 0; i < int(currentNode.ChildCount()); i++ {
+					stack.Push(currentNode.Child(i))
+				}
+			}
+			return result
+		}
+		getWhitespaceEdits := func() []protocol.TextEdit {
+			result := []protocol.TextEdit{}
+			sourceCode := doc.SourceCode
+			lines := strings.Split(string(sourceCode), "\n")
+			for idx, line := range lines {
+				numSpaces := 0
+				for i := len(line) - 1; i >= 0; i-- {
+					if line[i] != ' ' {
+						break
+					}
+					numSpaces++
+				}
+				if numSpaces > 0 {
+					result = append(
+						result,
 						protocol.TextEdit{
 							Range: protocol.Range{
 								Start: protocol.Position{
-									Line:      uint(currentNode.StartPoint().Row),
-									Character: 0,
+									Line:      uint(idx),
+									Character: uint(len(line) - numSpaces),
 								},
 								End: protocol.Position{
-									Line:      uint(currentNode.StartPoint().Row),
-									Character: uint(currentNode.StartPoint().Column),
+									Line:      uint(idx),
+									Character: uint(len(line)),
 								},
 							},
-							NewText: newText,
 						},
 					)
 				}
 			}
-			for i := 0; i < int(currentNode.ChildCount()); i++ {
-				stack.Push(currentNode.Child(i))
-			}
+			return result
 		}
+		edits = append(edits, getIndentationEdits()...)
+		edits = append(edits, getWhitespaceEdits()...)
 		editsBytes, err := json.Marshal(edits)
 		if err != nil {
 			return protocol.ResponseMessage{}, 0, err
