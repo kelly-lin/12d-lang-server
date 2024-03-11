@@ -423,8 +423,36 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 						)
 					}
 				}
+				formatParamList := func() {
+					paramsNode := funcDeclarationNode.ChildByFieldName("parameters")
+					startCol := paramsNode.StartPoint().Column
+					for i := 0; i < int(paramsNode.ChildCount()); i++ {
+						currentNode := paramsNode.Child(i)
+						if currentNode.Type() == "parameter_declaration" {
+							if currentNode.StartPoint().Column-startCol > 1 {
+								result = append(
+									result,
+									protocol.TextEdit{
+										Range: protocol.Range{
+											Start: protocol.Position{
+												Line:      uint(currentNode.StartPoint().Row),
+												Character: uint(startCol) + 1,
+											},
+											End: protocol.Position{
+												Line:      uint(currentNode.StartPoint().Row),
+												Character: uint(currentNode.StartPoint().Column),
+											},
+										},
+										NewText: "",
+									},
+								)
+							}
+						}
+					}
+				}
 				formatReturnTypeAndDeclarationSpacing()
 				formatDeclarationAndBodySpacing()
+				formatParamList()
 			}
 			return result
 		}

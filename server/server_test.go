@@ -314,6 +314,44 @@ if (1) {}
 					},
 				},
 			},
+			{
+				Desc:       "func def - parameter list - param spacing - trim leading param type single space",
+				SourceCode: `void Null( Integer a) {}`,
+				Want: []protocol.TextEdit{
+					{
+						Range: protocol.Range{
+							Start: protocol.Position{
+								Line:      0,
+								Character: 10,
+							},
+							End: protocol.Position{
+								Line:      0,
+								Character: 11,
+							},
+						},
+						NewText: "",
+					},
+				},
+			},
+			{
+				Desc:       "func def - parameter list - param spacing - trim leading param type double space",
+				SourceCode: `void Null(  Integer a) {}`,
+				Want: []protocol.TextEdit{
+					{
+						Range: protocol.Range{
+							Start: protocol.Position{
+								Line:      0,
+								Character: 10,
+							},
+							End: protocol.Position{
+								Line:      0,
+								Character: 12,
+							},
+						},
+						NewText: "",
+					},
+				},
+			},
 			// {
 			// 	Desc:       "func param list separated by single comma and space",
 			// 	SourceCode: `Integer Add(Integer addend,  Integer augend){}`,
