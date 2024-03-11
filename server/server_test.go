@@ -1143,7 +1143,7 @@ void main() {
 				),
 			},
 			{
-				Desc: "global param - include declaration",
+				Desc: "global param - consumption reference request - include declaration",
 				SourceCode: `{
     Integer ONE = 1;
 }
@@ -1152,6 +1152,36 @@ Integer AddOne(Integer subject) {
     return subject + ONE;
 }`,
 				Pos:                protocol.Position{Line: 5, Character: 21},
+				IncludeDeclaration: true,
+				Want: mustNewLocationsResponseMessage(
+					[]protocol.Location{
+						{
+							URI: "file:///main.4dm",
+							Range: protocol.Range{
+								Start: protocol.Position{Line: 1, Character: 12},
+								End:   protocol.Position{Line: 1, Character: 15},
+							},
+						},
+						{
+							URI: "file:///main.4dm",
+							Range: protocol.Range{
+								Start: protocol.Position{Line: 5, Character: 21},
+								End:   protocol.Position{Line: 5, Character: 24},
+							},
+						},
+					},
+				),
+			},
+			{
+				Desc: "global param - definition reference request - include declaration",
+				SourceCode: `{
+    Integer ONE = 1;
+}
+
+Integer AddOne(Integer subject) {
+    return subject + ONE;
+}`,
+				Pos:                protocol.Position{Line: 1, Character: 12},
 				IncludeDeclaration: true,
 				Want: mustNewLocationsResponseMessage(
 					[]protocol.Location{
