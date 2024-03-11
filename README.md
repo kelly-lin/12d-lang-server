@@ -48,10 +48,8 @@ The language server can be configured by passing in the below options to the
 ## Features
 
 - Go to definition.
-  TODO: add gif
 - Hover support.
   - User defined function documentation in markdown.
-    TODO: add gif
 - Rename symbol.
 - Find references.
 
