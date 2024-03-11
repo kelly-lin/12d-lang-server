@@ -1054,7 +1054,7 @@ void main() {
     return subject;
 }
 
-void main(){
+void main() {
     Integer subject = 1;
 	Integer result = subject + 1;
 }`,
@@ -1074,6 +1074,37 @@ void main(){
 							Range: protocol.Range{
 								Start: protocol.Position{Line: 1, Character: 11},
 								End:   protocol.Position{Line: 1, Character: 18},
+							},
+						},
+					},
+				),
+			},
+			{
+				Desc: "user defined func - param in scope - include declaration",
+				SourceCode: `Integer Identity(Integer subject) {
+    return subject;
+}
+
+void main() {
+    Integer subject = 1;
+    Integer result = subject + 1;
+}`,
+				Pos:                protocol.Position{Line: 6, Character: 21},
+				IncludeDeclaration: true,
+				Want: mustNewLocationsResponseMessage(
+					[]protocol.Location{
+						{
+							URI: "file:///main.4dm",
+							Range: protocol.Range{
+								Start: protocol.Position{Line: 5, Character: 12},
+								End:   protocol.Position{Line: 5, Character: 19},
+							},
+						},
+						{
+							URI: "file:///main.4dm",
+							Range: protocol.Range{
+								Start: protocol.Position{Line: 6, Character: 21},
+								End:   protocol.Position{Line: 6, Character: 28},
 							},
 						},
 					},
