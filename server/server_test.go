@@ -390,6 +390,25 @@ if (1) {}
 					},
 				},
 			},
+			{
+				Desc:       "func def - parameter list - type-identifier spacing - trim leading double space",
+				SourceCode: `void Null(Integer  &a) {}`,
+				Want: []protocol.TextEdit{
+					{
+						Range: protocol.Range{
+							Start: protocol.Position{
+								Line:      0,
+								Character: 17,
+							},
+							End: protocol.Position{
+								Line:      0,
+								Character: 19,
+							},
+						},
+						NewText: " ",
+					},
+				},
+			},
 			// {
 			// 	Desc:       "func param list separated by single comma and space",
 			// 	SourceCode: `Integer Add(Integer addend,  Integer augend){}`,
