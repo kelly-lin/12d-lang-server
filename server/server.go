@@ -428,8 +428,9 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 					startCol := paramsNode.StartPoint().Column
 					for i := 0; i < int(paramsNode.ChildCount()); i++ {
 						currentNode := paramsNode.Child(i)
+						paramIdx := 0
 						if currentNode.Type() == "parameter_declaration" {
-							if currentNode.StartPoint().Column-startCol > 1 {
+							if paramIdx == 0 && currentNode.StartPoint().Column-startCol > 1 {
 								result = append(
 									result,
 									protocol.TextEdit{
@@ -447,6 +448,27 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 									},
 								)
 							}
+							typeNode := currentNode.ChildByFieldName("type")
+							declaratorNode := currentNode.ChildByFieldName("declarator")
+							if declaratorNode.StartPoint().Column-typeNode.EndPoint().Column > 1 {
+								result = append(
+									result,
+									protocol.TextEdit{
+										Range: protocol.Range{
+											Start: protocol.Position{
+												Line:      uint(typeNode.EndPoint().Row),
+												Character: uint(typeNode.EndPoint().Column),
+											},
+											End: protocol.Position{
+												Line:      uint(declaratorNode.StartPoint().Row),
+												Character: uint(declaratorNode.StartPoint().Column),
+											},
+										},
+										NewText: " ",
+									},
+								)
+							}
+							paramIdx++
 						}
 					}
 				}
