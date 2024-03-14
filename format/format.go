@@ -8,6 +8,7 @@ import (
 	sitter "github.com/smacker/go-tree-sitter"
 )
 
+// Get formatting edits for block indentations,
 func GetIndentationEdits(node *sitter.Node) []protocol.TextEdit {
 	result := []protocol.TextEdit{}
 	stack := parser.NewStack()
@@ -78,6 +79,7 @@ func isSupportedIndentationNodeType(nodeType string) bool {
 	return false
 }
 
+// Get formatting edits for trailing whitespaces.
 func GetTrailingWhitespaceEdits(sourceCode []byte) []protocol.TextEdit {
 	result := []protocol.TextEdit{}
 	lines := strings.Split(string(sourceCode), "\n")
@@ -110,6 +112,7 @@ func GetTrailingWhitespaceEdits(sourceCode []byte) []protocol.TextEdit {
 	return result
 }
 
+// Get formatting edits for function definitions.
 func GetFuncDefEdits(rootNode *sitter.Node) []protocol.TextEdit {
 	result := []protocol.TextEdit{}
 	for i := 0; i < int(rootNode.ChildCount()); i++ {
