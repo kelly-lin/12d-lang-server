@@ -77,3 +77,35 @@ func isSupportedIndentationNodeType(nodeType string) bool {
 	}
 	return false
 }
+
+func GetTrailingWhitespaceEdits(sourceCode []byte) []protocol.TextEdit {
+	result := []protocol.TextEdit{}
+	lines := strings.Split(string(sourceCode), "\n")
+	for idx, line := range lines {
+		numSpaces := 0
+		for i := len(line) - 1; i >= 0; i-- {
+			if line[i] != ' ' {
+				break
+			}
+			numSpaces++
+		}
+		if numSpaces > 0 {
+			result = append(
+				result,
+				protocol.TextEdit{
+					Range: protocol.Range{
+						Start: protocol.Position{
+							Line:      uint(idx),
+							Character: uint(len(line) - numSpaces),
+						},
+						End: protocol.Position{
+							Line:      uint(idx),
+							Character: uint(len(line)),
+						},
+					},
+				},
+			)
+		}
+	}
+	return result
+}

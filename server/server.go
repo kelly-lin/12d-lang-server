@@ -283,39 +283,6 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 			return newNullResponseMessage(msg.ID), len(protocol.NullResult), errors.New("source node not found")
 		}
 		edits := []protocol.TextEdit{}
-
-		getTrailingWhitespaceEdits := func() []protocol.TextEdit {
-			result := []protocol.TextEdit{}
-			sourceCode := doc.SourceCode
-			lines := strings.Split(string(sourceCode), "\n")
-			for idx, line := range lines {
-				numSpaces := 0
-				for i := len(line) - 1; i >= 0; i-- {
-					if line[i] != ' ' {
-						break
-					}
-					numSpaces++
-				}
-				if numSpaces > 0 {
-					result = append(
-						result,
-						protocol.TextEdit{
-							Range: protocol.Range{
-								Start: protocol.Position{
-									Line:      uint(idx),
-									Character: uint(len(line) - numSpaces),
-								},
-								End: protocol.Position{
-									Line:      uint(idx),
-									Character: uint(len(line)),
-								},
-							},
-						},
-					)
-				}
-			}
-			return result
-		}
 		getFuncDefEdits := func() []protocol.TextEdit {
 			result := []protocol.TextEdit{}
 			for i := 0; i < int(doc.RootNode.ChildCount()); i++ {
@@ -479,7 +446,7 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 			return result
 		}
 		edits = append(edits, format.GetIndentationEdits(doc.RootNode)...)
-		edits = append(edits, getTrailingWhitespaceEdits()...)
+		edits = append(edits, format.GetTrailingWhitespaceEdits(doc.SourceCode)...)
 		edits = append(edits, getFuncDefEdits()...)
 		editsBytes, err := json.Marshal(edits)
 		if err != nil {
