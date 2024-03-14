@@ -123,155 +123,175 @@ func GetFuncDefEdits(rootNode *sitter.Node) []protocol.TextEdit {
 		returnTypeNode := currentNode.ChildByFieldName("type")
 		funcDeclarationNode := currentNode.ChildByFieldName("declarator")
 		bodyNode := currentNode.ChildByFieldName("body")
-		formatReturnTypeAndDeclarationSpacing := func() {
-			numSpaces := funcDeclarationNode.StartPoint().Column - returnTypeNode.EndPoint().Column
-			if numSpaces != 1 {
-				lineNum := uint(returnTypeNode.StartPoint().Row)
+
+		result = append(result, formatReturnTypeAndDeclarationSpacing(funcDeclarationNode, returnTypeNode)...)
+		result = append(result, formatDeclarationAndBodySpacing(bodyNode, funcDeclarationNode, returnTypeNode)...)
+		result = append(result, formatParamList(funcDeclarationNode)...)
+	}
+	return result
+}
+
+// Formats the spacing between the function return type and declaration. For
+// example the spacing between "void" and "Foo" in "void Foo()".
+func formatReturnTypeAndDeclarationSpacing(funcDeclarationNode, returnTypeNode *sitter.Node) []protocol.TextEdit {
+	result := []protocol.TextEdit{}
+	numSpaces := funcDeclarationNode.StartPoint().Column - returnTypeNode.EndPoint().Column
+	if numSpaces != 1 {
+		lineNum := uint(returnTypeNode.StartPoint().Row)
+		result = append(
+			result,
+			protocol.TextEdit{
+				Range: protocol.Range{
+					Start: protocol.Position{
+						Line:      lineNum,
+						Character: uint(returnTypeNode.EndPoint().Column),
+					},
+					End: protocol.Position{
+						Line:      lineNum,
+						Character: uint(funcDeclarationNode.StartPoint().Column),
+					},
+				},
+				NewText: " ",
+			},
+		)
+	}
+	return result
+}
+
+// Get the formatting edits for the spacing between the ending parenthesis of
+// the function parameter list and opening body brace. i.e. the space between
+// the ")" and "{" in "void Foo() {}".
+func formatDeclarationAndBodySpacing(bodyNode, funcDeclarationNode, returnTypeNode *sitter.Node) []protocol.TextEdit {
+	result := []protocol.TextEdit{}
+	numSpaces := bodyNode.StartPoint().Column - funcDeclarationNode.EndPoint().Column
+	if numSpaces != 1 {
+		lineNum := uint(returnTypeNode.StartPoint().Row)
+		result = append(
+			result,
+			protocol.TextEdit{
+				Range: protocol.Range{
+					Start: protocol.Position{
+						Line:      lineNum,
+						Character: uint(funcDeclarationNode.EndPoint().Column),
+					},
+					End: protocol.Position{
+						Line:      lineNum,
+						Character: uint(bodyNode.StartPoint().Column),
+					},
+				},
+				NewText: " ",
+			},
+		)
+	}
+	return result
+}
+
+// Get formatting edits for the function parameter list.
+func formatParamList(funcDeclarationNode *sitter.Node) []protocol.TextEdit {
+	var result []protocol.TextEdit
+	paramsNode := funcDeclarationNode.ChildByFieldName("parameters")
+	startCol := paramsNode.StartPoint().Column
+	paramIdx := 0
+	lastDeclaratorPos := 0
+	numChildren := int(paramsNode.ChildCount())
+	if numChildren == 0 {
+		return []protocol.TextEdit{}
+	}
+	// prevLine := paramsNode.Child(0).StartPoint().Row
+	for i := 0; i < numChildren; i++ {
+		currentNode := paramsNode.Child(i)
+		if currentNode.Type() == "parameter_declaration" {
+			typeNode := currentNode.ChildByFieldName("type")
+			declaratorNode := currentNode.ChildByFieldName("declarator")
+			result = append(result, formatParamSpacing(paramIdx, lastDeclaratorPos, startCol, currentNode, typeNode, declaratorNode)...)
+			shouldFormatTypeIdentifierSpacing := declaratorNode.StartPoint().Column-typeNode.EndPoint().Column > 1
+			if shouldFormatTypeIdentifierSpacing {
 				result = append(
 					result,
 					protocol.TextEdit{
 						Range: protocol.Range{
 							Start: protocol.Position{
-								Line:      lineNum,
-								Character: uint(returnTypeNode.EndPoint().Column),
+								Line:      uint(typeNode.EndPoint().Row),
+								Character: uint(typeNode.EndPoint().Column),
 							},
 							End: protocol.Position{
-								Line:      lineNum,
-								Character: uint(funcDeclarationNode.StartPoint().Column),
+								Line:      uint(declaratorNode.StartPoint().Row),
+								Character: uint(declaratorNode.StartPoint().Column),
 							},
 						},
 						NewText: " ",
 					},
 				)
 			}
+
+			lastDeclaratorPos = int(declaratorNode.EndPoint().Column)
+			// prevLine = uint32(typeNode.StartPoint().Row)
+			paramIdx++
 		}
-		formatDeclarationAndBodySpacing := func() {
-			numSpaces := bodyNode.StartPoint().Column - funcDeclarationNode.EndPoint().Column
-			if numSpaces != 1 {
-				lineNum := uint(returnTypeNode.StartPoint().Row)
-				result = append(
-					result,
-					protocol.TextEdit{
-						Range: protocol.Range{
-							Start: protocol.Position{
-								Line:      lineNum,
-								Character: uint(funcDeclarationNode.EndPoint().Column),
-							},
-							End: protocol.Position{
-								Line:      lineNum,
-								Character: uint(bodyNode.StartPoint().Column),
-							},
-						},
-						NewText: " ",
+	}
+	return result
+}
+
+// Get formatting edits for the spacing in between parameters. For example,
+// The spacing of "Integer a," and "Integer b" "void Foo(Integer a, Integer b)".
+// This function will return the edits so that the number of spaces between the
+// comma after "a" and "Integer" is exactly 1.
+func formatParamSpacing(paramIdx, lastDeclaratorPos int, startCol uint32, currentNode, typeNode, declaratorNode *sitter.Node) []protocol.TextEdit {
+	var result []protocol.TextEdit
+	if paramIdx == 0 && currentNode.StartPoint().Column-startCol > 1 {
+		result = append(
+			result,
+			protocol.TextEdit{
+				Range: protocol.Range{
+					Start: protocol.Position{
+						Line:      uint(currentNode.StartPoint().Row),
+						Character: uint(startCol) + 1,
 					},
-				)
-			}
-		}
-		formatParamList := func() {
-			formatParamSpacing := func(paramIdx, lastDeclaratorPos int, startCol uint32, currentNode, typeNode, declaratorNode *sitter.Node) {
-				if paramIdx == 0 && currentNode.StartPoint().Column-startCol > 1 {
-					result = append(
-						result,
-						protocol.TextEdit{
-							Range: protocol.Range{
-								Start: protocol.Position{
-									Line:      uint(currentNode.StartPoint().Row),
-									Character: uint(startCol) + 1,
-								},
-								End: protocol.Position{
-									Line:      uint(currentNode.StartPoint().Row),
-									Character: uint(currentNode.StartPoint().Column),
-								},
-							},
-							NewText: "",
+					End: protocol.Position{
+						Line:      uint(currentNode.StartPoint().Row),
+						Character: uint(currentNode.StartPoint().Column),
+					},
+				},
+				NewText: "",
+			},
+		)
+	} else if paramIdx > 0 {
+		if int(typeNode.StartPoint().Column)-lastDeclaratorPos == 1 {
+			result = append(
+				result,
+				protocol.TextEdit{
+					Range: protocol.Range{
+						Start: protocol.Position{
+							Line:      uint(typeNode.StartPoint().Row),
+							Character: uint(lastDeclaratorPos + 1),
 						},
-					)
-				} else if paramIdx > 0 {
-					if int(typeNode.StartPoint().Column)-lastDeclaratorPos == 1 {
-						result = append(
-							result,
-							protocol.TextEdit{
-								Range: protocol.Range{
-									Start: protocol.Position{
-										Line:      uint(typeNode.StartPoint().Row),
-										Character: uint(lastDeclaratorPos + 1),
-									},
-									End: protocol.Position{
-										Line:      uint(typeNode.StartPoint().Row),
-										Character: uint(lastDeclaratorPos + 1),
-									},
-								},
-								NewText: " ",
-							},
-						)
-					}
-					if int(typeNode.StartPoint().Column)-lastDeclaratorPos > 2 {
-						result = append(
-							result,
-							protocol.TextEdit{
-								Range: protocol.Range{
-									Start: protocol.Position{
-										Line:      uint(typeNode.StartPoint().Row),
-										Character: uint(lastDeclaratorPos + 1),
-									},
-									End: protocol.Position{
-										Line:      uint(typeNode.StartPoint().Row),
-										Character: uint(typeNode.StartPoint().Column),
-									},
-								},
-								NewText: " ",
-							},
-						)
-					}
-				}
-
-			}
-			paramsNode := funcDeclarationNode.ChildByFieldName("parameters")
-			startCol := paramsNode.StartPoint().Column
-			paramIdx := 0
-			lastDeclaratorPos := 0
-			numChildren := int(paramsNode.ChildCount())
-			if numChildren == 0 {
-				return
-			}
-			// prevLine := paramsNode.Child(0).StartPoint().Row
-			for i := 0; i < numChildren; i++ {
-				currentNode := paramsNode.Child(i)
-				if currentNode.Type() == "parameter_declaration" {
-					typeNode := currentNode.ChildByFieldName("type")
-					declaratorNode := currentNode.ChildByFieldName("declarator")
-
-					formatParamSpacing(paramIdx, lastDeclaratorPos, startCol, currentNode, typeNode, declaratorNode)
-
-					shouldFormatTypeIdentifierSpacing := declaratorNode.StartPoint().Column-typeNode.EndPoint().Column > 1
-					if shouldFormatTypeIdentifierSpacing {
-						result = append(
-							result,
-							protocol.TextEdit{
-								Range: protocol.Range{
-									Start: protocol.Position{
-										Line:      uint(typeNode.EndPoint().Row),
-										Character: uint(typeNode.EndPoint().Column),
-									},
-									End: protocol.Position{
-										Line:      uint(declaratorNode.StartPoint().Row),
-										Character: uint(declaratorNode.StartPoint().Column),
-									},
-								},
-								NewText: " ",
-							},
-						)
-					}
-
-					lastDeclaratorPos = int(declaratorNode.EndPoint().Column)
-					// prevLine = uint32(typeNode.StartPoint().Row)
-					paramIdx++
-				}
-			}
+						End: protocol.Position{
+							Line:      uint(typeNode.StartPoint().Row),
+							Character: uint(lastDeclaratorPos + 1),
+						},
+					},
+					NewText: " ",
+				},
+			)
 		}
-		formatReturnTypeAndDeclarationSpacing()
-		formatDeclarationAndBodySpacing()
-		formatParamList()
+		if int(typeNode.StartPoint().Column)-lastDeclaratorPos > 2 {
+			result = append(
+				result,
+				protocol.TextEdit{
+					Range: protocol.Range{
+						Start: protocol.Position{
+							Line:      uint(typeNode.StartPoint().Row),
+							Character: uint(lastDeclaratorPos + 1),
+						},
+						End: protocol.Position{
+							Line:      uint(typeNode.StartPoint().Row),
+							Character: uint(typeNode.StartPoint().Column),
+						},
+					},
+					NewText: " ",
+				},
+			)
+		}
 	}
 	return result
 }
