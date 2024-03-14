@@ -480,7 +480,7 @@ if (1) {}
 				},
 			},
 			{
-				Desc:       "func param list separated by single comma and space",
+				Desc:       "func def - parameter list - param spacing - param list separated by single comma and space",
 				SourceCode: `Integer Add(Integer addend,  Integer augend) {}`,
 				Want: []protocol.TextEdit{
 					{
@@ -499,7 +499,7 @@ if (1) {}
 				},
 			},
 			{
-				Desc:       "func param list separated by single comma and space - multiple param",
+				Desc:       "func def - parameter list - param spacing - param list separated by single comma and space - multiple param",
 				SourceCode: `Integer Volume(Integer w,  Integer d,     Integer h) {}`,
 				Want: []protocol.TextEdit{
 					{
