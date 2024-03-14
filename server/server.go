@@ -14,6 +14,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/kelly-lin/12d-lang-server/format"
 	"github.com/kelly-lin/12d-lang-server/lang"
 	"github.com/kelly-lin/12d-lang-server/parser"
 	"github.com/kelly-lin/12d-lang-server/protocol"
@@ -24,8 +25,6 @@ const contentLengthHeaderName = "Content-Length"
 
 // Unhandled LSP method error.
 var ErrUnhandledMethod = errors.New("unhandled method")
-
-var supportedIndentationNodeTypes = []string{"declaration", "for_statement", "switch_statement", "while_statement", "if_statement", "function_definition"}
 
 type LangCompletions struct {
 	Keyword []protocol.CompletionItem
@@ -284,59 +283,7 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 			return newNullResponseMessage(msg.ID), len(protocol.NullResult), errors.New("source node not found")
 		}
 		edits := []protocol.TextEdit{}
-		getIndentationEdits := func() []protocol.TextEdit {
-			result := []protocol.TextEdit{}
-			stack := parser.NewStack()
-			stack.Push(doc.RootNode)
-			for stack.HasItems() {
-				currentNode, _ := stack.Pop()
-				nodeType := currentNode.Type()
-				if isSupportedIndentationNodeType(nodeType) {
-					// HACK: we dont yet support formatting the children of for
-					// statement nodes. Skip the iteration for now.
-					if nodeType == "declaration" && currentNode.Parent() != nil && currentNode.Parent().Type() == "for_statement" {
-						continue
-					}
-					indentLevel := 0
-					currentParent := currentNode.Parent()
-					for currentParent != nil {
-						if currentParent.Type() == "compound_statement" {
-							indentLevel++
-						}
-						currentParent = currentParent.Parent()
-					}
-					targetIndentation := indentLevel * 4
-					currentIndentation := currentNode.StartPoint().Column
-					if targetIndentation != int(currentIndentation) {
-						sb := strings.Builder{}
-						for i := 0; i < targetIndentation; i++ {
-							sb.WriteRune(' ')
-						}
-						newText := sb.String()
-						result = append(
-							result,
-							protocol.TextEdit{
-								Range: protocol.Range{
-									Start: protocol.Position{
-										Line:      uint(currentNode.StartPoint().Row),
-										Character: 0,
-									},
-									End: protocol.Position{
-										Line:      uint(currentNode.StartPoint().Row),
-										Character: uint(currentNode.StartPoint().Column),
-									},
-								},
-								NewText: newText,
-							},
-						)
-					}
-				}
-				for i := 0; i < int(currentNode.ChildCount()); i++ {
-					stack.Push(currentNode.Child(i))
-				}
-			}
-			return result
-		}
+
 		getTrailingWhitespaceEdits := func() []protocol.TextEdit {
 			result := []protocol.TextEdit{}
 			sourceCode := doc.SourceCode
@@ -424,72 +371,83 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 					}
 				}
 				formatParamList := func() {
-					paramsNode := funcDeclarationNode.ChildByFieldName("parameters")
-					startCol := paramsNode.StartPoint().Column
-					paramIdx := 0
-					lastDeclaratorPos := 0
-					for i := 0; i < int(paramsNode.ChildCount()); i++ {
-						currentNode := paramsNode.Child(i)
-						if currentNode.Type() == "parameter_declaration" {
-							typeNode := currentNode.ChildByFieldName("type")
-							declaratorNode := currentNode.ChildByFieldName("declarator")
-							if paramIdx == 0 && currentNode.StartPoint().Column-startCol > 1 {
+					formatParamSpacing := func(paramIdx, lastDeclaratorPos int, startCol uint32, currentNode, typeNode, declaratorNode *sitter.Node) {
+						if paramIdx == 0 && currentNode.StartPoint().Column-startCol > 1 {
+							result = append(
+								result,
+								protocol.TextEdit{
+									Range: protocol.Range{
+										Start: protocol.Position{
+											Line:      uint(currentNode.StartPoint().Row),
+											Character: uint(startCol) + 1,
+										},
+										End: protocol.Position{
+											Line:      uint(currentNode.StartPoint().Row),
+											Character: uint(currentNode.StartPoint().Column),
+										},
+									},
+									NewText: "",
+								},
+							)
+						} else if paramIdx > 0 {
+							if int(typeNode.StartPoint().Column)-lastDeclaratorPos == 1 {
 								result = append(
 									result,
 									protocol.TextEdit{
 										Range: protocol.Range{
 											Start: protocol.Position{
-												Line:      uint(currentNode.StartPoint().Row),
-												Character: uint(startCol) + 1,
+												Line:      uint(typeNode.StartPoint().Row),
+												Character: uint(lastDeclaratorPos + 1),
 											},
 											End: protocol.Position{
-												Line:      uint(currentNode.StartPoint().Row),
-												Character: uint(currentNode.StartPoint().Column),
+												Line:      uint(typeNode.StartPoint().Row),
+												Character: uint(lastDeclaratorPos + 1),
 											},
 										},
-										NewText: "",
+										NewText: " ",
 									},
 								)
-							} else if paramIdx > 0 {
-								if int(typeNode.StartPoint().Column)-lastDeclaratorPos == 1 {
-									result = append(
-										result,
-										protocol.TextEdit{
-											Range: protocol.Range{
-												Start: protocol.Position{
-													Line:      uint(typeNode.StartPoint().Row),
-													Character: uint(lastDeclaratorPos + 1),
-												},
-												End: protocol.Position{
-													Line:      uint(typeNode.StartPoint().Row),
-													Character: uint(lastDeclaratorPos + 1),
-												},
-											},
-											NewText: " ",
-										},
-									)
-								}
-								if int(typeNode.StartPoint().Column)-lastDeclaratorPos > 2 {
-									result = append(
-										result,
-										protocol.TextEdit{
-											Range: protocol.Range{
-												Start: protocol.Position{
-													Line:      uint(typeNode.StartPoint().Row),
-													Character: uint(lastDeclaratorPos + 1),
-												},
-												End: protocol.Position{
-													Line:      uint(typeNode.StartPoint().Row),
-													Character: uint(typeNode.StartPoint().Column),
-												},
-											},
-											NewText: " ",
-										},
-									)
-								}
 							}
+							if int(typeNode.StartPoint().Column)-lastDeclaratorPos > 2 {
+								result = append(
+									result,
+									protocol.TextEdit{
+										Range: protocol.Range{
+											Start: protocol.Position{
+												Line:      uint(typeNode.StartPoint().Row),
+												Character: uint(lastDeclaratorPos + 1),
+											},
+											End: protocol.Position{
+												Line:      uint(typeNode.StartPoint().Row),
+												Character: uint(typeNode.StartPoint().Column),
+											},
+										},
+										NewText: " ",
+									},
+								)
+							}
+						}
 
-							if declaratorNode.StartPoint().Column-typeNode.EndPoint().Column > 1 {
+					}
+					paramsNode := funcDeclarationNode.ChildByFieldName("parameters")
+					startCol := paramsNode.StartPoint().Column
+					paramIdx := 0
+					lastDeclaratorPos := 0
+					numChildren := int(paramsNode.ChildCount())
+					if numChildren == 0 {
+						return
+					}
+					// prevLine := paramsNode.Child(0).StartPoint().Row
+					for i := 0; i < numChildren; i++ {
+						currentNode := paramsNode.Child(i)
+						if currentNode.Type() == "parameter_declaration" {
+							typeNode := currentNode.ChildByFieldName("type")
+							declaratorNode := currentNode.ChildByFieldName("declarator")
+
+							formatParamSpacing(paramIdx, lastDeclaratorPos, startCol, currentNode, typeNode, declaratorNode)
+
+							shouldFormatTypeIdentifierSpacing := declaratorNode.StartPoint().Column-typeNode.EndPoint().Column > 1
+							if shouldFormatTypeIdentifierSpacing {
 								result = append(
 									result,
 									protocol.TextEdit{
@@ -509,6 +467,7 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 							}
 
 							lastDeclaratorPos = int(declaratorNode.EndPoint().Column)
+							// prevLine = uint32(typeNode.StartPoint().Row)
 							paramIdx++
 						}
 					}
@@ -519,7 +478,7 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 			}
 			return result
 		}
-		edits = append(edits, getIndentationEdits()...)
+		edits = append(edits, format.GetIndentationEdits(doc.RootNode)...)
 		edits = append(edits, getTrailingWhitespaceEdits()...)
 		edits = append(edits, getFuncDefEdits()...)
 		editsBytes, err := json.Marshal(edits)
@@ -1664,13 +1623,4 @@ func newNullResponseMessage(id int64) protocol.ResponseMessage {
 		ID:     id,
 		Result: json.RawMessage(protocol.NullResult),
 	}
-}
-
-func isSupportedIndentationNodeType(nodeType string) bool {
-	for _, supportedType := range supportedIndentationNodeTypes {
-		if nodeType == supportedType {
-			return true
-		}
-	}
-	return false
 }
