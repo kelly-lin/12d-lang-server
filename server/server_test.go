@@ -530,6 +530,132 @@ if (1) {}
 					},
 				},
 			},
+			{
+				Desc: "func def - parameter list - param spacing - insert indent first param",
+				SourceCode: `Integer Identity(
+Integer subject) {}`,
+				Want: []protocol.TextEdit{
+					{
+						Range: protocol.Range{
+							Start: protocol.Position{
+								Line:      1,
+								Character: 0,
+							},
+							End: protocol.Position{
+								Line:      1,
+								Character: 0,
+							},
+						},
+						NewText: "    ",
+					},
+				},
+			},
+			{
+				Desc: "func def - parameter list - param indentation - insert partial indent first param",
+				SourceCode: `Integer Identity(
+  Integer subject) {}`,
+				Want: []protocol.TextEdit{
+					{
+						Range: protocol.Range{
+							Start: protocol.Position{
+								Line:      1,
+								Character: 0,
+							},
+							End: protocol.Position{
+								Line:      1,
+								Character: 2,
+							},
+						},
+						NewText: "    ",
+					},
+				},
+			},
+			{
+				Desc: "func def - parameter list - param indentation - insert indent first param - multiple param",
+				SourceCode: `Integer Add(
+    Integer a, Integer b) {}`,
+				Want: []protocol.TextEdit{
+					{
+						Range: protocol.Range{
+							Start: protocol.Position{
+								Line:      1,
+								Character: 0,
+							},
+							End: protocol.Position{
+								Line:      1,
+								Character: 4,
+							},
+						},
+						NewText: "    ",
+					},
+				},
+			},
+			{
+				Desc: "func def - parameter list - param indentation - insert indent multiple params",
+				SourceCode: `Integer Add(
+Integer a,
+Integer b) {}`,
+				Want: []protocol.TextEdit{
+					{
+						Range: protocol.Range{
+							Start: protocol.Position{
+								Line:      1,
+								Character: 0,
+							},
+							End: protocol.Position{
+								Line:      1,
+								Character: 0,
+							},
+						},
+						NewText: "    ",
+					},
+					{
+						Range: protocol.Range{
+							Start: protocol.Position{
+								Line:      2,
+								Character: 0,
+							},
+							End: protocol.Position{
+								Line:      2,
+								Character: 0,
+							},
+						},
+						NewText: "    ",
+					},
+				},
+			},
+			// {
+			// 	Desc:       "func def - parameter list - empty param list on same line should join",
+			// 	SourceCode: `void Null(   ) {}`,
+			// 	Want: []protocol.TextEdit{
+			// 		{
+			// 			Range: protocol.Range{
+			// 				Start: protocol.Position{
+			// 					Line:      0,
+			// 					Character: 25,
+			// 				},
+			// 				End: protocol.Position{
+			// 					Line:      0,
+			// 					Character: 27,
+			// 				},
+			// 			},
+			// 			NewText: " ",
+			// 		},
+			// 		{
+			// 			Range: protocol.Range{
+			// 				Start: protocol.Position{
+			// 					Line:      0,
+			// 					Character: 37,
+			// 				},
+			// 				End: protocol.Position{
+			// 					Line:      0,
+			// 					Character: 42,
+			// 				},
+			// 			},
+			// 			NewText: " ",
+			// 		},
+			// 	},
+			// },
 		}
 		for _, testCase := range testCases {
 			t.Run(testCase.Desc, func(t *testing.T) {

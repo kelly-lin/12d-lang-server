@@ -8,7 +8,7 @@ import (
 	sitter "github.com/smacker/go-tree-sitter"
 )
 
-// Get formatting edits for block indentations,
+// Get formatting edits for block indentations.
 func GetIndentationEdits(node *sitter.Node) []protocol.TextEdit {
 	result := []protocol.TextEdit{}
 	stack := parser.NewStack()
@@ -190,20 +190,66 @@ func formatDeclarationAndBodySpacing(bodyNode, funcDeclarationNode, returnTypeNo
 func formatParamList(funcDeclarationNode *sitter.Node) []protocol.TextEdit {
 	var result []protocol.TextEdit
 	paramsNode := funcDeclarationNode.ChildByFieldName("parameters")
-	startCol := paramsNode.StartPoint().Column
 	paramIdx := 0
-	lastDeclaratorPos := 0
 	numChildren := int(paramsNode.ChildCount())
 	if numChildren == 0 {
 		return []protocol.TextEdit{}
 	}
-	// prevLine := paramsNode.Child(0).StartPoint().Row
+	prevLine := -1
+	var prevNode *sitter.Node
 	for i := 0; i < numChildren; i++ {
 		currentNode := paramsNode.Child(i)
 		if currentNode.Type() == "parameter_declaration" {
+			if prevNode != nil {
+				result = append(result, formatParamSpacing(currentNode, prevNode)...)
+			}
+
+			if prevLine < int(currentNode.StartPoint().Row) {
+				if int(currentNode.StartPoint().Row) == int(funcDeclarationNode.StartPoint().Row) {
+					funcIdentifierNode := funcDeclarationNode.ChildByFieldName("declarator")
+					if currentNode.StartPoint().Column-funcIdentifierNode.EndPoint().Column > 1 {
+						result = append(
+							result,
+							protocol.TextEdit{
+								Range: protocol.Range{
+									Start: protocol.Position{
+										Line:      uint(currentNode.StartPoint().Row),
+										Character: uint(funcIdentifierNode.EndPoint().Column) + 1,
+									},
+									End: protocol.Position{
+										Line:      uint(currentNode.StartPoint().Row),
+										Character: uint(currentNode.StartPoint().Column),
+									},
+								},
+								NewText: "",
+							},
+						)
+					}
+				} else {
+					// if currentNode.StartPoint().Column < 5 {
+					result = append(
+						result,
+						protocol.TextEdit{
+							Range: protocol.Range{
+								Start: protocol.Position{
+									Line:      uint(currentNode.StartPoint().Row),
+									Character: 0,
+								},
+								End: protocol.Position{
+									Line:      uint(currentNode.StartPoint().Row),
+									Character: uint(currentNode.StartPoint().Column),
+								},
+							},
+							NewText: "    ",
+						},
+					)
+					// }
+				}
+				prevLine = int(currentNode.StartPoint().Row)
+			}
+
 			typeNode := currentNode.ChildByFieldName("type")
 			declaratorNode := currentNode.ChildByFieldName("declarator")
-			result = append(result, formatParamSpacing(paramIdx, lastDeclaratorPos, startCol, currentNode, typeNode, declaratorNode)...)
 			shouldFormatTypeIdentifierSpacing := declaratorNode.StartPoint().Column-typeNode.EndPoint().Column > 1
 			if shouldFormatTypeIdentifierSpacing {
 				result = append(
@@ -223,9 +269,8 @@ func formatParamList(funcDeclarationNode *sitter.Node) []protocol.TextEdit {
 					},
 				)
 			}
-
-			lastDeclaratorPos = int(declaratorNode.EndPoint().Column)
 			// prevLine = uint32(typeNode.StartPoint().Row)
+			prevNode = currentNode
 			paramIdx++
 		}
 	}
@@ -236,62 +281,46 @@ func formatParamList(funcDeclarationNode *sitter.Node) []protocol.TextEdit {
 // The spacing of "Integer a," and "Integer b" "void Foo(Integer a, Integer b)".
 // This function will return the edits so that the number of spaces between the
 // comma after "a" and "Integer" is exactly 1.
-func formatParamSpacing(paramIdx, lastDeclaratorPos int, startCol uint32, currentNode, typeNode, declaratorNode *sitter.Node) []protocol.TextEdit {
+func formatParamSpacing(currentNode, prevNode *sitter.Node) []protocol.TextEdit {
 	var result []protocol.TextEdit
-	if paramIdx == 0 && currentNode.StartPoint().Column-startCol > 1 {
+	currentTypeNode := currentNode.ChildByFieldName("type")
+	prevDeclaratorEndCol := int(prevNode.ChildByFieldName("declarator").EndPoint().Column)
+	currentTypeNodeStartCol := int(currentTypeNode.StartPoint().Column)
+	if currentTypeNodeStartCol-prevDeclaratorEndCol == 1 {
 		result = append(
 			result,
 			protocol.TextEdit{
 				Range: protocol.Range{
 					Start: protocol.Position{
-						Line:      uint(currentNode.StartPoint().Row),
-						Character: uint(startCol) + 1,
+						Line:      uint(currentTypeNode.StartPoint().Row),
+						Character: uint(prevDeclaratorEndCol + 1),
 					},
 					End: protocol.Position{
-						Line:      uint(currentNode.StartPoint().Row),
-						Character: uint(currentNode.StartPoint().Column),
+						Line:      uint(currentTypeNode.StartPoint().Row),
+						Character: uint(prevDeclaratorEndCol + 1),
 					},
 				},
-				NewText: "",
+				NewText: " ",
 			},
 		)
-	} else if paramIdx > 0 {
-		if int(typeNode.StartPoint().Column)-lastDeclaratorPos == 1 {
-			result = append(
-				result,
-				protocol.TextEdit{
-					Range: protocol.Range{
-						Start: protocol.Position{
-							Line:      uint(typeNode.StartPoint().Row),
-							Character: uint(lastDeclaratorPos + 1),
-						},
-						End: protocol.Position{
-							Line:      uint(typeNode.StartPoint().Row),
-							Character: uint(lastDeclaratorPos + 1),
-						},
+	}
+	if currentTypeNodeStartCol-prevDeclaratorEndCol > 2 {
+		result = append(
+			result,
+			protocol.TextEdit{
+				Range: protocol.Range{
+					Start: protocol.Position{
+						Line:      uint(currentTypeNode.StartPoint().Row),
+						Character: uint(prevDeclaratorEndCol + 1),
 					},
-					NewText: " ",
-				},
-			)
-		}
-		if int(typeNode.StartPoint().Column)-lastDeclaratorPos > 2 {
-			result = append(
-				result,
-				protocol.TextEdit{
-					Range: protocol.Range{
-						Start: protocol.Position{
-							Line:      uint(typeNode.StartPoint().Row),
-							Character: uint(lastDeclaratorPos + 1),
-						},
-						End: protocol.Position{
-							Line:      uint(typeNode.StartPoint().Row),
-							Character: uint(typeNode.StartPoint().Column),
-						},
+					End: protocol.Position{
+						Line:      uint(currentTypeNode.StartPoint().Row),
+						Character: uint(currentTypeNode.StartPoint().Column),
 					},
-					NewText: " ",
 				},
-			)
-		}
+				NewText: " ",
+			},
+		)
 	}
 	return result
 }
