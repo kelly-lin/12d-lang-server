@@ -315,6 +315,26 @@ if (1) {}
 				},
 			},
 			{
+				Desc: "func def - spacing - parameter list-opening body - insert space",
+				SourceCode: `void helloworld(
+    Integer a){}`,
+				Want: []protocol.TextEdit{
+					{
+						Range: protocol.Range{
+							Start: protocol.Position{
+								Line:      1,
+								Character: 14,
+							},
+							End: protocol.Position{
+								Line:      1,
+								Character: 14,
+							},
+						},
+						NewText: " ",
+					},
+				},
+			},
+			{
 				Desc:       "func def - spacing - parameter list-opening body - trim space",
 				SourceCode: `void main()  {}`,
 				Want: []protocol.TextEdit{
@@ -574,21 +594,7 @@ Integer subject) {}`,
 				Desc: "func def - parameter list - param indentation - insert indent first param - multiple param",
 				SourceCode: `Integer Add(
     Integer a, Integer b) {}`,
-				Want: []protocol.TextEdit{
-					{
-						Range: protocol.Range{
-							Start: protocol.Position{
-								Line:      1,
-								Character: 0,
-							},
-							End: protocol.Position{
-								Line:      1,
-								Character: 4,
-							},
-						},
-						NewText: "    ",
-					},
-				},
+				Want: []protocol.TextEdit{},
 			},
 			{
 				Desc: "func def - parameter list - param indentation - insert indent multiple params",

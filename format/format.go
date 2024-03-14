@@ -125,7 +125,7 @@ func GetFuncDefEdits(rootNode *sitter.Node) []protocol.TextEdit {
 		bodyNode := currentNode.ChildByFieldName("body")
 
 		result = append(result, formatReturnTypeAndDeclarationSpacing(funcDeclarationNode, returnTypeNode)...)
-		result = append(result, formatDeclarationAndBodySpacing(bodyNode, funcDeclarationNode, returnTypeNode)...)
+		result = append(result, formatDeclarationAndBodySpacing(bodyNode, funcDeclarationNode)...)
 		result = append(result, formatParamList(funcDeclarationNode)...)
 	}
 	return result
@@ -161,11 +161,11 @@ func formatReturnTypeAndDeclarationSpacing(funcDeclarationNode, returnTypeNode *
 // Get the formatting edits for the spacing between the ending parenthesis of
 // the function parameter list and opening body brace. i.e. the space between
 // the ")" and "{" in "void Foo() {}".
-func formatDeclarationAndBodySpacing(bodyNode, funcDeclarationNode, returnTypeNode *sitter.Node) []protocol.TextEdit {
+func formatDeclarationAndBodySpacing(bodyNode, funcDeclarationNode *sitter.Node) []protocol.TextEdit {
 	result := []protocol.TextEdit{}
 	numSpaces := bodyNode.StartPoint().Column - funcDeclarationNode.EndPoint().Column
 	if numSpaces != 1 {
-		lineNum := uint(returnTypeNode.StartPoint().Row)
+		lineNum := uint(bodyNode.StartPoint().Row)
 		result = append(
 			result,
 			protocol.TextEdit{
@@ -226,24 +226,24 @@ func formatParamList(funcDeclarationNode *sitter.Node) []protocol.TextEdit {
 						)
 					}
 				} else {
-					// if currentNode.StartPoint().Column < 5 {
-					result = append(
-						result,
-						protocol.TextEdit{
-							Range: protocol.Range{
-								Start: protocol.Position{
-									Line:      uint(currentNode.StartPoint().Row),
-									Character: 0,
+					if currentNode.StartPoint().Column < 4 {
+						result = append(
+							result,
+							protocol.TextEdit{
+								Range: protocol.Range{
+									Start: protocol.Position{
+										Line:      uint(currentNode.StartPoint().Row),
+										Character: 0,
+									},
+									End: protocol.Position{
+										Line:      uint(currentNode.StartPoint().Row),
+										Character: uint(currentNode.StartPoint().Column),
+									},
 								},
-								End: protocol.Position{
-									Line:      uint(currentNode.StartPoint().Row),
-									Character: uint(currentNode.StartPoint().Column),
-								},
+								NewText: "    ",
 							},
-							NewText: "    ",
-						},
-					)
-					// }
+						)
+					}
 				}
 				prevLine = int(currentNode.StartPoint().Row)
 			}
