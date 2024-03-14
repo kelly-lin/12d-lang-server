@@ -409,25 +409,108 @@ if (1) {}
 					},
 				},
 			},
-			// {
-			// 	Desc:       "func param list separated by single comma and space",
-			// 	SourceCode: `Integer Add(Integer addend,  Integer augend){}`,
-			// 	Want: []protocol.TextEdit{
-			// 		{
-			// 			Range: protocol.Range{
-			// 				Start: protocol.Position{
-			// 					Line:      0,
-			// 					Character: 27,
-			// 				},
-			// 				End: protocol.Position{
-			// 					Line:      0,
-			// 					Character: 29,
-			// 				},
-			// 			},
-			// 			NewText: " ",
-			// 		},
-			// 	},
-			// },
+			{
+				Desc:       "func def - parameter list - param spacing - insert single space between separator and type - single param",
+				SourceCode: `void Null(Integer a,Integer b) {}`,
+				Want: []protocol.TextEdit{
+					{
+						Range: protocol.Range{
+							Start: protocol.Position{
+								Line:      0,
+								Character: 20,
+							},
+							End: protocol.Position{
+								Line:      0,
+								Character: 20,
+							},
+						},
+						NewText: " ",
+					},
+				},
+			},
+			{
+				Desc:       "func def - parameter list - param spacing - insert single space between separator and type - multiple params",
+				SourceCode: `void Null(Integer a,Integer b,Integer c) {}`,
+				Want: []protocol.TextEdit{
+					{
+						Range: protocol.Range{
+							Start: protocol.Position{
+								Line:      0,
+								Character: 20,
+							},
+							End: protocol.Position{
+								Line:      0,
+								Character: 20,
+							},
+						},
+						NewText: " ",
+					},
+					{
+						Range: protocol.Range{
+							Start: protocol.Position{
+								Line:      0,
+								Character: 30,
+							},
+							End: protocol.Position{
+								Line:      0,
+								Character: 30,
+							},
+						},
+						NewText: " ",
+					},
+				},
+			},
+			{
+				Desc:       "func param list separated by single comma and space",
+				SourceCode: `Integer Add(Integer addend,  Integer augend) {}`,
+				Want: []protocol.TextEdit{
+					{
+						Range: protocol.Range{
+							Start: protocol.Position{
+								Line:      0,
+								Character: 27,
+							},
+							End: protocol.Position{
+								Line:      0,
+								Character: 29,
+							},
+						},
+						NewText: " ",
+					},
+				},
+			},
+			{
+				Desc:       "func param list separated by single comma and space - multiple param",
+				SourceCode: `Integer Volume(Integer w,  Integer d,     Integer h) {}`,
+				Want: []protocol.TextEdit{
+					{
+						Range: protocol.Range{
+							Start: protocol.Position{
+								Line:      0,
+								Character: 25,
+							},
+							End: protocol.Position{
+								Line:      0,
+								Character: 27,
+							},
+						},
+						NewText: " ",
+					},
+					{
+						Range: protocol.Range{
+							Start: protocol.Position{
+								Line:      0,
+								Character: 37,
+							},
+							End: protocol.Position{
+								Line:      0,
+								Character: 42,
+							},
+						},
+						NewText: " ",
+					},
+				},
+			},
 		}
 		for _, testCase := range testCases {
 			t.Run(testCase.Desc, func(t *testing.T) {

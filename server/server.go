@@ -426,10 +426,13 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 				formatParamList := func() {
 					paramsNode := funcDeclarationNode.ChildByFieldName("parameters")
 					startCol := paramsNode.StartPoint().Column
+					paramIdx := 0
+					lastDeclaratorPos := 0
 					for i := 0; i < int(paramsNode.ChildCount()); i++ {
 						currentNode := paramsNode.Child(i)
-						paramIdx := 0
 						if currentNode.Type() == "parameter_declaration" {
+							typeNode := currentNode.ChildByFieldName("type")
+							declaratorNode := currentNode.ChildByFieldName("declarator")
 							if paramIdx == 0 && currentNode.StartPoint().Column-startCol > 1 {
 								result = append(
 									result,
@@ -447,9 +450,45 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 										NewText: "",
 									},
 								)
+							} else if paramIdx > 0 {
+								if int(typeNode.StartPoint().Column)-lastDeclaratorPos == 1 {
+									result = append(
+										result,
+										protocol.TextEdit{
+											Range: protocol.Range{
+												Start: protocol.Position{
+													Line:      uint(typeNode.StartPoint().Row),
+													Character: uint(lastDeclaratorPos + 1),
+												},
+												End: protocol.Position{
+													Line:      uint(typeNode.StartPoint().Row),
+													Character: uint(lastDeclaratorPos + 1),
+												},
+											},
+											NewText: " ",
+										},
+									)
+								}
+								if int(typeNode.StartPoint().Column)-lastDeclaratorPos > 2 {
+									result = append(
+										result,
+										protocol.TextEdit{
+											Range: protocol.Range{
+												Start: protocol.Position{
+													Line:      uint(typeNode.StartPoint().Row),
+													Character: uint(lastDeclaratorPos + 1),
+												},
+												End: protocol.Position{
+													Line:      uint(typeNode.StartPoint().Row),
+													Character: uint(typeNode.StartPoint().Column),
+												},
+											},
+											NewText: " ",
+										},
+									)
+								}
 							}
-							typeNode := currentNode.ChildByFieldName("type")
-							declaratorNode := currentNode.ChildByFieldName("declarator")
+
 							if declaratorNode.StartPoint().Column-typeNode.EndPoint().Column > 1 {
 								result = append(
 									result,
@@ -468,6 +507,8 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 									},
 								)
 							}
+
+							lastDeclaratorPos = int(declaratorNode.EndPoint().Column)
 							paramIdx++
 						}
 					}
