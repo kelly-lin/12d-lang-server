@@ -11,7 +11,8 @@ Language server for the 12d programming language (12dPL) conforming to the
 4. [Configuration](#configuration)
 5. [Design Decisions](#design-decisions)
 6. [Features](#features)
-7. [Contributing](#contributing)
+7. [Roadmap](#roadmap)
+8. [Contributing](#contributing)
 
 ## Dependencies
 
@@ -53,10 +54,18 @@ The language server can be configured by passing in the below options to the
 - Rename symbol.
 - Find references.
 
-## Planned features
+## Roadmap
 
-- Autoformatting.
-- Autocompletion.
+- [x] Go to definition.
+- [x] Hover support.
+  - [x] User defined function documentation in markdown.
+- [x] Rename symbol.
+- [x] Find references.
+- [ ] Autoformatting.
+- [ ] Autocompletion.
+- [ ] Includes.
+  - [x] Include directory references.
+  - [ ] Support relative path includes.
 
 ## Contributing
 
