@@ -13,25 +13,6 @@ func GetIndentationEdits(node *sitter.Node) []protocol.TextEdit {
 	result := []protocol.TextEdit{}
 	stack := parser.NewStack()
 	stack.Push(node)
-	getIndentLevel := func(startNode *sitter.Node) int {
-		indentLevel := 0
-		currentNode := startNode.Parent()
-		for currentNode != nil {
-			if currentNode.Type() == "compound_statement" {
-				indentLevel++
-			}
-			currentNode = currentNode.Parent()
-		}
-		return indentLevel
-	}
-	buildString := func(length int) string {
-		sb := strings.Builder{}
-		for i := 0; i < length; i++ {
-			sb.WriteRune(' ')
-		}
-		newText := sb.String()
-		return newText
-	}
 	for stack.HasItems() {
 		currentNode, _ := stack.Pop()
 		nodeType := currentNode.Type()
@@ -40,7 +21,7 @@ func GetIndentationEdits(node *sitter.Node) []protocol.TextEdit {
 		currentIndentation := currentNode.StartPoint().Column
 		if nodeType == "if_statement" {
 			if targetIndentation != int(currentIndentation) {
-				newText := buildString(targetIndentation)
+				newText := buildIndentText(targetIndentation)
 				result = append(
 					result,
 					protocol.TextEdit{
@@ -81,7 +62,7 @@ func GetIndentationEdits(node *sitter.Node) []protocol.TextEdit {
 							},
 						)
 					} else {
-						newText := buildString(targetIndentation)
+						newText := buildIndentText(targetIndentation)
 						result = append(
 							result,
 							protocol.TextEdit{
@@ -104,7 +85,7 @@ func GetIndentationEdits(node *sitter.Node) []protocol.TextEdit {
 		}
 		if nodeType == "declaration" && currentNode.Parent().Type() != "for_statement" || nodeType == "while_statement" || nodeType == "function_definition" || nodeType == "for_statement" {
 			if targetIndentation != int(currentIndentation) {
-				newText := buildString(targetIndentation)
+				newText := buildIndentText(targetIndentation)
 				result = append(
 					result,
 					protocol.TextEdit{
@@ -340,7 +321,6 @@ func formatParamList(funcDeclarationNode *sitter.Node) []protocol.TextEdit {
 					},
 				)
 			}
-			// prevLine = uint32(typeNode.StartPoint().Row)
 			prevNode = currentNode
 			paramIdx++
 		}
@@ -394,4 +374,27 @@ func formatParamSpacing(currentNode, prevNode *sitter.Node) []protocol.TextEdit 
 		)
 	}
 	return result
+}
+
+// Get the indentation level of the start node.
+func getIndentLevel(startNode *sitter.Node) int {
+	indentLevel := 0
+	currentNode := startNode.Parent()
+	for currentNode != nil {
+		if currentNode.Type() == "compound_statement" {
+			indentLevel++
+		}
+		currentNode = currentNode.Parent()
+	}
+	return indentLevel
+}
+
+// Build the indentation text with the given length.
+func buildIndentText(length int) string {
+	sb := strings.Builder{}
+	for i := 0; i < length; i++ {
+		sb.WriteRune(' ')
+	}
+	newText := sb.String()
+	return newText
 }
