@@ -382,7 +382,7 @@ func indentNode(currentNode *sitter.Node, targetIndentation int) []protocol.Text
 						Character: 0,
 					},
 					End: protocol.Position{
-						Line:      uint(currentNode.EndPoint().Row),
+						Line:      uint(currentNode.StartPoint().Row),
 						Character: uint(currentNode.StartPoint().Column),
 					},
 				},
