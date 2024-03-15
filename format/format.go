@@ -23,26 +23,7 @@ func GetIndentationEdits(node *sitter.Node) []protocol.TextEdit {
 		}
 		shouldIndentNode := nodeType == "declaration" && currentNode.Parent().Type() != "for_statement" || nodeType == "while_statement" || nodeType == "function_definition" || nodeType == "for_statement" || nodeType == "if_statement"
 		if shouldIndentNode {
-			currentIndentation := currentNode.StartPoint().Column
-			if targetIndentation != int(currentIndentation) {
-				newText := buildIndentText(targetIndentation)
-				result = append(
-					result,
-					protocol.TextEdit{
-						Range: protocol.Range{
-							Start: protocol.Position{
-								Line:      uint(currentNode.StartPoint().Row),
-								Character: 0,
-							},
-							End: protocol.Position{
-								Line:      uint(currentNode.EndPoint().Row),
-								Character: uint(currentNode.StartPoint().Column),
-							},
-						},
-						NewText: newText,
-					},
-				)
-			}
+			result = append(result, indentNode(currentNode, targetIndentation)...)
 		}
 		for i := 0; i < int(currentNode.ChildCount()); i++ {
 			stack.Push(currentNode.Child(i))
@@ -381,6 +362,31 @@ func formatCompoundStatementNode(currentNode *sitter.Node, targetIndentation int
 				)
 			}
 		}
+	}
+	return result
+}
+
+func indentNode(currentNode *sitter.Node, targetIndentation int) []protocol.TextEdit {
+	var result []protocol.TextEdit
+	currentIndentation := currentNode.StartPoint().Column
+	if targetIndentation != int(currentIndentation) {
+		newText := buildIndentText(targetIndentation)
+		result = append(
+			result,
+			protocol.TextEdit{
+				Range: protocol.Range{
+					Start: protocol.Position{
+						Line:      uint(currentNode.StartPoint().Row),
+						Character: 0,
+					},
+					End: protocol.Position{
+						Line:      uint(currentNode.EndPoint().Row),
+						Character: uint(currentNode.StartPoint().Column),
+					},
+				},
+				NewText: newText,
+			},
+		)
 	}
 	return result
 }
