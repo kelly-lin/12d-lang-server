@@ -8,6 +8,8 @@ import (
 	sitter "github.com/smacker/go-tree-sitter"
 )
 
+const numSpaces = 4
+
 // Get formatting edits for block indentations.
 func GetIndentationEdits(node *sitter.Node) []protocol.TextEdit {
 	result := []protocol.TextEdit{}
@@ -17,7 +19,7 @@ func GetIndentationEdits(node *sitter.Node) []protocol.TextEdit {
 		currentNode, _ := stack.Pop()
 		nodeType := currentNode.Type()
 		indentLevel := getIndentLevel(currentNode)
-		targetIndentation := indentLevel * 4
+		targetIndentation := indentLevel * numSpaces
 		if nodeType == "compound_statement" {
 			result = append(result, formatCompoundStatementNode(currentNode, targetIndentation)...)
 		}
