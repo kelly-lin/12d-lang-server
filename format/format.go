@@ -23,7 +23,7 @@ func GetIndentationEdits(node *sitter.Node) []protocol.TextEdit {
 		if nodeType == "compound_statement" {
 			result = append(result, formatCompoundStatementNode(currentNode, targetIndentation)...)
 		}
-		shouldIndentNode := nodeType == "declaration" && currentNode.Parent().Type() != "for_statement" || nodeType == "while_statement" || nodeType == "function_definition" || nodeType == "for_statement" || nodeType == "if_statement"
+		shouldIndentNode := nodeType == "declaration" && currentNode.Parent().Type() != "for_statement" || nodeType == "while_statement" || nodeType == "function_definition" || nodeType == "for_statement" || nodeType == "if_statement" && currentNode.Parent().Type() != "if_statement"
 		if shouldIndentNode {
 			result = append(result, indentNode(currentNode, targetIndentation)...)
 		}

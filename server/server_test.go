@@ -255,29 +255,29 @@ if (1) {}
 					},
 				},
 			},
-// 			{
-// 				Desc: "indentation - statements - if (else)",
-// 				SourceCode: `void Foo() {
-//     if (1) {
-// } else if(2){
-//     }
-// }`,
-// 				Want: []protocol.TextEdit{
-// 					{
-// 						Range: protocol.Range{
-// 							Start: protocol.Position{
-// 								Line:      2,
-// 								Character: 0,
-// 							},
-// 							End: protocol.Position{
-// 								Line:      2,
-// 								Character: 0,
-// 							},
-// 						},
-// 						NewText: "    ",
-// 					},
-// 				},
-// 			},
+			{
+				Desc: "indentation - statements - if (else)",
+				SourceCode: `void Foo() {
+    if (1) {
+} else if(2){
+    }
+}`,
+				Want: []protocol.TextEdit{
+					{
+						Range: protocol.Range{
+							Start: protocol.Position{
+								Line:      2,
+								Character: 0,
+							},
+							End: protocol.Position{
+								Line:      2,
+								Character: 0,
+							},
+						},
+						NewText: "    ",
+					},
+				},
+			},
 			{
 				Desc: "indentation - compound statements - func def - trim leading space",
 				SourceCode: `void Foo() {
