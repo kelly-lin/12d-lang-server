@@ -13,25 +13,30 @@ func GetIndentationEdits(node *sitter.Node) []protocol.TextEdit {
 	result := []protocol.TextEdit{}
 	stack := parser.NewStack()
 	stack.Push(node)
+	getIndentLevel := func(startNode *sitter.Node) int {
+		indentLevel := 0
+		currentNode := startNode.Parent()
+		for currentNode != nil {
+			if currentNode.Type() == "compound_statement" {
+				indentLevel++
+			}
+			currentNode = currentNode.Parent()
+		}
+		return indentLevel
+	}
 	for stack.HasItems() {
 		currentNode, _ := stack.Pop()
 		nodeType := currentNode.Type()
-		if isSupportedIndentationNodeType(nodeType) {
-			// HACK: we dont yet support formatting the children of for
-			// statement nodes. Skip the iteration for now.
-			if nodeType == "declaration" && currentNode.Parent() != nil && currentNode.Parent().Type() == "for_statement" {
-				continue
-			}
-			indentLevel := 0
-			currentParent := currentNode.Parent()
-			for currentParent != nil {
-				if currentParent.Type() == "compound_statement" {
-					indentLevel++
-				}
-				currentParent = currentParent.Parent()
-			}
-			targetIndentation := indentLevel * 4
-			currentIndentation := currentNode.StartPoint().Column
+		// if isSupportedIndentationNodeType(nodeType) {
+		// HACK: we dont yet support formatting the children of for
+		// statement nodes. Skip the iteration for now.
+		// if nodeType == "declaration" && currentNode.Parent() != nil && currentNode.Parent().Type() == "for_statement" {
+		// 	continue
+		// }
+		indentLevel := getIndentLevel(currentNode)
+		targetIndentation := indentLevel * 4
+		currentIndentation := currentNode.StartPoint().Column
+		if nodeType == "if_statement" {
 			if targetIndentation != int(currentIndentation) {
 				sb := strings.Builder{}
 				for i := 0; i < targetIndentation; i++ {
@@ -47,7 +52,79 @@ func GetIndentationEdits(node *sitter.Node) []protocol.TextEdit {
 								Character: 0,
 							},
 							End: protocol.Position{
+								Line:      uint(currentNode.EndPoint().Row),
+								Character: uint(currentNode.StartPoint().Column),
+							},
+						},
+						NewText: newText,
+					},
+				)
+			}
+		}
+		if nodeType == "compound_statement" {
+			if currentNode.EndPoint().Row > currentNode.StartPoint().Row {
+				currIndent := currentNode.EndPoint().Column - 1
+				if targetIndentation != int(currIndent) {
+					if targetIndentation == 0 {
+						result = append(
+							result,
+							protocol.TextEdit{
+								Range: protocol.Range{
+									Start: protocol.Position{
+										Line:      uint(currentNode.EndPoint().Row),
+										Character: 0,
+									},
+									End: protocol.Position{
+										Line:      uint(currentNode.EndPoint().Row),
+										Character: uint(currentNode.EndPoint().Column) - 1,
+									},
+								},
+								NewText: "",
+							},
+						)
+					} else {
+						sb := strings.Builder{}
+						for i := 0; i < targetIndentation; i++ {
+							sb.WriteRune(' ')
+						}
+						newText := sb.String()
+						result = append(
+							result,
+							protocol.TextEdit{
+								Range: protocol.Range{
+									Start: protocol.Position{
+										Line:      uint(currentNode.EndPoint().Row),
+										Character: 0,
+									},
+									End: protocol.Position{
+										Line:      uint(currentNode.EndPoint().Row),
+										Character: uint(currentNode.EndPoint().Column) - 1,
+									},
+								},
+								NewText: newText,
+							},
+						)
+					}
+				}
+			}
+		}
+		if nodeType == "declaration" && currentNode.Parent().Type() != "for_statement" || nodeType == "while_statement" || nodeType == "function_definition" || nodeType == "for_statement" {
+			if targetIndentation != int(currentIndentation) {
+				sb := strings.Builder{}
+				for i := 0; i < targetIndentation; i++ {
+					sb.WriteRune(' ')
+				}
+				newText := sb.String()
+				result = append(
+					result,
+					protocol.TextEdit{
+						Range: protocol.Range{
+							Start: protocol.Position{
 								Line:      uint(currentNode.StartPoint().Row),
+								Character: 0,
+							},
+							End: protocol.Position{
+								Line:      uint(currentNode.EndPoint().Row),
 								Character: uint(currentNode.StartPoint().Column),
 							},
 						},
@@ -71,6 +148,7 @@ func isSupportedIndentationNodeType(nodeType string) bool {
 		"while_statement",
 		"if_statement",
 		"function_definition",
+		"compound_statement",
 	} {
 		if nodeType == supportedType {
 			return true

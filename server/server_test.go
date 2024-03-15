@@ -235,7 +235,7 @@ while (1) {}
 				},
 			},
 			{
-				Desc: "indentation - statements - if",
+				Desc: "indentation - statements - if - insert indentation",
 				SourceCode: `void main() {
 if (1) {}
 }`,
@@ -255,8 +255,73 @@ if (1) {}
 					},
 				},
 			},
+// 			{
+// 				Desc: "indentation - statements - if (else)",
+// 				SourceCode: `void Foo() {
+//     if (1) {
+// } else if(2){
+//     }
+// }`,
+// 				Want: []protocol.TextEdit{
+// 					{
+// 						Range: protocol.Range{
+// 							Start: protocol.Position{
+// 								Line:      2,
+// 								Character: 0,
+// 							},
+// 							End: protocol.Position{
+// 								Line:      2,
+// 								Character: 0,
+// 							},
+// 						},
+// 						NewText: "    ",
+// 					},
+// 				},
+// 			},
 			{
-				Desc: "whitespace - trailing whitespace",
+				Desc: "indentation - compound statements - func def - trim leading space",
+				SourceCode: `void Foo() {
+    }`,
+				Want: []protocol.TextEdit{
+					{
+						Range: protocol.Range{
+							Start: protocol.Position{
+								Line:      1,
+								Character: 0,
+							},
+							End: protocol.Position{
+								Line:      1,
+								Character: 4,
+							},
+						},
+						NewText: "",
+					},
+				},
+			},
+			{
+				Desc: "indentation - compound statements - if statement - insert leading spaces",
+				SourceCode: `void Foo() {
+    if (1) {
+}
+}`,
+				Want: []protocol.TextEdit{
+					{
+						Range: protocol.Range{
+							Start: protocol.Position{
+								Line:      2,
+								Character: 0,
+							},
+							End: protocol.Position{
+								Line:      2,
+								Character: 0,
+							},
+						},
+						NewText: "    ",
+					},
+				},
+			},
+			{
+				Desc: "declaration - trailing whitespace",
 				SourceCode: `void main() {
     Integer a = 1;    
 }`,
@@ -714,11 +779,6 @@ Integer b) {}`,
 			// TODO: Function Expressions argument spacing. "Call(a,b,c);"
 			// TODO: Statement expressions. "if(a);"
 			// TODO: else if getting removed:
-			// void Foo() {
-			//  if(1){
-			// 	} else if(2){
-			// 	}
-			// }
 		}
 		for _, testCase := range testCases {
 			t.Run(testCase.Desc, func(t *testing.T) {
