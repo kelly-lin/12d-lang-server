@@ -24,6 +24,14 @@ func GetIndentationEdits(node *sitter.Node) []protocol.TextEdit {
 		}
 		return indentLevel
 	}
+	buildString := func(length int) string {
+		sb := strings.Builder{}
+		for i := 0; i < length; i++ {
+			sb.WriteRune(' ')
+		}
+		newText := sb.String()
+		return newText
+	}
 	for stack.HasItems() {
 		currentNode, _ := stack.Pop()
 		nodeType := currentNode.Type()
@@ -38,11 +46,7 @@ func GetIndentationEdits(node *sitter.Node) []protocol.TextEdit {
 		currentIndentation := currentNode.StartPoint().Column
 		if nodeType == "if_statement" {
 			if targetIndentation != int(currentIndentation) {
-				sb := strings.Builder{}
-				for i := 0; i < targetIndentation; i++ {
-					sb.WriteRune(' ')
-				}
-				newText := sb.String()
+				newText := buildString(targetIndentation)
 				result = append(
 					result,
 					protocol.TextEdit{
@@ -83,11 +87,7 @@ func GetIndentationEdits(node *sitter.Node) []protocol.TextEdit {
 							},
 						)
 					} else {
-						sb := strings.Builder{}
-						for i := 0; i < targetIndentation; i++ {
-							sb.WriteRune(' ')
-						}
-						newText := sb.String()
+						newText := buildString(targetIndentation)
 						result = append(
 							result,
 							protocol.TextEdit{
@@ -110,11 +110,7 @@ func GetIndentationEdits(node *sitter.Node) []protocol.TextEdit {
 		}
 		if nodeType == "declaration" && currentNode.Parent().Type() != "for_statement" || nodeType == "while_statement" || nodeType == "function_definition" || nodeType == "for_statement" {
 			if targetIndentation != int(currentIndentation) {
-				sb := strings.Builder{}
-				for i := 0; i < targetIndentation; i++ {
-					sb.WriteRune(' ')
-				}
-				newText := sb.String()
+				newText := buildString(targetIndentation)
 				result = append(
 					result,
 					protocol.TextEdit{
@@ -138,23 +134,6 @@ func GetIndentationEdits(node *sitter.Node) []protocol.TextEdit {
 		}
 	}
 	return result
-}
-
-func isSupportedIndentationNodeType(nodeType string) bool {
-	for _, supportedType := range []string{
-		"declaration",
-		"for_statement",
-		"switch_statement",
-		"while_statement",
-		"if_statement",
-		"function_definition",
-		"compound_statement",
-	} {
-		if nodeType == supportedType {
-			return true
-		}
-	}
-	return false
 }
 
 // Get formatting edits for trailing whitespaces.
