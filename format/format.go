@@ -83,7 +83,9 @@ func GetIndentationEdits(node *sitter.Node) []protocol.TextEdit {
 				}
 			}
 		}
-		if nodeType == "declaration" && currentNode.Parent().Type() != "for_statement" || nodeType == "while_statement" || nodeType == "function_definition" || nodeType == "for_statement" {
+
+		shouldIndentNode := nodeType == "declaration" && currentNode.Parent().Type() != "for_statement" || nodeType == "while_statement" || nodeType == "function_definition" || nodeType == "for_statement"
+		if shouldIndentNode {
 			currentIndentation := currentNode.StartPoint().Column
 			if targetIndentation != int(currentIndentation) {
 				newText := buildIndentText(targetIndentation)
