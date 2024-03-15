@@ -765,6 +765,28 @@ Integer b) {}`,
 					},
 				},
 			},
+			// TODO: Function Expressions argument spacing. "Call(a,b,c);"
+			{
+				Desc: "call expression - arg spacing - remove leading space",
+				SourceCode: `void main() {
+    Add( 1);
+}`,
+				Want: []protocol.TextEdit{
+					{
+						Range: protocol.Range{
+							Start: protocol.Position{
+								Line:      1,
+								Character: 8,
+							},
+							End: protocol.Position{
+								Line:      1,
+								Character: 9,
+							},
+						},
+						NewText: "",
+					},
+				},
+			},
 			// {
 			// 	Desc:       "func def - parameter list - empty param list on same line should join",
 			// 	SourceCode: `void Null(   ) {}`,
@@ -800,7 +822,6 @@ Integer b) {}`,
 			// TODO: Multiple var declaration spacing. "Integer a,b,c;"
 			// TODO: Assignment spacing. "Integer a=1;"
 			// TODO: Expressions spacing. "Integer a=1+1;"
-			// TODO: Function Expressions argument spacing. "Call(a,b,c);"
 			// TODO: Statement expressions. "if(a);"
 			// TODO: else if getting removed:
 		}

@@ -21,7 +21,7 @@ func GetIndentationEdits(node *sitter.Node) []protocol.TextEdit {
 		indentLevel := getIndentLevel(currentNode)
 		targetIndentation := indentLevel * numSpaces
 		if nodeType == "compound_statement" {
-			result = append(result, formatCompoundStatementNode(currentNode, targetIndentation)...)
+			result = append(result, indentCompoundStatementNode(currentNode, targetIndentation)...)
 		}
 		shouldIndentNode := nodeType == "declaration" && currentNode.Parent().Type() != "for_statement" || nodeType == "while_statement" || nodeType == "function_definition" || nodeType == "for_statement" || nodeType == "if_statement" && currentNode.Parent().Type() != "if_statement"
 		if shouldIndentNode {
@@ -322,7 +322,7 @@ func buildIndentText(length int) string {
 	return newText
 }
 
-func formatCompoundStatementNode(currentNode *sitter.Node, targetIndentation int) []protocol.TextEdit {
+func indentCompoundStatementNode(currentNode *sitter.Node, targetIndentation int) []protocol.TextEdit {
 	var result []protocol.TextEdit
 	if currentNode.EndPoint().Row > currentNode.StartPoint().Row {
 		currentIndentation := currentNode.EndPoint().Column - 1
@@ -389,6 +389,47 @@ func indentNode(currentNode *sitter.Node, targetIndentation int) []protocol.Text
 				NewText: newText,
 			},
 		)
+	}
+	return result
+}
+
+func GetCallExpressionEdits(node *sitter.Node, sourceCode []byte) []protocol.TextEdit {
+	result := []protocol.TextEdit{}
+	stack := parser.NewStack()
+	stack.Push(node)
+	for stack.HasItems() {
+		currentNode, _ := stack.Pop()
+		nodeType := currentNode.Type()
+		if nodeType == "call_expression" {
+			argsNode := currentNode.ChildByFieldName("arguments")
+			for i := 0; i < int(argsNode.ChildCount()); i++ {
+				argNode := argsNode.Child(i)
+				isArgNode := !(argNode.Content(sourceCode) == "(" || argNode.Content(sourceCode) == ")")
+				if isArgNode {
+					if argNode.StartPoint().Column-argsNode.Child(0).StartPoint().Column != 1 {
+						result = append(
+							result,
+							protocol.TextEdit{
+								Range: protocol.Range{
+									Start: protocol.Position{
+										Line:      uint(argsNode.Child(0).EndPoint().Row),
+										Character: uint(argsNode.Child(0).EndPoint().Column),
+									},
+									End: protocol.Position{
+										Line:      uint(argsNode.Child(0).EndPoint().Row),
+										Character: uint(argNode.StartPoint().Column),
+									},
+								},
+								NewText: "",
+							},
+						)
+					}
+				}
+			}
+		}
+		for i := 0; i < int(currentNode.ChildCount()); i++ {
+			stack.Push(currentNode.Child(i))
+		}
 	}
 	return result
 }

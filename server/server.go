@@ -286,6 +286,7 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 		edits = append(edits, format.GetIndentationEdits(doc.RootNode)...)
 		edits = append(edits, format.GetTrailingWhitespaceEdits(doc.SourceCode)...)
 		edits = append(edits, format.GetFuncDefEdits(doc.RootNode)...)
+		edits = append(edits, format.GetCallExpressionEdits(doc.RootNode, doc.SourceCode)...)
 		editsBytes, err := json.Marshal(edits)
 		if err != nil {
 			return protocol.ResponseMessage{}, 0, err
