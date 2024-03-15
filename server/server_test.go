@@ -354,6 +354,32 @@ if (1) {}
 				},
 			},
 			{
+				Desc: "func def - spacing - parameter list-opening body - body on new line - no edits",
+				SourceCode: `void main()
+{}`,
+				Want: []protocol.TextEdit{},
+			},
+			{
+				Desc: "func def - spacing - parameter list-opening body - body on new line - remove partial indentation",
+				SourceCode: `void main()
+  {}`,
+				Want: []protocol.TextEdit{
+					{
+						Range: protocol.Range{
+							Start: protocol.Position{
+								Line:      1,
+								Character: 0,
+							},
+							End: protocol.Position{
+								Line:      1,
+								Character: 2,
+							},
+						},
+						NewText: "",
+					},
+				},
+			},
+			{
 				Desc:       "func def - parameter list - param spacing - trim leading param type single space",
 				SourceCode: `void Null( Integer a) {}`,
 				Want: []protocol.TextEdit{
@@ -590,6 +616,26 @@ Integer subject) {}`,
 					},
 				},
 			},
+			// {
+			// 	Desc: "func def - parameter list - param indentation - remove indent first param",
+			// 	SourceCode: `Integer Identity(
+			//      Integer subject) {}`,
+			// 	Want: []protocol.TextEdit{
+			// 		{
+			// 			Range: protocol.Range{
+			// 				Start: protocol.Position{
+			// 					Line:      1,
+			// 					Character: 0,
+			// 				},
+			// 				End: protocol.Position{
+			// 					Line:      1,
+			// 					Character: 8,
+			// 				},
+			// 			},
+			// 			NewText: "    ",
+			// 		},
+			// 	},
+			// },
 			{
 				Desc: "func def - parameter list - param indentation - insert indent first param - multiple param",
 				SourceCode: `Integer Add(
@@ -662,6 +708,17 @@ Integer b) {}`,
 			// 		},
 			// 	},
 			// },
+			// TODO: Multiple var declaration spacing. "Integer a,b,c;"
+			// TODO: Assignment spacing. "Integer a=1;"
+			// TODO: Expressions spacing. "Integer a=1+1;"
+			// TODO: Function Expressions argument spacing. "Call(a,b,c);"
+			// TODO: Statement expressions. "if(a);"
+			// TODO: else if getting removed:
+			// void Foo() {
+			//  if(1){
+			// 	} else if(2){
+			// 	}
+			// }
 		}
 		for _, testCase := range testCases {
 			t.Run(testCase.Desc, func(t *testing.T) {

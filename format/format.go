@@ -162,6 +162,26 @@ func formatReturnTypeAndDeclarationSpacing(funcDeclarationNode, returnTypeNode *
 // the function parameter list and opening body brace. i.e. the space between
 // the ")" and "{" in "void Foo() {}".
 func formatDeclarationAndBodySpacing(bodyNode, funcDeclarationNode *sitter.Node) []protocol.TextEdit {
+	if bodyNode.StartPoint().Row > funcDeclarationNode.EndPoint().Row {
+		if bodyNode.StartPoint().Column > 0 {
+			return []protocol.TextEdit{
+				{
+					Range: protocol.Range{
+						Start: protocol.Position{
+							Line:      1,
+							Character: 0,
+						},
+						End: protocol.Position{
+							Line:      1,
+							Character: 2,
+						},
+					},
+					NewText: "",
+				},
+			}
+		}
+		return []protocol.TextEdit{}
+	}
 	result := []protocol.TextEdit{}
 	numSpaces := bodyNode.StartPoint().Column - funcDeclarationNode.EndPoint().Column
 	if numSpaces != 1 {
