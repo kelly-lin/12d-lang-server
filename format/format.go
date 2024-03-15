@@ -18,8 +18,8 @@ func GetIndentationEdits(node *sitter.Node) []protocol.TextEdit {
 		nodeType := currentNode.Type()
 		indentLevel := getIndentLevel(currentNode)
 		targetIndentation := indentLevel * 4
-		currentIndentation := currentNode.StartPoint().Column
 		if nodeType == "if_statement" {
+			currentIndentation := currentNode.StartPoint().Column
 			if targetIndentation != int(currentIndentation) {
 				newText := buildIndentText(targetIndentation)
 				result = append(
@@ -42,8 +42,8 @@ func GetIndentationEdits(node *sitter.Node) []protocol.TextEdit {
 		}
 		if nodeType == "compound_statement" {
 			if currentNode.EndPoint().Row > currentNode.StartPoint().Row {
-				currIndent := currentNode.EndPoint().Column - 1
-				if targetIndentation != int(currIndent) {
+				currentIndentation := currentNode.EndPoint().Column - 1
+				if targetIndentation != int(currentIndentation) {
 					if targetIndentation == 0 {
 						result = append(
 							result,
@@ -84,6 +84,7 @@ func GetIndentationEdits(node *sitter.Node) []protocol.TextEdit {
 			}
 		}
 		if nodeType == "declaration" && currentNode.Parent().Type() != "for_statement" || nodeType == "while_statement" || nodeType == "function_definition" || nodeType == "for_statement" {
+			currentIndentation := currentNode.StartPoint().Column
 			if targetIndentation != int(currentIndentation) {
 				newText := buildIndentText(targetIndentation)
 				result = append(
@@ -157,7 +158,7 @@ func GetFuncDefEdits(rootNode *sitter.Node) []protocol.TextEdit {
 		bodyNode := currentNode.ChildByFieldName("body")
 
 		result = append(result, formatReturnTypeAndDeclarationSpacing(funcDeclarationNode, returnTypeNode)...)
-		result = append(result, formatDeclarationAndBodySpacing(bodyNode, funcDeclarationNode)...)
+		result = append(result, formatFuncDeclarationAndBodySpacing(bodyNode, funcDeclarationNode)...)
 		result = append(result, formatParamList(funcDeclarationNode)...)
 	}
 	return result
@@ -193,7 +194,7 @@ func formatReturnTypeAndDeclarationSpacing(funcDeclarationNode, returnTypeNode *
 // Get the formatting edits for the spacing between the ending parenthesis of
 // the function parameter list and opening body brace. i.e. the space between
 // the ")" and "{" in "void Foo() {}".
-func formatDeclarationAndBodySpacing(bodyNode, funcDeclarationNode *sitter.Node) []protocol.TextEdit {
+func formatFuncDeclarationAndBodySpacing(bodyNode, funcDeclarationNode *sitter.Node) []protocol.TextEdit {
 	if bodyNode.StartPoint().Row > funcDeclarationNode.EndPoint().Row {
 		if bodyNode.StartPoint().Column > 0 {
 			return []protocol.TextEdit{
