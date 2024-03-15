@@ -35,12 +35,6 @@ func GetIndentationEdits(node *sitter.Node) []protocol.TextEdit {
 	for stack.HasItems() {
 		currentNode, _ := stack.Pop()
 		nodeType := currentNode.Type()
-		// if isSupportedIndentationNodeType(nodeType) {
-		// HACK: we dont yet support formatting the children of for
-		// statement nodes. Skip the iteration for now.
-		// if nodeType == "declaration" && currentNode.Parent() != nil && currentNode.Parent().Type() == "for_statement" {
-		// 	continue
-		// }
 		indentLevel := getIndentLevel(currentNode)
 		targetIndentation := indentLevel * 4
 		currentIndentation := currentNode.StartPoint().Column
