@@ -18,73 +18,10 @@ func GetIndentationEdits(node *sitter.Node) []protocol.TextEdit {
 		nodeType := currentNode.Type()
 		indentLevel := getIndentLevel(currentNode)
 		targetIndentation := indentLevel * 4
-		if nodeType == "if_statement" {
-			currentIndentation := currentNode.StartPoint().Column
-			if targetIndentation != int(currentIndentation) {
-				newText := buildIndentText(targetIndentation)
-				result = append(
-					result,
-					protocol.TextEdit{
-						Range: protocol.Range{
-							Start: protocol.Position{
-								Line:      uint(currentNode.StartPoint().Row),
-								Character: 0,
-							},
-							End: protocol.Position{
-								Line:      uint(currentNode.EndPoint().Row),
-								Character: uint(currentNode.StartPoint().Column),
-							},
-						},
-						NewText: newText,
-					},
-				)
-			}
-		}
 		if nodeType == "compound_statement" {
-			if currentNode.EndPoint().Row > currentNode.StartPoint().Row {
-				currentIndentation := currentNode.EndPoint().Column - 1
-				if targetIndentation != int(currentIndentation) {
-					if targetIndentation == 0 {
-						result = append(
-							result,
-							protocol.TextEdit{
-								Range: protocol.Range{
-									Start: protocol.Position{
-										Line:      uint(currentNode.EndPoint().Row),
-										Character: 0,
-									},
-									End: protocol.Position{
-										Line:      uint(currentNode.EndPoint().Row),
-										Character: uint(currentNode.EndPoint().Column) - 1,
-									},
-								},
-								NewText: "",
-							},
-						)
-					} else {
-						newText := buildIndentText(targetIndentation)
-						result = append(
-							result,
-							protocol.TextEdit{
-								Range: protocol.Range{
-									Start: protocol.Position{
-										Line:      uint(currentNode.EndPoint().Row),
-										Character: 0,
-									},
-									End: protocol.Position{
-										Line:      uint(currentNode.EndPoint().Row),
-										Character: uint(currentNode.EndPoint().Column) - 1,
-									},
-								},
-								NewText: newText,
-							},
-						)
-					}
-				}
-			}
+			result = append(result, formatCompoundStatementNode(currentNode, targetIndentation)...)
 		}
-
-		shouldIndentNode := nodeType == "declaration" && currentNode.Parent().Type() != "for_statement" || nodeType == "while_statement" || nodeType == "function_definition" || nodeType == "for_statement"
+		shouldIndentNode := nodeType == "declaration" && currentNode.Parent().Type() != "for_statement" || nodeType == "while_statement" || nodeType == "function_definition" || nodeType == "for_statement" || nodeType == "if_statement"
 		if shouldIndentNode {
 			currentIndentation := currentNode.StartPoint().Column
 			if targetIndentation != int(currentIndentation) {
@@ -400,4 +337,50 @@ func buildIndentText(length int) string {
 	}
 	newText := sb.String()
 	return newText
+}
+
+func formatCompoundStatementNode(currentNode *sitter.Node, targetIndentation int) []protocol.TextEdit {
+	var result []protocol.TextEdit
+	if currentNode.EndPoint().Row > currentNode.StartPoint().Row {
+		currentIndentation := currentNode.EndPoint().Column - 1
+		if targetIndentation != int(currentIndentation) {
+			if targetIndentation == 0 {
+				result = append(
+					result,
+					protocol.TextEdit{
+						Range: protocol.Range{
+							Start: protocol.Position{
+								Line:      uint(currentNode.EndPoint().Row),
+								Character: 0,
+							},
+							End: protocol.Position{
+								Line:      uint(currentNode.EndPoint().Row),
+								Character: uint(currentNode.EndPoint().Column) - 1,
+							},
+						},
+						NewText: "",
+					},
+				)
+			} else {
+				newText := buildIndentText(targetIndentation)
+				result = append(
+					result,
+					protocol.TextEdit{
+						Range: protocol.Range{
+							Start: protocol.Position{
+								Line:      uint(currentNode.EndPoint().Row),
+								Character: 0,
+							},
+							End: protocol.Position{
+								Line:      uint(currentNode.EndPoint().Row),
+								Character: uint(currentNode.EndPoint().Column) - 1,
+							},
+						},
+						NewText: newText,
+					},
+				)
+			}
+		}
+	}
+	return result
 }
