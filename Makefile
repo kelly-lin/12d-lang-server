@@ -44,5 +44,9 @@ gen-patch:
 	@./doc/4dm/mk_patch.py ./doc/4dm/generated.json  ./doc/4dm/patch.json
 
 .PHONY:
-vendor-parser:
-	@./scripts/vendor_parser.sh kelly-lin/tree-sitter-12dpl main ./parser
+vendor-parser-12dpl:
+	@./scripts/vendor_parser.sh kelly-lin/tree-sitter-12dpl main ./parser/12dpl
+
+.PHONY:
+vendor-parser-doxygen:
+	@./scripts/vendor_parser.sh tree-sitter-grammars/tree-sitter-doxygen master ./parser/doxygen
