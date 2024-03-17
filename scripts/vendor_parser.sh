@@ -80,7 +80,7 @@ main() {
 
 	mkdir -p "$target_dir"
 	printf '// Vendored commit %s
-%s' "$commit_hash" "$(printf "%s" "$parser_c_content" | sed 's|^#include <tree_sitter/parser.h>$|#include "parser.h"|')" >"$target_dir/parser.c"
+%s' "$commit_hash" "$(printf "%s" "$parser_c_content" | sed 's|^#include.*tree_sitter/parser.h.*$|#include "parser.h"|')" >"$target_dir/parser.c"
 
 	printf '// Vendored commit %s
 %s' "$commit_hash" "$parser_h_content" >"$target_dir/parser.h"
