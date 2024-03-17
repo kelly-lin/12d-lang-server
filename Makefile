@@ -45,4 +45,4 @@ gen-patch:
 
 .PHONY:
 vendor-parser:
-	@./scripts/vendor_parser.sh ./parser
+	@./scripts/vendor_parser.sh kelly-lin/tree-sitter-12dpl main ./parser
