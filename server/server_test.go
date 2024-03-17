@@ -914,6 +914,27 @@ Integer b) {}`,
 				},
 			},
 			{
+				Desc: "call expression - arg spacing - add space for call expression arg",
+				SourceCode: `void main() {
+    Add(1,Add(1, 1));
+}`,
+				Want: []protocol.TextEdit{
+					{
+						Range: protocol.Range{
+							Start: protocol.Position{
+								Line:      1,
+								Character: 10,
+							},
+							End: protocol.Position{
+								Line:      1,
+								Character: 10,
+							},
+						},
+						NewText: " ",
+					},
+				},
+			},
+			{
 				Desc: "call expression - arg spacing - empty param list on same line should join",
 				SourceCode: `void main() {
     DoNothing(   );
