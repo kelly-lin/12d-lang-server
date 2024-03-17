@@ -787,6 +787,111 @@ Integer b) {}`,
 					},
 				},
 			},
+			{
+				Desc: "call expression - arg spacing - add space between first and second args",
+				SourceCode: `void main() {
+    Add(1,2);
+}`,
+				Want: []protocol.TextEdit{
+					{
+						Range: protocol.Range{
+							Start: protocol.Position{
+								Line:      1,
+								Character: 10,
+							},
+							End: protocol.Position{
+								Line:      1,
+								Character: 10,
+							},
+						},
+						NewText: " ",
+					},
+				},
+			},
+			{
+				Desc: "call expression - arg spacing - add space between args second and third args",
+				SourceCode: `void main() {
+    Add(1, 2,3);
+}`,
+				Want: []protocol.TextEdit{
+					{
+						Range: protocol.Range{
+							Start: protocol.Position{
+								Line:      1,
+								Character: 13,
+							},
+							End: protocol.Position{
+								Line:      1,
+								Character: 13,
+							},
+						},
+						NewText: " ",
+					},
+				},
+			},
+			{
+				Desc: "call expression - arg spacing - trim space between first and second args",
+				SourceCode: `void main() {
+    Add(1,  2);
+}`,
+				Want: []protocol.TextEdit{
+					{
+						Range: protocol.Range{
+							Start: protocol.Position{
+								Line:      1,
+								Character: 10,
+							},
+							End: protocol.Position{
+								Line:      1,
+								Character: 12,
+							},
+						},
+						NewText: " ",
+					},
+				},
+			},
+			{
+				Desc: "call expression - arg spacing - trim space between first arg and separator",
+				SourceCode: `void main() {
+    Add(1 , 2);
+}`,
+				Want: []protocol.TextEdit{
+					{
+						Range: protocol.Range{
+							Start: protocol.Position{
+								Line:      1,
+								Character: 9,
+							},
+							End: protocol.Position{
+								Line:      1,
+								Character: 10,
+							},
+						},
+						NewText: "",
+					},
+				},
+			},
+			{
+				Desc: "call expression - arg spacing - trim space between second arg and separator",
+				SourceCode: `void main() {
+    Add(1, 2 , 3);
+}`,
+				Want: []protocol.TextEdit{
+					{
+						Range: protocol.Range{
+							Start: protocol.Position{
+								Line:      1,
+								Character: 12,
+							},
+							End: protocol.Position{
+								Line:      1,
+								Character: 13,
+							},
+						},
+						NewText: "",
+					},
+				},
+			},
 			// {
 			// 	Desc:       "func def - parameter list - empty param list on same line should join",
 			// 	SourceCode: `void Null(   ) {}`,

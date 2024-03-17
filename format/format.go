@@ -402,29 +402,84 @@ func GetCallExpressionEdits(node *sitter.Node, sourceCode []byte) []protocol.Tex
 		nodeType := currentNode.Type()
 		if nodeType == "call_expression" {
 			argsNode := currentNode.ChildByFieldName("arguments")
+			var prevArgNode *sitter.Node
+			var prevSeparatorNode *sitter.Node
 			for i := 0; i < int(argsNode.ChildCount()); i++ {
-				argNode := argsNode.Child(i)
-				isArgNode := !(argNode.Content(sourceCode) == "(" || argNode.Content(sourceCode) == ")")
-				if isArgNode {
-					if argNode.StartPoint().Column-argsNode.Child(0).StartPoint().Column != 1 {
+				currentNode := argsNode.Child(i)
+				isStartOrEndChar := currentNode.Content(sourceCode) == "(" || currentNode.Content(sourceCode) == ")"
+				if isStartOrEndChar {
+					continue
+				}
+				isSeparator := currentNode.Content(sourceCode) == ","
+				isFirstArg := prevArgNode == nil
+				if isSeparator {
+					separatorNode := currentNode
+					// Trim the space between the current separator node and
+					// the end of the previous argument.
+					if separatorNode.StartPoint().Column != prevArgNode.EndPoint().Column {
 						result = append(
 							result,
 							protocol.TextEdit{
 								Range: protocol.Range{
 									Start: protocol.Position{
-										Line:      uint(argsNode.Child(0).EndPoint().Row),
-										Character: uint(argsNode.Child(0).EndPoint().Column),
+										Line:      uint(prevArgNode.StartPoint().Row),
+										Character: uint(prevArgNode.EndPoint().Column),
 									},
 									End: protocol.Position{
-										Line:      uint(argsNode.Child(0).EndPoint().Row),
-										Character: uint(argNode.StartPoint().Column),
+										Line:      uint(prevArgNode.StartPoint().Row),
+										Character: uint(separatorNode.StartPoint().Column),
 									},
 								},
 								NewText: "",
 							},
 						)
 					}
+					prevSeparatorNode = currentNode
+					continue
 				}
+				numOpeningParenFirstArgSpaces := currentNode.StartPoint().Column-argsNode.Child(0).StartPoint().Column != 1
+				shouldTrimLeadingSpaceOfFirstArg := isFirstArg && numOpeningParenFirstArgSpaces
+				if shouldTrimLeadingSpaceOfFirstArg {
+					result = append(
+						result,
+						protocol.TextEdit{
+							Range: protocol.Range{
+								Start: protocol.Position{
+									Line:      uint(argsNode.Child(0).EndPoint().Row),
+									Character: uint(argsNode.Child(0).EndPoint().Column),
+								},
+								End: protocol.Position{
+									Line:      uint(argsNode.Child(0).EndPoint().Row),
+									Character: uint(currentNode.StartPoint().Column),
+								},
+							},
+							NewText: "",
+						},
+					)
+				}
+				if !isFirstArg && prevSeparatorNode != nil {
+					// Trim space between the start of the argument node and the
+					// previous separator node.
+					if currentNode.StartPoint().Column-prevSeparatorNode.StartPoint().Column != 2 {
+						result = append(
+							result,
+							protocol.TextEdit{
+								Range: protocol.Range{
+									Start: protocol.Position{
+										Line:      uint(prevArgNode.StartPoint().Row),
+										Character: uint(prevArgNode.EndPoint().Column) + 1,
+									},
+									End: protocol.Position{
+										Line:      uint(currentNode.StartPoint().Row),
+										Character: uint(currentNode.StartPoint().Column),
+									},
+								},
+								NewText: " ",
+							},
+						)
+					}
+				}
+				prevArgNode = currentNode
 			}
 		}
 		for i := 0; i < int(currentNode.ChildCount()); i++ {
