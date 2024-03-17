@@ -892,6 +892,48 @@ Integer b) {}`,
 					},
 				},
 			},
+			{
+				Desc: "call expression - arg spacing - trim space in nested call expression",
+				SourceCode: `void main() {
+    Add(1, Add(1 , 1));
+}`,
+				Want: []protocol.TextEdit{
+					{
+						Range: protocol.Range{
+							Start: protocol.Position{
+								Line:      1,
+								Character: 16,
+							},
+							End: protocol.Position{
+								Line:      1,
+								Character: 17,
+							},
+						},
+						NewText: "",
+					},
+				},
+			},
+			{
+				Desc: "call expression - arg spacing - empty param list on same line should join",
+				SourceCode: `void main() {
+    DoNothing(   );
+}`,
+				Want: []protocol.TextEdit{
+					{
+						Range: protocol.Range{
+							Start: protocol.Position{
+								Line:      1,
+								Character: 14,
+							},
+							End: protocol.Position{
+								Line:      1,
+								Character: 17,
+							},
+						},
+						NewText: "",
+					},
+				},
+			},
 			// {
 			// 	Desc:       "func def - parameter list - empty param list on same line should join",
 			// 	SourceCode: `void Null(   ) {}`,
@@ -900,27 +942,14 @@ Integer b) {}`,
 			// 			Range: protocol.Range{
 			// 				Start: protocol.Position{
 			// 					Line:      0,
-			// 					Character: 25,
+			// 					Character: 10,
 			// 				},
 			// 				End: protocol.Position{
 			// 					Line:      0,
-			// 					Character: 27,
+			// 					Character: 13,
 			// 				},
 			// 			},
-			// 			NewText: " ",
-			// 		},
-			// 		{
-			// 			Range: protocol.Range{
-			// 				Start: protocol.Position{
-			// 					Line:      0,
-			// 					Character: 37,
-			// 				},
-			// 				End: protocol.Position{
-			// 					Line:      0,
-			// 					Character: 42,
-			// 				},
-			// 			},
-			// 			NewText: " ",
+			// 			NewText: "",
 			// 		},
 			// 	},
 			// },

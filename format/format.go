@@ -402,6 +402,26 @@ func GetCallExpressionEdits(node *sitter.Node, sourceCode []byte) []protocol.Tex
 		nodeType := currentNode.Type()
 		if nodeType == "call_expression" {
 			argsNode := currentNode.ChildByFieldName("arguments")
+			if int(argsNode.ChildCount()) == 2 && argsNode.Child(0).Content(sourceCode) == "(" && argsNode.Child(1).Content(sourceCode) == ")" {
+				openingParenNode := argsNode.Child(0)
+				closingParenNode := argsNode.Child(1)
+				result = append(
+					result,
+					protocol.TextEdit{
+						Range: protocol.Range{
+							Start: protocol.Position{
+								Line:      uint(openingParenNode.StartPoint().Row),
+								Character: uint(openingParenNode.EndPoint().Column),
+							},
+							End: protocol.Position{
+								Line:      uint(openingParenNode.StartPoint().Row),
+								Character: uint(closingParenNode.StartPoint().Column),
+							},
+						},
+						NewText: "",
+					},
+				)
+			}
 			var prevArgNode *sitter.Node
 			var prevSeparatorNode *sitter.Node
 			for i := 0; i < int(argsNode.ChildCount()); i++ {
