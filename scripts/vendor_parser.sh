@@ -77,6 +77,7 @@ main() {
 		echo 'could not fetch parser.h'
 		exit 1
 	fi
+	scanner_c_content=$(curl -fs "https://raw.githubusercontent.com/$repo_ref/$commit_hash/src/scanner.c")
 
 	mkdir -p "$target_dir"
 	printf '// Vendored commit %s
@@ -84,6 +85,11 @@ main() {
 
 	printf '// Vendored commit %s
 %s' "$commit_hash" "$parser_h_content" >"$target_dir/parser.h"
+
+    if [ -n "$scanner_c_content" ]; then
+	printf '// Vendored commit %s
+%s' "$commit_hash" "$(printf "%s" "$scanner_c_content" | sed 's|^#include.*tree_sitter/parser.h.*$|#include "parser.h"|')" >"$target_dir/scanner.c"
+    fi
 }
 
 main "$@"
