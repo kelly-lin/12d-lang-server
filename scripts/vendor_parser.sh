@@ -39,19 +39,19 @@ main() {
 	done
 	shift $((OPTIND - 1))
 
-    repo_ref=$1
+	repo_ref=$1
 	if [ -z "$repo_ref" ]; then
 		echo 'please provide repo ref'
 		print_usage
 		exit 1
 	fi
-    branch_name=$2
+	branch_name=$2
 	if [ -z "$branch_name" ]; then
 		echo 'please provide branch name'
 		print_usage
 		exit 1
 	fi
-    target_dir=$3
+	target_dir=$3
 	if [ -z "$target_dir" ]; then
 		echo 'please provide target directory'
 		print_usage
@@ -83,6 +83,7 @@ main() {
 		exit 1
 	fi
 
+	mkdir -p "$target_dir"
 	printf '// Vendored commit %s
 %s' "$commit_hash" "$(printf "%s" "$parser_c_content" | sed 's|^#include <tree_sitter/parser.h>$|#include "parser.h"|')" >"$target_dir/parser.c"
 
