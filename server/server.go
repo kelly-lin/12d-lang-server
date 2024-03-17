@@ -16,7 +16,7 @@ import (
 
 	"github.com/kelly-lin/12d-lang-server/format"
 	"github.com/kelly-lin/12d-lang-server/lang"
-	"github.com/kelly-lin/12d-lang-server/parser"
+	"github.com/kelly-lin/12d-lang-server/parser/12dpl"
 	"github.com/kelly-lin/12d-lang-server/protocol"
 	sitter "github.com/smacker/go-tree-sitter"
 )

@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	pl12d "github.com/kelly-lin/12d-lang-server/parser"
+	pl12d "github.com/kelly-lin/12d-lang-server/parser/12dpl"
 	sitter "github.com/smacker/go-tree-sitter"
 	"github.com/stretchr/testify/assert"
 )

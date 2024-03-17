@@ -1,7 +1,7 @@
 package parser
 
-//#include "parser.h"
-//TSLanguage *tree_sitter_pl12d();
+// #include "parser.h"
+// TSLanguage *tree_sitter_pl12d();
 import "C"
 import (
 	"unsafe"

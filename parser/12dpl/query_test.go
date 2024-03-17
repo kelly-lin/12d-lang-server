@@ -4,8 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/kelly-lin/12d-lang-server/parser"
-	pl12d "github.com/kelly-lin/12d-lang-server/parser"
+	"github.com/kelly-lin/12d-lang-server/parser/12dpl"
 	sitter "github.com/smacker/go-tree-sitter"
 	"github.com/stretchr/testify/assert"
 )
@@ -58,7 +57,7 @@ void main() {
     Integer bar = 1;
     Integer result = Add(foo, bar);
 }`)
-	n, err := sitter.ParseCtx(context.Background(), sourceCode, pl12d.GetLanguage())
+	n, err := sitter.ParseCtx(context.Background(), sourceCode, parser.GetLanguage())
 	assert.NoError(err)
 	want := "Add"
 	lineNum := 7
