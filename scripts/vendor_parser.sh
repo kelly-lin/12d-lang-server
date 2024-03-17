@@ -57,11 +57,6 @@ main() {
 		print_usage
 		exit 1
 	fi
-	if [ ! -d "$target_dir" ]; then
-		echo "target directory $target_dir does not exist"
-		exit 1
-	fi
-
 	if [ -z "$commit_hash" ]; then
 		if ! heads=$(git ls-remote -h --exit-code "https://github.com/$repo_ref"); then
 			echo 'could not get repository heads'
