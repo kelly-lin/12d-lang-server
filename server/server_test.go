@@ -2445,101 +2445,55 @@ void main() {
 		})
 
 		t.Run("declarations", func(t *testing.T) {
-			testCases := []TestCase{
+			doxygen := []TestCase{
 				{
-					Desc: "local initialised var",
-					SourceCode: `Integer AddOne(Integer addend) {
-    Integer augend = 1;
-    return addend, augend;
+					Desc: "user defined func - doxygen - brief description",
+					SourceCode: `/*! \brief Loops forever.
+ */
+void Forever(Integer subject) {
+    return Forever(subject);
 }`,
-					Position: protocol.Position{Line: 2, Character: 19},
-					Pattern:  []string{"```12dpl\nInteger augend\n```"},
+					Position: protocol.Position{Line: 2, Character: 5},
+					Pattern:  []string{"```12dpl\nvoid Forever(Integer subject)\n```\n---\nLoops forever."},
 				},
 				{
-					Desc: "no definition for identifier declared after usage",
-					SourceCode: `void main() {
-    Print(text);
-	Text text = "Hello world";
+					Desc: "user defined func - doxygen - brief and detailed description",
+					SourceCode: `/*! \brief Loops forever.
+ *
+ * Forever and ever until the end of time.
+ */
+void Forever(Integer subject) {
+    return Forever(subject);
 }`,
-					Position: protocol.Position{Line: 1, Character: 10},
-					Pattern:  []string{},
+					Position: protocol.Position{Line: 4, Character: 5},
+					Pattern:  []string{"```12dpl\nvoid Forever(Integer subject)\n```\n---\nLoops forever. Forever and ever until the end of time."},
 				},
 				{
-					Desc: "local uninitialised var",
-					SourceCode: `Integer AddOne(Integer addend) {
-    Integer augend;
-	augend = 1;
-    return addend, augend;
+					Desc: "user defined func - doxygen - multi line brief description",
+					SourceCode: `/*! \brief Loops forever.
+ *         Until the end of time.
+ */
+void Forever(Integer subject) {
+    return Forever(subject);
 }`,
-					Position: protocol.Position{Line: 3, Character: 19},
-					Pattern:  []string{"```12dpl\nInteger augend\n```"},
+					Position: protocol.Position{Line: 3, Character: 5},
+					Pattern:  []string{"```12dpl\nvoid Forever(Integer subject)\n```\n---\nLoops forever. Until the end of time."},
 				},
 				{
-					Desc: "static array",
-					SourceCode: `void main() {
-    Text arr[3];
+					Desc: "user defined func - doxygen - multi line brief and detailed description",
+					SourceCode: `/*! \brief Loops forever.
+ *         Until the end of time.
+ *
+ *  Detailed description starts here.
+ */
+void Forever(Integer subject) {
+    return Forever(subject);
 }`,
-					Position: protocol.Position{Line: 1, Character: 9},
-					Pattern:  []string{"```12dpl\nText arr[]\n```"},
+					Position: protocol.Position{Line: 5, Character: 5},
+					Pattern:  []string{"```12dpl\nvoid Forever(Integer subject)\n```\n---\nLoops forever. Until the end of time. Detailed description starts here."},
 				},
-				{
-					Desc: "func param",
-					SourceCode: `Integer Identity(Integer id) {
-    return id;
-}`,
-					Position: protocol.Position{Line: 1, Character: 11},
-					Pattern:  []string{"```12dpl\n(parameter) Integer id\n```"},
-				},
-				{
-					Desc: "multiple variable declaration - initialised var",
-					SourceCode: `Integer Two() {
-    Integer a = 1, b;
-    return a + b;
-}`,
-					Position: protocol.Position{Line: 2, Character: 11},
-					Pattern:  []string{"```12dpl\nInteger a\n```"},
-				},
-				{
-					Desc: "multiple variable declaration - uninitialised var",
-					SourceCode: `Integer Two() {
-    Integer a = 1, b;
-    return a + b;
-}`,
-					Position: protocol.Position{Line: 2, Character: 15},
-					Pattern:  []string{"```12dpl\nInteger b\n```"},
-				},
-				{
-					Desc: "reference param hover in local scope",
-					SourceCode: `void Identity(Dynamic_Text &items) {
-    return items;
-}`,
-					Position: protocol.Position{Line: 1, Character: 11},
-					Pattern:  []string{"```12dpl\n(parameter) Dynamic_Text &items\n```"},
-				},
-				{
-					Desc: "reference param hover (static array)",
-					SourceCode: `void Identity(Dynamic_Text &items[]) {
-    return items;
-}`,
-					Position: protocol.Position{Line: 1, Character: 11},
-					Pattern:  []string{"```12dpl\n(parameter) Dynamic_Text &items[]\n```"},
-				},
-				{
-					Desc: "param hover (static array)",
-					SourceCode: `void Identity(Dynamic_Text items[]) {
-    return items;
-}`,
-					Position: protocol.Position{Line: 1, Character: 11},
-					Pattern:  []string{"```12dpl\n(parameter) Dynamic_Text items[]\n```"},
-				},
-				{
-					Desc: "param hover (static array pointer)",
-					SourceCode: `void Identity(Dynamic_Text &items[]) {
-    return items;
-}`,
-					Position: protocol.Position{Line: 1, Character: 11},
-					Pattern:  []string{"```12dpl\n(parameter) Dynamic_Text &items[]\n```"},
-				},
+			}
+			userDefinedFunc := []TestCase{
 				{
 					Desc: "user defined func - no doc",
 					SourceCode: `void Hello() {
@@ -2635,51 +2589,118 @@ void Forever(Integer subject) {
 					Position: protocol.Position{Line: 1, Character: 5},
 					Pattern:  []string{"```12dpl\nvoid Forever(Integer subject)\n```\n---\nLoops forever."},
 				},
+			}
+
+			funcParam := []TestCase{
 				{
-					Desc: "user defined func - doxygen - brief description",
-					SourceCode: `/*! \brief Loops forever.
- */
-void Forever(Integer subject) {
-    return Forever(subject);
+					Desc: "func param",
+					SourceCode: `Integer Identity(Integer id) {
+    return id;
 }`,
-					Position: protocol.Position{Line: 2, Character: 5},
-					Pattern:  []string{"```12dpl\nvoid Forever(Integer subject)\n```\n---\nLoops forever."},
+					Position: protocol.Position{Line: 1, Character: 11},
+					Pattern:  []string{"```12dpl\n(parameter) Integer id\n```"},
 				},
 				{
-					Desc: "user defined func - doxygen - brief and detailed description",
-					SourceCode: `/*! \brief Loops forever.
- *
- * Forever and ever until the end of time.
- */
-void Forever(Integer subject) {
-    return Forever(subject);
+					Desc: "reference param hover in local scope",
+					SourceCode: `void Identity(Dynamic_Text &items) {
+    return items;
 }`,
-					Position: protocol.Position{Line: 4, Character: 5},
-					Pattern:  []string{"```12dpl\nvoid Forever(Integer subject)\n```\n---\nLoops forever. Forever and ever until the end of time."},
+					Position: protocol.Position{Line: 1, Character: 11},
+					Pattern:  []string{"```12dpl\n(parameter) Dynamic_Text &items\n```"},
 				},
 				{
-					Desc: "user defined func - doxygen - multi line brief description",
-					SourceCode: `/*! \brief Loops forever.
- *         Until the end of time.
- */
-void Forever(Integer subject) {
-    return Forever(subject);
+					Desc: "reference param hover (static array)",
+					SourceCode: `void Identity(Dynamic_Text &items[]) {
+    return items;
 }`,
-					Position: protocol.Position{Line: 3, Character: 5},
-					Pattern:  []string{"```12dpl\nvoid Forever(Integer subject)\n```\n---\nLoops forever. Until the end of time."},
+					Position: protocol.Position{Line: 1, Character: 11},
+					Pattern:  []string{"```12dpl\n(parameter) Dynamic_Text &items[]\n```"},
 				},
 				{
-					Desc: "user defined func - doxygen - multi line brief and detailed description",
-					SourceCode: `/*! \brief Loops forever.
- *         Until the end of time.
- *
- *  Detailed description starts here.
- */
-void Forever(Integer subject) {
-    return Forever(subject);
+					Desc: "param hover (static array)",
+					SourceCode: `void Identity(Dynamic_Text items[]) {
+    return items;
 }`,
-					Position: protocol.Position{Line: 5, Character: 5},
-					Pattern:  []string{"```12dpl\nvoid Forever(Integer subject)\n```\n---\nLoops forever. Until the end of time. Detailed description starts here."},
+					Position: protocol.Position{Line: 1, Character: 11},
+					Pattern:  []string{"```12dpl\n(parameter) Dynamic_Text items[]\n```"},
+				},
+				{
+					Desc: "param hover (static array pointer)",
+					SourceCode: `void Identity(Dynamic_Text &items[]) {
+    return items;
+}`,
+					Position: protocol.Position{Line: 1, Character: 11},
+					Pattern:  []string{"```12dpl\n(parameter) Dynamic_Text &items[]\n```"},
+				},
+			}
+
+			localVar := []TestCase{
+				{
+					Desc: "local initialised var",
+					SourceCode: `Integer AddOne(Integer addend) {
+    Integer augend = 1;
+    return addend, augend;
+}`,
+					Position: protocol.Position{Line: 2, Character: 19},
+					Pattern:  []string{"```12dpl\nInteger augend\n```"},
+				},
+				{
+					Desc: "local uninitialised var",
+					SourceCode: `Integer AddOne(Integer addend) {
+    Integer augend;
+	augend = 1;
+    return addend, augend;
+}`,
+					Position: protocol.Position{Line: 3, Character: 19},
+					Pattern:  []string{"```12dpl\nInteger augend\n```"},
+				},
+				{
+					Desc: "multiple variable declaration - initialised var",
+					SourceCode: `Integer Two() {
+    Integer a = 1, b;
+    return a + b;
+}`,
+					Position: protocol.Position{Line: 2, Character: 11},
+					Pattern:  []string{"```12dpl\nInteger a\n```"},
+				},
+				{
+					Desc: "static array",
+					SourceCode: `void main() {
+    Text arr[3];
+}`,
+					Position: protocol.Position{Line: 1, Character: 9},
+					Pattern:  []string{"```12dpl\nText arr[]\n```"},
+				},
+				{
+					Desc: "multiple variable declaration - uninitialised var",
+					SourceCode: `Integer Two() {
+    Integer a = 1, b;
+    return a + b;
+}`,
+					Position: protocol.Position{Line: 2, Character: 15},
+					Pattern:  []string{"```12dpl\nInteger b\n```"},
+				},
+				{
+					Desc: "static array of dynamic array",
+					SourceCode: `void main() {
+    Dynamic_Text foo[2];
+    foo;
+}`,
+					Position:    protocol.Position{Line: 2, Character: 5},
+					IncludesDir: includesDir,
+					Pattern:     []string{"```12dpl\nDynamic_Text foo[]\n```"},
+				},
+			}
+
+			testCases := []TestCase{
+				{
+					Desc: "no definition for identifier declared after usage",
+					SourceCode: `void main() {
+    Print(text);
+	Text text = "Hello world";
+}`,
+					Position: protocol.Position{Line: 1, Character: 10},
+					Pattern:  []string{},
 				},
 				{
 					Desc: "preproc declaration",
@@ -2699,17 +2720,11 @@ void main() {
 					IncludesDir: includesDir,
 					Pattern:     []string{"```12dpl\n#define TRUE  1\n```"},
 				},
-				{
-					Desc: "static array of dynamic array",
-					SourceCode: `void main() {
-    Dynamic_Text foo[2];
-    foo;
-}`,
-					Position:    protocol.Position{Line: 2, Character: 5},
-					IncludesDir: includesDir,
-					Pattern:     []string{"```12dpl\nDynamic_Text foo[]\n```"},
-				},
 			}
+			testCases = append(testCases, doxygen...)
+			testCases = append(testCases, userDefinedFunc...)
+			testCases = append(testCases, funcParam...)
+			testCases = append(testCases, localVar...)
 			for _, testCase := range testCases {
 				t.Run(testCase.Desc, func(t *testing.T) {
 					defer goleak.VerifyNone(t)
