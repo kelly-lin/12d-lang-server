@@ -16,7 +16,8 @@ import (
 
 	"github.com/kelly-lin/12d-lang-server/format"
 	"github.com/kelly-lin/12d-lang-server/lang"
-	"github.com/kelly-lin/12d-lang-server/parser/12dpl"
+	pl12d "github.com/kelly-lin/12d-lang-server/parser/12dpl"
+	doxygen "github.com/kelly-lin/12d-lang-server/parser/doxygen"
 	"github.com/kelly-lin/12d-lang-server/protocol"
 	sitter "github.com/smacker/go-tree-sitter"
 )
@@ -219,12 +220,12 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 		}
 		rootNode := doc.RootNode
 		sourceCode := doc.SourceCode
-		identifierNode, err := parser.FindIdentifierNode(rootNode, params.Position.Line, params.Position.Character)
+		identifierNode, err := pl12d.FindIdentifierNode(rootNode, params.Position.Line, params.Position.Character)
 		if err != nil {
 			return newNullResponseMessage(msg.ID), len(protocol.NullResult), err
 		}
 		identifier := identifierNode.Content(sourceCode)
-		if errors.Is(err, parser.ErrNoDefinition) {
+		if errors.Is(err, pl12d.ErrNoDefinition) {
 			return newNullResponseMessage(msg.ID), len(protocol.NullResult), nil
 		}
 		if err != nil {
@@ -309,8 +310,8 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 		}
 		rootNode := doc.RootNode
 		sourceCode := doc.SourceCode
-		identifierNode, err := parser.FindIdentifierNode(rootNode, params.Position.Line, params.Position.Character)
-		if errors.Is(err, parser.ErrNoDefinition) {
+		identifierNode, err := pl12d.FindIdentifierNode(rootNode, params.Position.Line, params.Position.Character)
+		if errors.Is(err, pl12d.ErrNoDefinition) {
 			return newNullResponseMessage(msg.ID), len(protocol.NullResult), nil
 		}
 		if err != nil {
@@ -347,7 +348,7 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 		}
 		rootNode := doc.RootNode
 		sourceCode := doc.SourceCode
-		identifierNode, err := parser.FindIdentifierNode(rootNode, params.Position.Line, params.Position.Character)
+		identifierNode, err := pl12d.FindIdentifierNode(rootNode, params.Position.Line, params.Position.Character)
 		if err != nil {
 			return newNullResponseMessage(msg.ID), len(protocol.NullResult), err
 		}
@@ -398,7 +399,7 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 		}
 		rootNode := doc.RootNode
 		sourceCode := doc.SourceCode
-		identifierNode, err := parser.FindIdentifierNode(rootNode, params.Position.Line, params.Position.Character)
+		identifierNode, err := pl12d.FindIdentifierNode(rootNode, params.Position.Line, params.Position.Character)
 		if err != nil {
 			return newNullResponseMessage(msg.ID), len(protocol.NullResult), err
 		}
@@ -509,7 +510,7 @@ func ToRanges(nodes []*sitter.Node) []protocol.Range {
 
 func getReferenceNodes(scopeNode, declarationNode *sitter.Node, identifier string, sourceCode []byte) []*sitter.Node {
 	var result []*sitter.Node
-	stack := parser.NewStack()
+	stack := pl12d.NewStack()
 	stack.Push(scopeNode)
 	for stack.HasItems() {
 		currNode, _ := stack.Pop()
@@ -528,7 +529,7 @@ func getReferenceNodes(scopeNode, declarationNode *sitter.Node, identifier strin
 // Update the document stored on the server identified by the uri with provided
 // content.
 func (s *Server) setDocument(uri string, content string) error {
-	rootNode, err := sitter.ParseCtx(context.Background(), []byte(content), parser.GetLanguage())
+	rootNode, err := sitter.ParseCtx(context.Background(), []byte(content), pl12d.GetLanguage())
 	if err != nil {
 		return err
 	}
@@ -541,7 +542,7 @@ func getCompletionItems(rootNode *sitter.Node, sourceCode []byte, position proto
 	var result []protocol.CompletionItem
 
 	// Depth first search the deepest node described by position.
-	stack := parser.NewStack()
+	stack := pl12d.NewStack()
 	stack.Push(rootNode)
 	var nearestNode *sitter.Node
 	for stack.HasItems() {
@@ -893,6 +894,8 @@ func formatDescComment(desc string) string {
 	for _, line := range descLines {
 		newLine := strings.TrimPrefix(line, "//")
 		newLine = strings.TrimSpace(newLine)
+		newLine = strings.TrimPrefix(newLine, "*")
+		newLine = strings.TrimSpace(newLine)
 		newLines = append(newLines, newLine)
 	}
 	result = strings.Join(newLines, "\n")
@@ -918,6 +921,29 @@ func getFuncDocComponents(funcDefNode *sitter.Node, sourceCode []byte) (string, 
 		isDocNodeAboveDefinition := funcDefNode.StartPoint().Row-1 == docNode.EndPoint().Row
 		if isDocNodeAboveDefinition {
 			desc = docNode.Content(sourceCode)
+			if rootNode, err := sitter.ParseCtx(context.Background(), []byte(desc), doxygen.GetLanguage()); err == nil {
+				hasHeaderTag := false
+				if briefHeaderNode, err := pl12d.FindChild(rootNode, "brief_header"); err == nil {
+					if _, err := pl12d.FindChild(briefHeaderNode, "tag_name"); err == nil {
+						hasHeaderTag = true
+					}
+					if briefDescriptionNode, err := pl12d.FindChild(briefHeaderNode, "brief_description"); err == nil {
+						desc = formatDescComment(briefDescriptionNode.Content(sourceCode))
+						if hasHeaderTag {
+							split := strings.Split(desc, "\n")
+							desc = strings.Join(split, " ")
+						}
+					}
+				}
+				// Detailed desc
+				if descNode, err := pl12d.FindChild(rootNode, "description"); err == nil {
+					if hasHeaderTag {
+						desc = fmt.Sprintf("%s %s", desc, descNode.Content(sourceCode))
+					} else {
+						desc = fmt.Sprintf("%s\n%s", desc, descNode.Content(sourceCode))
+					}
+				}
+			}
 			desc = formatDescComment(desc)
 		}
 	}
@@ -1180,7 +1206,7 @@ type Document struct {
 }
 
 type DefinitionResult struct {
-	Range parser.Range
+	Range pl12d.Range
 	Node  *sitter.Node
 	URI   string
 }
@@ -1195,7 +1221,7 @@ func findDefinition(startNode *sitter.Node, identifier string, uri string, docum
 
 	sourceCode := doc.SourceCode
 	if startNode.Parent() != nil && startNode.Parent().Type() == "call_expression" {
-		locRange, node, err := parser.FindFuncDefinition(identifier, sourceCode)
+		locRange, node, err := pl12d.FindFuncDefinition(identifier, sourceCode)
 		return DefinitionResult{Range: locRange, Node: node, URI: uri}, err
 	}
 
@@ -1208,11 +1234,11 @@ func findDefinition(startNode *sitter.Node, identifier string, uri string, docum
 		if currentNode.Type() == "function_definition" {
 			funcDefIdentifierNode := getFuncDefIdentifierNode(currentNode)
 			if funcDefIdentifierNode != nil && funcDefIdentifierNode.Content(sourceCode) == identifier {
-				return DefinitionResult{Range: parser.NewParserRange(funcDefIdentifierNode), Node: funcDefIdentifierNode, URI: uri}, nil
+				return DefinitionResult{Range: pl12d.NewParserRange(funcDefIdentifierNode), Node: funcDefIdentifierNode, URI: uri}, nil
 			}
 			paramsNode := getFuncDefParamsNode(currentNode)
 			if paramNode, err := getParamNode(paramsNode, identifier, sourceCode); err == nil {
-				return DefinitionResult{Range: parser.NewParserRange(paramNode), Node: paramNode, URI: uri}, nil
+				return DefinitionResult{Range: pl12d.NewParserRange(paramNode), Node: paramNode, URI: uri}, nil
 			}
 		}
 
@@ -1221,7 +1247,7 @@ func findDefinition(startNode *sitter.Node, identifier string, uri string, docum
 			if currentChildNode.Type() == "preproc_def" {
 				identifierDeclarationNode := currentChildNode.ChildByFieldName("name")
 				if identifierDeclarationNode != nil && identifierDeclarationNode.Content(sourceCode) == identifier {
-					return DefinitionResult{Range: parser.NewParserRange(identifierDeclarationNode), Node: identifierDeclarationNode, URI: uri}, nil
+					return DefinitionResult{Range: pl12d.NewParserRange(identifierDeclarationNode), Node: identifierDeclarationNode, URI: uri}, nil
 				}
 			}
 			if currentChildNode.Type() == "preproc_include" {
@@ -1335,9 +1361,9 @@ func getParamNode(paramsNode *sitter.Node, identifier string, sourceCode []byte)
 //
 // If the identifier is of value "a" the range is ([0, 8] - [0, 9]), if "b",
 // ([0, 15] - [0, 16]).
-func findDeclaration(node *sitter.Node, identifier string, sourceCode []byte) (parser.Range, *sitter.Node, error) {
+func findDeclaration(node *sitter.Node, identifier string, sourceCode []byte) (pl12d.Range, *sitter.Node, error) {
 	if node.Type() != "declaration" {
-		return parser.Range{}, nil, errors.New("node is not a declaration node")
+		return pl12d.Range{}, nil, errors.New("node is not a declaration node")
 	}
 	declaratorNode := node.ChildByFieldName("declarator")
 	for declaratorNode != nil {
@@ -1346,7 +1372,7 @@ func findDeclaration(node *sitter.Node, identifier string, sourceCode []byte) (p
 		case "identifier":
 			identifierDeclarationNode := declaratorNode
 			if identifierDeclarationNode.Content(sourceCode) == identifier {
-				return parser.NewParserRange(identifierDeclarationNode), identifierDeclarationNode, nil
+				return pl12d.NewParserRange(identifierDeclarationNode), identifierDeclarationNode, nil
 			}
 
 		// Initialized variable declaration.
@@ -1356,7 +1382,7 @@ func findDeclaration(node *sitter.Node, identifier string, sourceCode []byte) (p
 				break
 			}
 			if identifierDeclarationNode.Content(sourceCode) == identifier {
-				return parser.NewParserRange(identifierDeclarationNode), identifierDeclarationNode, nil
+				return pl12d.NewParserRange(identifierDeclarationNode), identifierDeclarationNode, nil
 			}
 
 		case "array_declarator":
@@ -1365,17 +1391,17 @@ func findDeclaration(node *sitter.Node, identifier string, sourceCode []byte) (p
 				break
 			}
 			if identifierDeclarationNode.Content(sourceCode) == identifier {
-				return parser.NewParserRange(identifierDeclarationNode), identifierDeclarationNode, nil
+				return pl12d.NewParserRange(identifierDeclarationNode), identifierDeclarationNode, nil
 			}
 		}
 
 		declaratorNode = declaratorNode.NextNamedSibling()
 	}
-	return parser.Range{}, nil, errors.New("declaration not found")
+	return pl12d.Range{}, nil, errors.New("declaration not found")
 }
 
 // Converts parser range into protocol range.
-func ToProtocolRange(r parser.Range) protocol.Range {
+func ToProtocolRange(r pl12d.Range) protocol.Range {
 	result := protocol.Range{
 		Start: protocol.Position{
 			Line:      uint(r.Start.Row),

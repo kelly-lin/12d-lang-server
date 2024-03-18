@@ -198,3 +198,19 @@ func FindIdentifierNode(node *sitter.Node, lineNum, colNum uint) (*sitter.Node, 
 	}
 	return nil, ErrNoDefinition
 }
+
+// Get the first child of node of provided type.
+func FindChild(node *sitter.Node, childType string) (*sitter.Node, error) {
+	var result *sitter.Node
+	for i := 0; i < int(node.ChildCount()); i++ {
+		currentNode := node.Child(i)
+		if currentNode.Type() == childType {
+			result = currentNode
+			break
+		}
+	}
+	if result == nil {
+		return nil, fmt.Errorf("child of type %s not found on node", childType)
+	}
+	return result, nil
+}

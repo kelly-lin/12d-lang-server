@@ -2619,7 +2619,7 @@ void Forever(Integer subject) {
 					Pattern:  []string{"```12dpl\nvoid Forever(Integer subject)\n```\n---\nLoops forever.\nsubject is an integer."},
 				},
 				{
-					Desc: "user defined func - single line doc - on definition",
+					Desc: "user defined func - on definition with no doc",
 					SourceCode: `void Forever(Integer subject) {
     return Forever(subject);
 }`,
@@ -2634,6 +2634,52 @@ void Forever(Integer subject) {
 }`,
 					Position: protocol.Position{Line: 1, Character: 5},
 					Pattern:  []string{"```12dpl\nvoid Forever(Integer subject)\n```\n---\nLoops forever."},
+				},
+				{
+					Desc: "user defined func - doxygen - brief description",
+					SourceCode: `/*! \brief Loops forever.
+ */
+void Forever(Integer subject) {
+    return Forever(subject);
+}`,
+					Position: protocol.Position{Line: 2, Character: 5},
+					Pattern:  []string{"```12dpl\nvoid Forever(Integer subject)\n```\n---\nLoops forever."},
+				},
+				{
+					Desc: "user defined func - doxygen - brief and detailed description",
+					SourceCode: `/*! \brief Loops forever.
+ *
+ * Forever and ever until the end of time.
+ */
+void Forever(Integer subject) {
+    return Forever(subject);
+}`,
+					Position: protocol.Position{Line: 4, Character: 5},
+					Pattern:  []string{"```12dpl\nvoid Forever(Integer subject)\n```\n---\nLoops forever. Forever and ever until the end of time."},
+				},
+				{
+					Desc: "user defined func - doxygen - multi line brief description",
+					SourceCode: `/*! \brief Loops forever.
+ *         Until the end of time.
+ */
+void Forever(Integer subject) {
+    return Forever(subject);
+}`,
+					Position: protocol.Position{Line: 3, Character: 5},
+					Pattern:  []string{"```12dpl\nvoid Forever(Integer subject)\n```\n---\nLoops forever. Until the end of time."},
+				},
+				{
+					Desc: "user defined func - doxygen - multi line brief and detailed description",
+					SourceCode: `/*! \brief Loops forever.
+ *         Until the end of time.
+ *
+ *  Detailed description starts here.
+ */
+void Forever(Integer subject) {
+    return Forever(subject);
+}`,
+					Position: protocol.Position{Line: 5, Character: 5},
+					Pattern:  []string{"```12dpl\nvoid Forever(Integer subject)\n```\n---\nLoops forever. Until the end of time. Detailed description starts here."},
 				},
 				{
 					Desc: "preproc declaration",
