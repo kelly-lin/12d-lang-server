@@ -651,16 +651,16 @@ func getCompletionItems(rootNode *sitter.Node, sourceCode []byte, position proto
 		}
 		if declaratorNode.Type() == "function_definition" {
 			identifier := declaratorNode.ChildByFieldName("declarator").ChildByFieldName("declarator").Content(sourceCode)
-			if varType, declaration, doc, err := getFuncDocComponents(declaratorNode, sourceCode); err == nil {
+			if funcDoc, err := getFuncDoc(declaratorNode, sourceCode); err == nil {
 				item := protocol.CompletionItem{
 					Label:  identifier,
-					Detail: fmt.Sprintf("%s %s", varType, declaration),
+					Detail: fmt.Sprintf("%s %s", funcDoc.VarType, funcDoc.Declaration),
 					Kind:   protocol.GetCompletionItemKind(protocol.CompletionItemKindFunction),
 				}
-				if doc != "" {
+				if funcDoc.Desc != "" {
 					item.Documentation = &protocol.MarkupContent{
 						Kind:  protocol.MarkupKindPlainText,
-						Value: doc,
+						Value: funcDoc.Desc,
 					}
 				}
 				declarations = append(declarations, item)
@@ -764,8 +764,8 @@ func getHoverContents(identifierNode *sitter.Node, identifier string, uri string
 	sourceCode := documents[def.URI].SourceCode
 	if isFuncDefinition(node) {
 		funcDefNode := node.Parent().Parent()
-		if varType, declaration, desc, err := getFuncDocComponents(funcDefNode, sourceCode); err == nil {
-			result = append(result, createHoverDeclarationDocString(varType, declaration, desc, ""))
+		if funcDoc, err := getFuncDoc(funcDefNode, sourceCode); err == nil {
+			result = append(result, createHoverDeclarationDocString(funcDoc.VarType, funcDoc.Declaration, funcDoc.Desc, ""))
 			return result
 		}
 	}
@@ -813,8 +813,8 @@ func getFuncHoverContents(identifierNode *sitter.Node, identifier string, uri st
 	node := def.Node
 	if isFuncDefinition(node) {
 		funcDefNode := node.Parent().Parent()
-		if varType, declaration, desc, err := getFuncDocComponents(funcDefNode, sourceCode); err == nil {
-			contents = append(contents, createHoverDeclarationDocString(varType, declaration, desc, ""))
+		if funcDoc, err := getFuncDoc(funcDefNode, sourceCode); err == nil {
+			contents = append(contents, createHoverDeclarationDocString(funcDoc.VarType, funcDoc.Declaration, funcDoc.Desc, ""))
 			return contents
 		}
 	}
@@ -905,15 +905,20 @@ func formatDescComment(desc string) string {
 
 // Gets the type, declaration and description from the function definition node.
 // Returns error if any of the components cannot be found.
-func getFuncDocComponents(funcDefNode *sitter.Node, sourceCode []byte) (string, string, string, error) {
+func getFuncDoc(funcDefNode *sitter.Node, sourceCode []byte) (funcDoc, error) {
+	joinLines := func(s string) string {
+		split := strings.Split(s, "\n")
+		return strings.Join(split, " ")
+	}
+
 	typeNode := funcDefNode.ChildByFieldName("type")
 	if typeNode == nil {
-		return "", "", "", errors.New("type node not found")
+		return funcDoc{}, errors.New("type node not found")
 	}
 	varType := typeNode.Content(sourceCode)
 	declaration, err := formatFuncDeclaration(funcDefNode, sourceCode)
 	if err != nil {
-		return "", "", "", fmt.Errorf("could not format function declaration: %w", err)
+		return funcDoc{}, fmt.Errorf("could not format function declaration: %w", err)
 	}
 	desc := ""
 	docNode := funcDefNode.PrevSibling()
@@ -922,22 +927,21 @@ func getFuncDocComponents(funcDefNode *sitter.Node, sourceCode []byte) (string, 
 		if isDocNodeAboveDefinition {
 			desc = docNode.Content(sourceCode)
 			if rootNode, err := sitter.ParseCtx(context.Background(), []byte(desc), doxygen.GetLanguage()); err == nil {
-				hasHeaderTag := false
+				hasBriefHeaderTag := false
 				if briefHeaderNode, err := pl12d.FindChild(rootNode, "brief_header"); err == nil {
 					if _, err := pl12d.FindChild(briefHeaderNode, "tag_name"); err == nil {
-						hasHeaderTag = true
+						hasBriefHeaderTag = true
 					}
 					if briefDescriptionNode, err := pl12d.FindChild(briefHeaderNode, "brief_description"); err == nil {
 						desc = formatDescComment(briefDescriptionNode.Content(sourceCode))
-						if hasHeaderTag {
-							split := strings.Split(desc, "\n")
-							desc = strings.Join(split, " ")
+						if hasBriefHeaderTag {
+							desc = joinLines(desc)
 						}
 					}
 				}
 				// Detailed desc
 				if descNode, err := pl12d.FindChild(rootNode, "description"); err == nil {
-					if hasHeaderTag {
+					if hasBriefHeaderTag {
 						desc = fmt.Sprintf("%s %s", desc, descNode.Content(sourceCode))
 					} else {
 						desc = fmt.Sprintf("%s\n%s", desc, descNode.Content(sourceCode))
@@ -947,7 +951,13 @@ func getFuncDocComponents(funcDefNode *sitter.Node, sourceCode []byte) (string, 
 			desc = formatDescComment(desc)
 		}
 	}
-	return varType, declaration, desc, nil
+	return funcDoc{VarType: varType, Declaration: declaration, Desc: desc}, nil
+}
+
+type funcDoc struct {
+	VarType     string
+	Declaration string
+	Desc        string
 }
 
 // Returns true if the provided identifier node is for a function definition.
