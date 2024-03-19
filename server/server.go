@@ -947,8 +947,19 @@ func getFuncDoc(funcDefNode *sitter.Node, sourceCode []byte) (funcDoc, error) {
 						desc = fmt.Sprintf("%s\n%s", desc, descNode.Content(sourceCode))
 					}
 				}
+				// Parameter
+				if tagNode, err := pl12d.FindChild(rootNode, "tag"); err == nil {
+					if tagNameNode, err := pl12d.FindChild(tagNode, "tag_name"); err == nil {
+						if tagNameNode.Content(sourceCode) == `\param` {
+							if tagIdentifierNode, err := pl12d.FindChild(tagNode, "identifier"); err == nil {
+								if tagDescNode, err := pl12d.FindChild(tagNode, "description"); err == nil {
+									desc = fmt.Sprintf("**Parameters:**\n`%s` &minus %s", tagIdentifierNode.Content(sourceCode), tagDescNode.Content(sourceCode))
+								}
+							}
+						}
+					}
+				}
 			}
-			desc = formatDescComment(desc)
 		}
 	}
 	return funcDoc{VarType: varType, Declaration: declaration, Desc: desc}, nil

@@ -2492,6 +2492,16 @@ void Forever(Integer subject) {
 					Position: protocol.Position{Line: 5, Character: 5},
 					Pattern:  []string{"```12dpl\nvoid Forever(Integer subject)\n```\n---\nLoops forever. Until the end of time. Detailed description starts here."},
 				},
+				{
+					Desc: "user defined func - doxygen - single parameter",
+					SourceCode: `/*! \param subject the subject
+ */
+void Forever(Integer subject) {
+    return Forever(subject);
+}`,
+					Position: protocol.Position{Line: 2, Character: 5},
+					Pattern:  []string{"```12dpl\nvoid Forever(Integer subject)\n```\n---\n**Parameters:**\n`subject` &minus the subject"},
+				},
 			}
 			userDefinedFunc := []TestCase{
 				{
