@@ -948,16 +948,20 @@ func getFuncDoc(funcDefNode *sitter.Node, sourceCode []byte) (funcDoc, error) {
 					}
 				}
 				// Parameter
-				if tagNode, err := pl12d.FindChild(rootNode, "tag"); err == nil {
-					if tagNameNode, err := pl12d.FindChild(tagNode, "tag_name"); err == nil {
-						if tagNameNode.Content(sourceCode) == `\param` {
-							if tagIdentifierNode, err := pl12d.FindChild(tagNode, "identifier"); err == nil {
-								if tagDescNode, err := pl12d.FindChild(tagNode, "description"); err == nil {
-									desc = fmt.Sprintf("**Parameters:**\n`%s` &minus %s", tagIdentifierNode.Content(sourceCode), tagDescNode.Content(sourceCode))
+				if tags, err := pl12d.FindChildren(rootNode, "tag"); err == nil {
+					paramText := ""
+					for _, tagNode := range tags {
+						if tagNameNode, err := pl12d.FindChild(tagNode, "tag_name"); err == nil {
+							if tagNameNode.Content(sourceCode) == `\param` {
+								if tagIdentifierNode, err := pl12d.FindChild(tagNode, "identifier"); err == nil {
+									if tagDescNode, err := pl12d.FindChild(tagNode, "description"); err == nil {
+										paramText = fmt.Sprintf("%s\n`%s` &minus %s", paramText, tagIdentifierNode.Content(sourceCode), tagDescNode.Content(sourceCode))
+									}
 								}
 							}
 						}
 					}
+					desc = fmt.Sprintf("**Parameters:**%s", paramText)
 				}
 			}
 		}

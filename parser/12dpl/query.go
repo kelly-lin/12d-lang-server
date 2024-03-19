@@ -214,3 +214,18 @@ func FindChild(node *sitter.Node, childType string) (*sitter.Node, error) {
 	}
 	return result, nil
 }
+
+// Get all the direct children of node of provided type.
+func FindChildren(node *sitter.Node, childType string) ([]*sitter.Node, error) {
+	var result []*sitter.Node
+	for i := 0; i < int(node.ChildCount()); i++ {
+		currentNode := node.Child(i)
+		if currentNode.Type() == childType {
+			result = append(result, currentNode)
+		}
+	}
+	if result == nil {
+		return nil, fmt.Errorf("child of type %s not found on node", childType)
+	}
+	return result, nil
+}

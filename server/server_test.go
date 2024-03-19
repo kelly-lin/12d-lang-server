@@ -2502,6 +2502,17 @@ void Forever(Integer subject) {
 					Position: protocol.Position{Line: 2, Character: 5},
 					Pattern:  []string{"```12dpl\nvoid Forever(Integer subject)\n```\n---\n**Parameters:**\n`subject` &minus the subject"},
 				},
+				{
+					Desc: "user defined func - doxygen - multiple parameter",
+					SourceCode: `/*! \param augend the augend
+ * \param addend the addend
+ */
+Integer Add(Integer augend, Integer addend) {
+    return augend + addend;
+}`,
+					Position: protocol.Position{Line: 3, Character: 8},
+					Pattern:  []string{"```12dpl\nInteger Add(Integer augend, Integer addend)\n```\n---\n**Parameters:**\n`augend` &minus the augend\n`addend` &minus the addend"},
+				},
 			}
 			userDefinedFunc := []TestCase{
 				{
