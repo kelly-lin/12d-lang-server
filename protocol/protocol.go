@@ -35,6 +35,13 @@ const (
 )
 
 const (
+	DiagnosticSeverityError       uint = 1
+	DiagnosticSeverityWarning     uint = 2
+	DiagnosticSeverityInformation uint = 3
+	DiagnosticSeverityHint        uint = 4
+)
+
+const (
 	TextDocumentSyncKindNone        uint = 0
 	TextDocumentSyncKindFull        uint = 1
 	TextDocumentSyncKindIncremental uint = 2
@@ -300,4 +307,23 @@ type RenameParams struct {
 
 type WorkspaceEdit struct {
 	Changes map[string][]TextEdit `json:"changes"`
+}
+
+type PublishDiagnosticsParams struct {
+	// The URI for which diagnostic information is reported.
+	URI string `json:"uri"`
+	// An array of diagnostic information items.
+	Diagnostics []Diagnostic `json:"diagnostics"`
+}
+
+type Diagnostic struct {
+	Range Range `json:"range"`
+	// The diagnostic's severity. Can be omitted. If omitted it is up to the
+	// client to interpret diagnostics as error, warning, info or hint.
+	Severity uint `json:"severity"`
+	// A human-readable string describing the source of this
+	// diagnostic, e.g. 'typescript' or 'super lint'.
+	Source string `json:"source"`
+	// The diagnostic's message.
+	Message string `json:"message"`
 }
