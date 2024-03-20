@@ -1280,7 +1280,7 @@ type Document struct {
 	SourceCode []byte
 }
 
-type DefinitionResult struct {
+type Definition struct {
 	Range pl12d.Range
 	Node  *sitter.Node
 	URI   string
@@ -1288,16 +1288,16 @@ type DefinitionResult struct {
 
 // Find the definition of the node reprepsented by start node and identifier.
 // The start node is the identifier node representing the identifier.
-func findDefinition(startNode *sitter.Node, identifier string, uri string, documents map[string]Document, includesDir string) (DefinitionResult, error) {
+func findDefinition(startNode *sitter.Node, identifier string, uri string, documents map[string]Document, includesDir string) (Definition, error) {
 	doc, ok := documents[uri]
 	if !ok {
-		return DefinitionResult{}, errors.New("document not found")
+		return Definition{}, errors.New("document not found")
 	}
 
 	sourceCode := doc.SourceCode
 	if startNode.Parent() != nil && startNode.Parent().Type() == "call_expression" {
 		locRange, node, err := pl12d.FindFuncDefinition(identifier, sourceCode)
-		return DefinitionResult{Range: locRange, Node: node, URI: uri}, err
+		return Definition{Range: locRange, Node: node, URI: uri}, err
 	}
 
 	// No point looking at nodes past the identifier node.
@@ -1309,11 +1309,11 @@ func findDefinition(startNode *sitter.Node, identifier string, uri string, docum
 		if currentNode.Type() == "function_definition" {
 			funcDefIdentifierNode := getFuncDefIdentifierNode(currentNode)
 			if funcDefIdentifierNode != nil && funcDefIdentifierNode.Content(sourceCode) == identifier {
-				return DefinitionResult{Range: pl12d.NewParserRange(funcDefIdentifierNode), Node: funcDefIdentifierNode, URI: uri}, nil
+				return Definition{Range: pl12d.NewParserRange(funcDefIdentifierNode), Node: funcDefIdentifierNode, URI: uri}, nil
 			}
 			paramsNode := getFuncDefParamsNode(currentNode)
 			if paramNode, err := getParamNode(paramsNode, identifier, sourceCode); err == nil {
-				return DefinitionResult{Range: pl12d.NewParserRange(paramNode), Node: paramNode, URI: uri}, nil
+				return Definition{Range: pl12d.NewParserRange(paramNode), Node: paramNode, URI: uri}, nil
 			}
 		}
 
@@ -1322,7 +1322,7 @@ func findDefinition(startNode *sitter.Node, identifier string, uri string, docum
 			if currentChildNode.Type() == "preproc_def" {
 				identifierDeclarationNode := currentChildNode.ChildByFieldName("name")
 				if identifierDeclarationNode != nil && identifierDeclarationNode.Content(sourceCode) == identifier {
-					return DefinitionResult{Range: pl12d.NewParserRange(identifierDeclarationNode), Node: identifierDeclarationNode, URI: uri}, nil
+					return Definition{Range: pl12d.NewParserRange(identifierDeclarationNode), Node: identifierDeclarationNode, URI: uri}, nil
 				}
 			}
 			if currentChildNode.Type() == "preproc_include" {
@@ -1350,7 +1350,7 @@ func findDefinition(startNode *sitter.Node, identifier string, uri string, docum
 					if err != nil {
 						continue
 					}
-					return DefinitionResult{Range: locRange, Node: n, URI: uri}, nil
+					return Definition{Range: locRange, Node: n, URI: uri}, nil
 				}
 			}
 			// No point looking at nodes past the identifier node.
@@ -1361,11 +1361,11 @@ func findDefinition(startNode *sitter.Node, identifier string, uri string, docum
 			if err != nil {
 				continue
 			}
-			return DefinitionResult{Range: locRange, Node: n, URI: uri}, nil
+			return Definition{Range: locRange, Node: n, URI: uri}, nil
 		}
 		currentNode = currentNode.Parent()
 	}
-	return DefinitionResult{}, errors.New("parent function definition not found")
+	return Definition{}, errors.New("parent function definition not found")
 }
 
 // Get the full filepath of the include file described by path node.
