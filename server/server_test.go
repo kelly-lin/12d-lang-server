@@ -2500,7 +2500,7 @@ void Forever(Integer subject) {
     return Forever(subject);
 }`,
 					Position: protocol.Position{Line: 2, Character: 5},
-					Pattern:  []string{"```12dpl\nvoid Forever(Integer subject)\n```\n---\n**Parameters:**\n`subject` &minus the subject"},
+					Pattern:  []string{"```12dpl\nvoid Forever(Integer subject)\n```\n---\n**Parameters:**<br>\n- `subject` &minus; the subject"},
 				},
 				{
 					Desc: "user defined func - doxygen - multiple parameter",
@@ -2511,7 +2511,18 @@ Integer Add(Integer augend, Integer addend) {
     return augend + addend;
 }`,
 					Position: protocol.Position{Line: 3, Character: 8},
-					Pattern:  []string{"```12dpl\nInteger Add(Integer augend, Integer addend)\n```\n---\n**Parameters:**\n`augend` &minus the augend\n`addend` &minus the addend"},
+					Pattern:  []string{"```12dpl\nInteger Add(Integer augend, Integer addend)\n```\n---\n**Parameters:**<br>\n- `augend` &minus; the augend\n- `addend` &minus; the addend"},
+				},
+				{
+					Desc: "user defined func - doxygen - brief description with single parameter",
+					SourceCode: `/*! \brief Loops forever.
+ * \param subject the subject
+ */
+void Forever(Integer subject) {
+    return Forever(subject);
+}`,
+					Position: protocol.Position{Line: 3, Character: 5},
+					Pattern:  []string{"```12dpl\nvoid Forever(Integer subject)\n```\n---\nLoops forever.\n\n**Parameters:**<br>\n- `subject` &minus; the subject"},
 				},
 			}
 			userDefinedFunc := []TestCase{

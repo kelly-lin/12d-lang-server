@@ -906,11 +906,6 @@ func formatDescComment(desc string) string {
 // Gets the type, declaration and description from the function definition node.
 // Returns error if any of the components cannot be found.
 func getFuncDoc(funcDefNode *sitter.Node, sourceCode []byte) (funcDoc, error) {
-	joinLines := func(s string) string {
-		split := strings.Split(s, "\n")
-		return strings.Join(split, " ")
-	}
-
 	typeNode := funcDefNode.ChildByFieldName("type")
 	if typeNode == nil {
 		return funcDoc{}, errors.New("type node not found")
@@ -920,52 +915,11 @@ func getFuncDoc(funcDefNode *sitter.Node, sourceCode []byte) (funcDoc, error) {
 	if err != nil {
 		return funcDoc{}, fmt.Errorf("could not format function declaration: %w", err)
 	}
-	desc := ""
-	docNode := funcDefNode.PrevSibling()
-	if docNode != nil && docNode.Type() == "comment" {
-		isDocNodeAboveDefinition := funcDefNode.StartPoint().Row-1 == docNode.EndPoint().Row
-		if isDocNodeAboveDefinition {
-			desc = docNode.Content(sourceCode)
-			if rootNode, err := sitter.ParseCtx(context.Background(), []byte(desc), doxygen.GetLanguage()); err == nil {
-				hasBriefHeaderTag := false
-				if briefHeaderNode, err := pl12d.FindChild(rootNode, "brief_header"); err == nil {
-					if _, err := pl12d.FindChild(briefHeaderNode, "tag_name"); err == nil {
-						hasBriefHeaderTag = true
-					}
-					if briefDescriptionNode, err := pl12d.FindChild(briefHeaderNode, "brief_description"); err == nil {
-						desc = formatDescComment(briefDescriptionNode.Content(sourceCode))
-						if hasBriefHeaderTag {
-							desc = joinLines(desc)
-						}
-					}
-				}
-				// Detailed desc
-				if descNode, err := pl12d.FindChild(rootNode, "description"); err == nil {
-					if hasBriefHeaderTag {
-						desc = fmt.Sprintf("%s %s", desc, descNode.Content(sourceCode))
-					} else {
-						desc = fmt.Sprintf("%s\n%s", desc, descNode.Content(sourceCode))
-					}
-				}
-				// Parameter
-				if tags, err := pl12d.FindChildren(rootNode, "tag"); err == nil {
-					paramText := ""
-					for _, tagNode := range tags {
-						if tagNameNode, err := pl12d.FindChild(tagNode, "tag_name"); err == nil {
-							if tagNameNode.Content(sourceCode) == `\param` {
-								if tagIdentifierNode, err := pl12d.FindChild(tagNode, "identifier"); err == nil {
-									if tagDescNode, err := pl12d.FindChild(tagNode, "description"); err == nil {
-										paramText = fmt.Sprintf("%s\n`%s` &minus %s", paramText, tagIdentifierNode.Content(sourceCode), tagDescNode.Content(sourceCode))
-									}
-								}
-							}
-						}
-					}
-					desc = fmt.Sprintf("**Parameters:**%s", paramText)
-				}
-			}
-		}
+	docNode, err := getFuncDocNode(funcDefNode)
+	if err != nil {
+		return funcDoc{VarType: varType, Declaration: declaration, Desc: ""}, nil
 	}
+	desc := getFuncDocDesc(docNode, sourceCode)
 	return funcDoc{VarType: varType, Declaration: declaration, Desc: desc}, nil
 }
 
@@ -973,6 +927,98 @@ type funcDoc struct {
 	VarType     string
 	Declaration string
 	Desc        string
+}
+
+// Get the function documentation node from the function definition node.
+// Returns an error if the documentation node could not be found.
+func getFuncDocNode(funcDefNode *sitter.Node) (*sitter.Node, error) {
+	var result *sitter.Node
+	docNode := funcDefNode.PrevSibling()
+	if docNode != nil && docNode.Type() == "comment" {
+		isDocNodeAboveDefinition := funcDefNode.StartPoint().Row-1 == docNode.EndPoint().Row
+		if isDocNodeAboveDefinition {
+			result = docNode
+		}
+	}
+	if result == nil {
+		return nil, errors.New("function has no doc node")
+	}
+	return result, nil
+}
+
+func getFuncDocDesc(docNode *sitter.Node, sourceCode []byte) string {
+	appendParamHeading := func(s string) string {
+		return fmt.Sprintf("**Parameters:**<br>%s", s)
+	}
+	format := func(docDesc, paramText string) string {
+		result := ""
+		if docDesc != "" {
+			result = docDesc
+		}
+		if paramText != "" {
+			paramText = appendParamHeading(paramText)
+			if docDesc != "" {
+				paramText = fmt.Sprintf("\n\n%s", paramText)
+			}
+			result = result + paramText
+		}
+		return result
+	}
+
+	rootNode, err := sitter.ParseCtx(context.Background(), []byte(docNode.Content(sourceCode)), doxygen.GetLanguage())
+	if err != nil {
+		return ""
+	}
+	docDesc := getDesc(rootNode, sourceCode)
+	paramText := getParamText(rootNode, sourceCode)
+	result := format(docDesc, paramText)
+	return result
+}
+
+func getDesc(rootNode *sitter.Node, sourceCode []byte) string {
+	joinLines := func(s string) string {
+		return strings.Join(strings.Split(s, "\n"), " ")
+	}
+	docDesc := ""
+	hasBriefHeaderTag := false
+	if briefHeaderNode, err := pl12d.FindChild(rootNode, "brief_header"); err == nil {
+		if _, err := pl12d.FindChild(briefHeaderNode, "tag_name"); err == nil {
+			hasBriefHeaderTag = true
+		}
+		if briefDescriptionNode, err := pl12d.FindChild(briefHeaderNode, "brief_description"); err == nil {
+			docDesc = formatDescComment(briefDescriptionNode.Content(sourceCode))
+			if hasBriefHeaderTag {
+				docDesc = joinLines(docDesc)
+			}
+		}
+	}
+	// Detailed desc
+	if descNode, err := pl12d.FindChild(rootNode, "description"); err == nil {
+		if hasBriefHeaderTag {
+			docDesc = fmt.Sprintf("%s %s", docDesc, descNode.Content(sourceCode))
+		} else {
+			docDesc = fmt.Sprintf("%s\n%s", docDesc, descNode.Content(sourceCode))
+		}
+	}
+	return docDesc
+}
+
+func getParamText(rootNode *sitter.Node, sourceCode []byte) string {
+	paramText := ""
+	if tags, err := pl12d.FindChildren(rootNode, "tag"); err == nil {
+		for _, tagNode := range tags {
+			if tagNameNode, err := pl12d.FindChild(tagNode, "tag_name"); err == nil {
+				if tagNameNode.Content(sourceCode) == `\param` {
+					if tagIdentifierNode, err := pl12d.FindChild(tagNode, "identifier"); err == nil {
+						if tagDescNode, err := pl12d.FindChild(tagNode, "description"); err == nil {
+							paramText = fmt.Sprintf("%s\n- `%s` &minus; %s", paramText, tagIdentifierNode.Content(sourceCode), tagDescNode.Content(sourceCode))
+						}
+					}
+				}
+			}
+		}
+	}
+	return paramText
 }
 
 // Returns true if the provided identifier node is for a function definition.
