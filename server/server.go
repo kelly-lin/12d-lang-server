@@ -946,6 +946,7 @@ func getFuncDocNode(funcDefNode *sitter.Node) (*sitter.Node, error) {
 	return result, nil
 }
 
+// Get the function document description from the doc node.
 func getFuncDocDesc(docNode *sitter.Node, sourceCode []byte) string {
 	appendParamHeading := func(s string) string {
 		return fmt.Sprintf("**Parameters:**<br>%s", s)
@@ -965,17 +966,19 @@ func getFuncDocDesc(docNode *sitter.Node, sourceCode []byte) string {
 		return result
 	}
 
-	rootNode, err := sitter.ParseCtx(context.Background(), []byte(docNode.Content(sourceCode)), doxygen.GetLanguage())
+	docText := docNode.Content(sourceCode)
+	rootNode, err := sitter.ParseCtx(context.Background(), []byte(docText), doxygen.GetLanguage())
 	if err != nil {
 		return ""
 	}
-	docDesc := getDesc(rootNode, sourceCode)
+	isJavadoc := strings.HasPrefix(docText, "/**")
+	docDesc := getDesc(rootNode, sourceCode, isJavadoc)
 	paramText := getParamText(rootNode, sourceCode)
 	result := format(docDesc, paramText)
 	return result
 }
 
-func getDesc(rootNode *sitter.Node, sourceCode []byte) string {
+func getDesc(rootNode *sitter.Node, sourceCode []byte, isJavadoc bool) string {
 	joinLines := func(s string) string {
 		return strings.Join(strings.Split(s, "\n"), " ")
 	}
@@ -994,7 +997,7 @@ func getDesc(rootNode *sitter.Node, sourceCode []byte) string {
 	}
 	// Detailed desc
 	if descNode, err := pl12d.FindChild(rootNode, "description"); err == nil {
-		if hasBriefHeaderTag {
+		if hasBriefHeaderTag || isJavadoc {
 			docDesc = fmt.Sprintf("%s %s", docDesc, descNode.Content(sourceCode))
 		} else {
 			docDesc = fmt.Sprintf("%s\n%s", docDesc, descNode.Content(sourceCode))
@@ -1008,7 +1011,8 @@ func getParamText(rootNode *sitter.Node, sourceCode []byte) string {
 	if tags, err := pl12d.FindChildren(rootNode, "tag"); err == nil {
 		for _, tagNode := range tags {
 			if tagNameNode, err := pl12d.FindChild(tagNode, "tag_name"); err == nil {
-				if tagNameNode.Content(sourceCode) == `\param` {
+				tagName := tagNameNode.Content(sourceCode)
+				if tagName == `\param` || tagName == "@param" {
 					if tagIdentifierNode, err := pl12d.FindChild(tagNode, "identifier"); err == nil {
 						if tagDescNode, err := pl12d.FindChild(tagNode, "description"); err == nil {
 							paramText = fmt.Sprintf("%s\n- `%s` &minus; %s", paramText, tagIdentifierNode.Content(sourceCode), tagDescNode.Content(sourceCode))

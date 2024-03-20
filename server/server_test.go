@@ -2525,6 +2525,67 @@ void Forever(Integer subject) {
 					Pattern:  []string{"```12dpl\nvoid Forever(Integer subject)\n```\n---\nLoops forever.\n\n**Parameters:**<br>\n- `subject` &minus; the subject"},
 				},
 			}
+			doxygenJavadoc := []TestCase{
+				{
+					Desc: "user defined func - doxygen - javadoc - brief description",
+					SourceCode: `/**
+ * Loops forever.
+ */
+void Forever(Integer subject) {
+    return Forever(subject);
+}`,
+					Position: protocol.Position{Line: 3, Character: 5},
+					Pattern:  []string{"```12dpl\nvoid Forever(Integer subject)\n```\n---\nLoops forever."},
+				},
+				{
+					Desc: "user defined func - doxygen - javadoc - brief and detailed description",
+					SourceCode: `/**
+ * Loops forever.
+ *
+ * Forever and ever until the end of time.
+ */
+void Forever(Integer subject) {
+    return Forever(subject);
+}`,
+					Position: protocol.Position{Line: 5, Character: 5},
+					Pattern:  []string{"```12dpl\nvoid Forever(Integer subject)\n```\n---\nLoops forever. Forever and ever until the end of time."},
+				},
+				{
+					Desc: "user defined func - doxygen - javadoc - single parameter",
+					SourceCode: `/** 
+ * @param subject the subject
+ */
+void Forever(Integer subject) {
+    return Forever(subject);
+}`,
+					Position: protocol.Position{Line: 3, Character: 5},
+					Pattern:  []string{"```12dpl\nvoid Forever(Integer subject)\n```\n---\n**Parameters:**<br>\n- `subject` &minus; the subject"},
+				},
+				{
+					Desc: "user defined func - doxygen - javadoc - multiple parameter",
+					SourceCode: `/**
+ * @param augend the augend
+ * @param addend the addend
+ */
+Integer Add(Integer augend, Integer addend) {
+    return augend + addend;
+}`,
+					Position: protocol.Position{Line: 4, Character: 8},
+					Pattern:  []string{"```12dpl\nInteger Add(Integer augend, Integer addend)\n```\n---\n**Parameters:**<br>\n- `augend` &minus; the augend\n- `addend` &minus; the addend"},
+				},
+				{
+					Desc: "user defined func - doxygen - javadoc - brief description with single parameter",
+					SourceCode: `/**
+ * Loops forever.
+ * @param subject the subject
+ */
+void Forever(Integer subject) {
+    return Forever(subject);
+}`,
+					Position: protocol.Position{Line: 4, Character: 5},
+					Pattern:  []string{"```12dpl\nvoid Forever(Integer subject)\n```\n---\nLoops forever.\n\n**Parameters:**<br>\n- `subject` &minus; the subject"},
+				},
+			}
 			userDefinedFunc := []TestCase{
 				{
 					Desc: "user defined func - no doc",
@@ -2754,6 +2815,7 @@ void main() {
 				},
 			}
 			testCases = append(testCases, doxygen...)
+			testCases = append(testCases, doxygenJavadoc...)
 			testCases = append(testCases, userDefinedFunc...)
 			testCases = append(testCases, funcParam...)
 			testCases = append(testCases, localVar...)
