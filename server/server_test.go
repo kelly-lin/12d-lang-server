@@ -2524,10 +2524,45 @@ void Forever(Integer subject) {
 					Position: protocol.Position{Line: 3, Character: 5},
 					Pattern:  []string{"```12dpl\nvoid Forever(Integer subject)\n```\n---\nLoops forever.\n\n**Parameters:**<br>\n- `subject` &minus; the subject"},
 				},
+				{
+					Desc: "user defined func - doxygen - brief description and detailed description with multiple parameters",
+					SourceCode: `/*! \brief Loops forever.
+ * Until the end of time.
+ * \param subject the subject
+ */
+void Forever(Integer subject) {
+    return Forever(subject);
+}`,
+					Position: protocol.Position{Line: 4, Character: 5},
+					Pattern:  []string{"```12dpl\nvoid Forever(Integer subject)\n```\n---\nLoops forever. Until the end of time.\n\n**Parameters:**<br>\n- `subject` &minus; the subject"},
+				},
+				{
+					Desc: "user defined func - doxygen - brief description and detailed description with multiple parameters - without intermediate asterisk",
+					SourceCode: `/*! \brief Loops forever.
+   Until the end of time.
+   \param subject the subject
+ */
+void Forever(Integer subject) {
+    return Forever(subject);
+}`,
+					Position: protocol.Position{Line: 4, Character: 5},
+					Pattern:  []string{"```12dpl\nvoid Forever(Integer subject)\n```\n---\nLoops forever. Until the end of time.\n\n**Parameters:**<br>\n- `subject` &minus; the subject"},
+				},
 			}
 			doxygenJavadoc := []TestCase{
 				{
-					Desc: "user defined func - doxygen - javadoc - brief description",
+					Desc: "user defined func - doxygen - javadoc - explicit brief description",
+					SourceCode: `/**
+ * @brief Loops forever.
+ */
+void Forever(Integer subject) {
+    return Forever(subject);
+}`,
+					Position: protocol.Position{Line: 3, Character: 5},
+					Pattern:  []string{"```12dpl\nvoid Forever(Integer subject)\n```\n---\nLoops forever."},
+				},
+				{
+					Desc: "user defined func - doxygen - javadoc - implied brief description",
 					SourceCode: `/**
  * Loops forever.
  */
