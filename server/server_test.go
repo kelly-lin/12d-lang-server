@@ -2107,6 +2107,19 @@ Integer AddOne(Integer subject) {
 					"Expected expression.",
 				),
 			},
+			{
+				Desc: "undeclared var",
+				SourceCode: `void main() {
+    Integer a = b;
+}`,
+
+				Want: mustNewDiagnosticResponseMessage(
+					protocol.Position{Line: 1, Character: 16},
+					protocol.Position{Line: 1, Character: 17},
+					protocol.DiagnosticSeverityError,
+					"Identifier \"b\" is undefined.",
+				),
+			},
 			// TODO: parser is not throwing an error here.
 			// 			{
 			// 				Desc: "incomplete declaration - missing identifier",

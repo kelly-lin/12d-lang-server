@@ -332,27 +332,38 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 						})
 					continue
 				}
-				// HACK: catch all for error nodes.
+			}
+		}
+
+		identifierNodes := getIdentifierNodes(doc.RootNode)
+		for _, identifierNode := range identifierNodes {
+			if _, err := findDefinition(
+				identifierNode,
+				identifierNode.Content(doc.SourceCode),
+				params.TextDocument.URI,
+				s.documents,
+				s.includesDir,
+			); err != nil {
 				items = append(
 					items,
 					protocol.Diagnostic{
 						Range: protocol.Range{
 							Start: protocol.Position{
-								Line:      uint(syntaxErrorNode.StartPoint().Row),
-								Character: uint(syntaxErrorNode.StartPoint().Column),
+								Line:      uint(identifierNode.StartPoint().Row),
+								Character: uint(identifierNode.StartPoint().Column),
 							},
 							End: protocol.Position{
-								Line:      uint(syntaxErrorNode.EndPoint().Row),
-								Character: uint(syntaxErrorNode.EndPoint().Column),
+								Line:      uint(identifierNode.EndPoint().Row),
+								Character: uint(identifierNode.EndPoint().Column),
 							},
 						},
 						Severity: protocol.DiagnosticSeverityError,
 						Source:   SourceName,
-						Message:  "Syntax Error.",
+						Message:  fmt.Sprintf(`Identifier "%s" is undefined.`, identifierNode.Content(doc.SourceCode)),
 					})
-
 			}
 		}
+
 		report := protocol.DocumentDiagnosticReport{
 			FullDocumentDiagnosticReport: protocol.FullDocumentDiagnosticReport{
 				Kind:  protocol.DocumentDiagnosticReportKindFull,
@@ -632,6 +643,23 @@ func getSyntaxErrorNodes(node *sitter.Node) []*sitter.Node {
 			result = append(result, currentNode)
 		}
 		if currentNode.IsMissing() {
+			result = append(result, currentNode)
+		}
+		for i := 0; i < int(currentNode.ChildCount()); i++ {
+			stack.Push(currentNode.Child(i))
+		}
+	}
+	return result
+}
+
+// Search get all child identifier nodes of node.
+func getIdentifierNodes(node *sitter.Node) []*sitter.Node {
+	var result []*sitter.Node
+	stack := pl12d.NewStack()
+	stack.Push(node)
+	for stack.HasItems() {
+		currentNode, _ := stack.Pop()
+		if currentNode.Type() == "identifier" {
 			result = append(result, currentNode)
 		}
 		for i := 0; i < int(currentNode.ChildCount()); i++ {
