@@ -2041,7 +2041,21 @@ Integer AddOne(Integer subject) {
 	})
 
 	t.Run("textDocument/diagnostic", func(t *testing.T) {
-		mustNewDiagnosticResponseMessage := func(report protocol.DocumentDiagnosticReport) protocol.ResponseMessage {
+		mustNewDiagnosticResponseMessage := func(start, end protocol.Position, severity uint, errMsg string) protocol.ResponseMessage {
+			report := protocol.DocumentDiagnosticReport{
+				FullDocumentDiagnosticReport: protocol.FullDocumentDiagnosticReport{
+					Kind: protocol.DocumentDiagnosticReportKindFull,
+					Items: []protocol.Diagnostic{
+						{
+							Range:    protocol.Range{Start: start, End: end},
+							Severity: severity,
+							Source:   "12d-lang-server",
+							Message:  errMsg,
+						},
+					},
+				},
+			}
+
 			msg, err := newDiagnosticsResponseMessage(1, report)
 			require.NoError(t, err)
 			return msg
@@ -2059,29 +2073,18 @@ Integer AddOne(Integer subject) {
 				SourceCode: `void main() {
     Integer a = 1
 }`,
+
 				Want: mustNewDiagnosticResponseMessage(
-					protocol.DocumentDiagnosticReport{
-						FullDocumentDiagnosticReport: protocol.FullDocumentDiagnosticReport{
-							Kind: protocol.DocumentDiagnosticReportKindFull,
-							Items: []protocol.Diagnostic{
-								{
-									Range: protocol.Range{
-										Start: protocol.Position{
-											Line:      1,
-											Character: 17,
-										},
-										End: protocol.Position{
-											Line:      1,
-											Character: 17,
-										},
-									},
-									Severity: protocol.DiagnosticSeverityError,
-									Source:   "12d-lang-server",
-									Message:  "Expected \";\".",
-								},
-							},
-						},
+					protocol.Position{
+						Line:      1,
+						Character: 17,
 					},
+					protocol.Position{
+						Line:      1,
+						Character: 17,
+					},
+					protocol.DiagnosticSeverityError,
+					"Expected \";\".",
 				),
 			},
 		}
