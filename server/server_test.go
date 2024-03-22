@@ -2069,7 +2069,7 @@ Integer AddOne(Integer subject) {
 		}
 		testCases := []TestCase{
 			{
-				Desc: "missing semi colon",
+				Desc: "incomplete declaration - missing semi colon",
 				SourceCode: `void main() {
     Integer a = 1
 }`,
@@ -2077,6 +2077,19 @@ Integer AddOne(Integer subject) {
 				Want: mustNewDiagnosticResponseMessage(
 					protocol.Position{Line: 1, Character: 17},
 					protocol.Position{Line: 1, Character: 17},
+					protocol.DiagnosticSeverityError,
+					"Expected \";\".",
+				),
+			},
+			{
+				Desc: "incomplete declaration - multi-declaration missing semi colon",
+				SourceCode: `void main() {
+    Integer a = 1, b = 2
+}`,
+
+				Want: mustNewDiagnosticResponseMessage(
+					protocol.Position{Line: 1, Character: 24},
+					protocol.Position{Line: 1, Character: 24},
 					protocol.DiagnosticSeverityError,
 					"Expected \";\".",
 				),
@@ -2094,6 +2107,20 @@ Integer AddOne(Integer subject) {
 					"Expected expression.",
 				),
 			},
+			// TODO: parser is not throwing an error here.
+			// 			{
+			// 				Desc: "incomplete declaration - missing identifier",
+			// 				SourceCode: `void main() {
+			//     Integer = 1;
+			// }`,
+			//
+			// 				Want: mustNewDiagnosticResponseMessage(
+			// 					protocol.Position{Line: 1, Character: 12},
+			// 					protocol.Position{Line: 1, Character: 13},
+			// 					protocol.DiagnosticSeverityError,
+			// 					"Expected identifier.",
+			// 				),
+			// 			},
 		}
 		for _, testCase := range testCases {
 			t.Run(testCase.Desc, func(t *testing.T) {
