@@ -288,6 +288,30 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 		if doc.RootNode.HasError() {
 			syntaxErrNodes := getSyntaxErrorNodes(doc.RootNode)
 			for _, syntaxErrorNode := range syntaxErrNodes {
+				if syntaxErrorNode.IsError() {
+					if syntaxErrorNode.Parent().Type() == "declaration" {
+						semiColonNode := syntaxErrorNode.NextSibling()
+						items = append(
+							items,
+							protocol.Diagnostic{
+								Range: protocol.Range{
+									Start: protocol.Position{
+										Line:      uint(semiColonNode.StartPoint().Row),
+										Character: uint(semiColonNode.StartPoint().Column),
+									},
+									End: protocol.Position{
+										Line:      uint(semiColonNode.EndPoint().Row),
+										Character: uint(semiColonNode.EndPoint().Column),
+									},
+								},
+								Severity: protocol.DiagnosticSeverityError,
+								Source:   SourceName,
+								Message:  "Expected expression.",
+							},
+						)
+						continue
+					}
+				}
 				if syntaxErrorNode.String() == "(MISSING \";\")" {
 					items = append(
 						items,
@@ -306,7 +330,27 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 							Source:   SourceName,
 							Message:  "Expected \";\".",
 						})
+					continue
 				}
+				// HACK: catch all for error nodes.
+				items = append(
+					items,
+					protocol.Diagnostic{
+						Range: protocol.Range{
+							Start: protocol.Position{
+								Line:      uint(syntaxErrorNode.StartPoint().Row),
+								Character: uint(syntaxErrorNode.StartPoint().Column),
+							},
+							End: protocol.Position{
+								Line:      uint(syntaxErrorNode.EndPoint().Row),
+								Character: uint(syntaxErrorNode.EndPoint().Column),
+							},
+						},
+						Severity: protocol.DiagnosticSeverityError,
+						Source:   SourceName,
+						Message:  "Syntax Error.",
+					})
+
 			}
 		}
 		report := protocol.DocumentDiagnosticReport{
@@ -584,9 +628,9 @@ func getSyntaxErrorNodes(node *sitter.Node) []*sitter.Node {
 	stack.Push(node)
 	for stack.HasItems() {
 		currentNode, _ := stack.Pop()
-		// if (currentNode.String() == "(MISSING \";\")") {
-		// 	fmt.Printf("%v: %s\n", currentNode.IsMissing(), currentNode.String())
-		// }
+		if currentNode.IsError() {
+			result = append(result, currentNode)
+		}
 		if currentNode.IsMissing() {
 			result = append(result, currentNode)
 		}

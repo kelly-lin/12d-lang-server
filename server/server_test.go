@@ -2075,16 +2075,23 @@ Integer AddOne(Integer subject) {
 }`,
 
 				Want: mustNewDiagnosticResponseMessage(
-					protocol.Position{
-						Line:      1,
-						Character: 17,
-					},
-					protocol.Position{
-						Line:      1,
-						Character: 17,
-					},
+					protocol.Position{Line: 1, Character: 17},
+					protocol.Position{Line: 1, Character: 17},
 					protocol.DiagnosticSeverityError,
 					"Expected \";\".",
+				),
+			},
+			{
+				Desc: "incomplete declaration - missing expr",
+				SourceCode: `void main() {
+    Integer a = ;
+}`,
+
+				Want: mustNewDiagnosticResponseMessage(
+					protocol.Position{Line: 1, Character: 16},
+					protocol.Position{Line: 1, Character: 17},
+					protocol.DiagnosticSeverityError,
+					"Expected expression.",
 				),
 			},
 		}
