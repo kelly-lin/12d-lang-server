@@ -2040,6 +2040,78 @@ Integer AddOne(Integer subject) {
 		}
 	})
 
+	t.Run("textDocument/diagnostic", func(t *testing.T) {
+		mustNewDiagnosticResponseMessage := func(report protocol.DocumentDiagnosticReport) protocol.ResponseMessage {
+			msg, err := newDiagnosticsResponseMessage(1, report)
+			require.NoError(t, err)
+			return msg
+		}
+
+		type TestCase struct {
+			Desc       string
+			SourceCode string
+			Report     protocol.DocumentDiagnosticReport
+			Want       protocol.ResponseMessage
+		}
+		testCases := []TestCase{
+			{
+				Desc: "missing semi colon",
+				SourceCode: `void main() {
+    Integer a = 1
+}`,
+				Want: mustNewDiagnosticResponseMessage(
+					protocol.DocumentDiagnosticReport{
+						FullDocumentDiagnosticReport: protocol.FullDocumentDiagnosticReport{
+							Kind: protocol.DocumentDiagnosticReportKindFull,
+							Items: []protocol.Diagnostic{
+								{
+									Range: protocol.Range{
+										Start: protocol.Position{
+											Line:      1,
+											Character: 17,
+										},
+										End: protocol.Position{
+											Line:      1,
+											Character: 17,
+										},
+									},
+									Severity: protocol.DiagnosticSeverityError,
+									Source:   "12d-lang-server",
+									Message:  "Expected \";\".",
+								},
+							},
+						},
+					},
+				),
+			},
+		}
+		for _, testCase := range testCases {
+			t.Run(testCase.Desc, func(t *testing.T) {
+				defer goleak.VerifyNone(t)
+				assert := assert.New(t)
+				logger, err := newLogger()
+				assert.NoError(err)
+				in, out, cleanUp := startServer("", langCompletions, logger)
+				defer cleanUp()
+
+				var id int64 = 1
+				didOpenMsgBytes, err := newDidOpenRequestMessageBytes(id, "file:///main.4dm", testCase.SourceCode)
+				assert.NoError(err)
+				_, err = in.Writer.Write([]byte(server.ToProtocolMessage(didOpenMsgBytes)))
+				assert.NoError(err)
+
+				reqMsgBytes, err := newDiagnosticRequestMessageBytes(id, "file:///main.4dm")
+				assert.NoError(err)
+				_, err = in.Writer.Write([]byte(server.ToProtocolMessage(reqMsgBytes)))
+				assert.NoError(err)
+
+				got, err := getReponseMessage(out.Reader)
+				assert.NoError(err)
+				assertResponseMessageEqual(t, testCase.Want, got)
+			})
+		}
+	})
+
 	t.Run("textDocument/rename", func(t *testing.T) {
 		type TestCase struct {
 			Desc        string
@@ -2964,6 +3036,31 @@ func newReferencesRequestMessageBytes(id int64, uri string, position protocol.Po
 	return msgBytes, nil
 }
 
+// Creates a new protocol request message with references params and returns the
+// wire representation.
+func newDiagnosticRequestMessageBytes(id int64, uri string) ([]byte, error) {
+	params := protocol.DocumentDiagnosticParams{
+		TextDocument: protocol.TextDocumentIdentifier{
+			URI: uri,
+		},
+	}
+	paramsBytes, err := json.Marshal(params)
+	if err != nil {
+		return nil, err
+	}
+	msg := protocol.RequestMessage{
+		JSONRPC: "2.0",
+		ID:      id,
+		Method:  "textDocument/diagnostic",
+		Params:  json.RawMessage(paramsBytes),
+	}
+	msgBytes, err := json.Marshal(msg)
+	if err != nil {
+		return nil, err
+	}
+	return msgBytes, nil
+}
+
 // Creates a new protocol request message with rename params and returns the
 // wire representation.
 func newRenameRequestMessageBytes(id int64, uri, newText string, position protocol.Position) ([]byte, error) {
@@ -3150,6 +3247,17 @@ func newLocationResponseMessage(id int64, uri string, start, end protocol.Positi
 // the wire representation.
 func newLocationsResponseMessage(id int64, locations []protocol.Location) (protocol.ResponseMessage, error) {
 	resultBytes, err := json.Marshal(locations)
+	if err != nil {
+		return protocol.ResponseMessage{}, err
+	}
+	msg := protocol.ResponseMessage{ID: id, Result: json.RawMessage(resultBytes)}
+	return msg, nil
+}
+
+// Creates a new protocol response message with document locations and returns
+// the wire representation.
+func newDiagnosticsResponseMessage(id int64, report protocol.DocumentDiagnosticReport) (protocol.ResponseMessage, error) {
+	resultBytes, err := json.Marshal(report)
 	if err != nil {
 		return protocol.ResponseMessage{}, err
 	}

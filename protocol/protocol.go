@@ -42,6 +42,11 @@ const (
 )
 
 const (
+	DocumentDiagnosticReportKindFull      = "full"
+	DocumentDiagnosticReportKindUnchanged = "unchanged"
+)
+
+const (
 	TextDocumentSyncKindNone        uint = 0
 	TextDocumentSyncKindFull        uint = 1
 	TextDocumentSyncKindIncremental uint = 2
@@ -175,6 +180,7 @@ type MarkupContent struct {
 type ServerCapabilities struct {
 	CompletionProvider         *CompletionOptions `json:"completionProvider,omitempty"`
 	DefinitionProvider         *bool              `json:"definitionProvider,omitempty"`
+	DiagnosticProvider         DiagnosticOptions  `json:"diagnosticProvider"`
 	DocumentFormattingProvider *bool              `json:"documentFormattingProvider,omitempty"`
 	HoverProvider              bool               `json:"hoverProvider"`
 	ReferencesProvider         bool               `json:"referencesProvider"`
@@ -184,6 +190,16 @@ type ServerCapabilities struct {
 
 type CompletionOptions struct {
 	ResolveProvider *bool `json:"resolveProvider,omitempty"`
+}
+
+type DiagnosticOptions struct {
+	// Whether the language has inter file dependencies meaning that
+	// editing code in one file can result in a different diagnostic
+	// set in another file. Inter file dependencies are common for
+	// most programming languages and typically uncommon for linters.
+	InterFileDependencies bool `json:"interFileDependencies"`
+	// The server provides support for workspace diagnostics as well.
+	WorkspaceDiagnostics bool `json:"workspaceDiagnostics"`
 }
 
 type ServerInfo struct {
@@ -326,4 +342,19 @@ type Diagnostic struct {
 	Source string `json:"source"`
 	// The diagnostic's message.
 	Message string `json:"message"`
+}
+
+type DocumentDiagnosticParams struct {
+	TextDocument TextDocumentIdentifier `json:"textDocument"`
+}
+
+type DocumentDiagnosticReport struct {
+	FullDocumentDiagnosticReport
+}
+
+// A diagnostic report with a full set of problems.
+// @since 3.17.0
+type FullDocumentDiagnosticReport struct {
+	Kind  string       `json:"kind"` // A full document diagnostic report.
+	Items []Diagnostic `json:"items"`
 }

@@ -274,6 +274,44 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 		}
 		return protocol.ResponseMessage{}, 0, nil
 
+	case "textDocument/diagnostic":
+		var params protocol.DocumentDiagnosticParams
+		if err := json.Unmarshal(msg.Params, &params); err != nil {
+			return protocol.ResponseMessage{}, 0, err
+		}
+		report := protocol.DocumentDiagnosticReport{
+			FullDocumentDiagnosticReport: protocol.FullDocumentDiagnosticReport{
+				Kind: protocol.DocumentDiagnosticReportKindFull,
+				Items: []protocol.Diagnostic{
+					{
+						Range: protocol.Range{
+							Start: protocol.Position{
+								Line:      1,
+								Character: 17,
+							},
+							End: protocol.Position{
+								Line:      1,
+								Character: 17,
+							},
+						},
+						Severity: protocol.DiagnosticSeverityError,
+						Source:   "12d-lang-server",
+						Message:  "Expected \";\".",
+					},
+				},
+			},
+		}
+		reportBytes, err := json.Marshal(report)
+		if err != nil {
+			return protocol.ResponseMessage{}, 0, err
+		}
+		return protocol.ResponseMessage{
+				ID:     msg.ID,
+				Result: json.RawMessage(reportBytes),
+			},
+			len(reportBytes),
+			nil
+
 	case "textDocument/formatting":
 		var params protocol.DocumentFormattingParams
 		if err := json.Unmarshal(msg.Params, &params); err != nil {
@@ -1515,7 +1553,11 @@ func newServerCapabilities() protocol.ServerCapabilities {
 		CompletionProvider: &protocol.CompletionOptions{
 			ResolveProvider: &resolveProvider,
 		},
-		DefinitionProvider:         &definitionProvider,
+		DefinitionProvider: &definitionProvider,
+		DiagnosticProvider: protocol.DiagnosticOptions{
+			InterFileDependencies: true,
+			WorkspaceDiagnostics:  true,
+		},
 		DocumentFormattingProvider: &documentFormattingProvider,
 		HoverProvider:              true,
 		ReferencesProvider:         true,
