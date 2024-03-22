@@ -23,6 +23,7 @@ import (
 )
 
 const contentLengthHeaderName = "Content-Length"
+const SourceName = "12d-lang-server"
 
 // Unhandled LSP method error.
 var ErrUnhandledMethod = errors.New("unhandled method")
@@ -279,26 +280,39 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 		if err := json.Unmarshal(msg.Params, &params); err != nil {
 			return protocol.ResponseMessage{}, 0, err
 		}
+		doc, ok := s.documents[params.TextDocument.URI]
+		if !ok {
+			return newNullResponseMessage(msg.ID), len(protocol.NullResult), errors.New("source node not found")
+		}
+		items := []protocol.Diagnostic{}
+		if doc.RootNode.HasError() {
+			syntaxErrNodes := getSyntaxErrorNodes(doc.RootNode)
+			for _, syntaxErrorNode := range syntaxErrNodes {
+				if syntaxErrorNode.String() == "(MISSING \";\")" {
+					items = append(
+						items,
+						protocol.Diagnostic{
+							Range: protocol.Range{
+								Start: protocol.Position{
+									Line:      uint(syntaxErrorNode.StartPoint().Row),
+									Character: uint(syntaxErrorNode.StartPoint().Column),
+								},
+								End: protocol.Position{
+									Line:      uint(syntaxErrorNode.EndPoint().Row),
+									Character: uint(syntaxErrorNode.EndPoint().Column),
+								},
+							},
+							Severity: protocol.DiagnosticSeverityError,
+							Source:   SourceName,
+							Message:  "Expected \";\".",
+						})
+				}
+			}
+		}
 		report := protocol.DocumentDiagnosticReport{
 			FullDocumentDiagnosticReport: protocol.FullDocumentDiagnosticReport{
-				Kind: protocol.DocumentDiagnosticReportKindFull,
-				Items: []protocol.Diagnostic{
-					{
-						Range: protocol.Range{
-							Start: protocol.Position{
-								Line:      1,
-								Character: 17,
-							},
-							End: protocol.Position{
-								Line:      1,
-								Character: 17,
-							},
-						},
-						Severity: protocol.DiagnosticSeverityError,
-						Source:   "12d-lang-server",
-						Message:  "Expected \";\".",
-					},
-				},
+				Kind:  protocol.DocumentDiagnosticReportKindFull,
+				Items: items,
 			},
 		}
 		reportBytes, err := json.Marshal(report)
@@ -559,6 +573,25 @@ func getReferenceNodes(scopeNode, declarationNode *sitter.Node, identifier strin
 		}
 		for i := 0; i < int(currNode.ChildCount()); i++ {
 			stack.Push(currNode.Child(i))
+		}
+	}
+	return result
+}
+
+func getSyntaxErrorNodes(node *sitter.Node) []*sitter.Node {
+	var result []*sitter.Node
+	stack := pl12d.NewStack()
+	stack.Push(node)
+	for stack.HasItems() {
+		currentNode, _ := stack.Pop()
+		// if (currentNode.String() == "(MISSING \";\")") {
+		// 	fmt.Printf("%v: %s\n", currentNode.IsMissing(), currentNode.String())
+		// }
+		if currentNode.IsMissing() {
+			result = append(result, currentNode)
+		}
+		for i := 0; i < int(currentNode.ChildCount()); i++ {
+			stack.Push(currentNode.Child(i))
 		}
 	}
 	return result
