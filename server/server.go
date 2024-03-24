@@ -66,7 +66,7 @@ func NewServer(
 }
 
 type IncludesResolver interface {
-	Find(path string) (string, error)
+	Resolve(path string) (string, error)
 	Read(name string) ([]byte, error)
 }
 
@@ -84,7 +84,7 @@ type FSResolver struct {
 // fallback directory.
 //
 // Returns path to the file if it exists or an error otherwise.
-func (rs FSResolver) Find(path string) (string, error) {
+func (rs FSResolver) Resolve(path string) (string, error) {
 	fullPath, err := filepath.Abs(filepath.Join(rs.includesDir, path))
 	if err != nil {
 		return "", err
@@ -710,7 +710,7 @@ func (s *Server) setDocument(uri string, content string) error {
 		}
 		for _, includeNode := range includeNodes {
 			includePath := includeNode.ChildByFieldName("path").Child(1).Content(sourceCode)
-			resolvedFilepath, err := s.includesResolver.Find(includePath)
+			resolvedFilepath, err := s.includesResolver.Resolve(includePath)
 			if err != nil {
 				return err
 			}
@@ -719,8 +719,9 @@ func (s *Server) setDocument(uri string, content string) error {
 			if err != nil {
 				continue
 			}
-			if err := s.setDocument(protocol.URI(resolvedFilepath), string(contents)); err != nil {
-				continue
+			resolvedURI := protocol.URI(resolvedFilepath)
+			if _, ok := s.documents[resolvedURI]; !ok {
+				_ = s.setDocument(protocol.URI(resolvedFilepath), string(contents))
 			}
 		}
 	}

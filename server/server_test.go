@@ -3425,7 +3425,7 @@ type MockIncludesResolver struct {
 	includesDir string
 }
 
-func (rs MockIncludesResolver) Find(path string) (string, error) {
+func (rs MockIncludesResolver) Resolve(path string) (string, error) {
 	if filepath.Join(rs.includesDir, path) == filepath.Join("/12d", "set_ups.h") {
 		return filepath.Join("/12d", "set_ups.h"), nil
 	}
