@@ -3,6 +3,7 @@ package server_test
 import (
 	"bufio"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -21,6 +22,8 @@ import (
 )
 
 func TestServer(t *testing.T) {
+	includesDir := "/12d"
+	mockIncludesResolver := newMockIncludesResolver(includesDir)
 	// Helper returns the response message and fails if the test if the
 	// response message could not be created.
 	mustNewLocationResponseMessage := func(uri string, start, end protocol.Position) protocol.ResponseMessage {
@@ -38,10 +41,6 @@ func TestServer(t *testing.T) {
 		require.NoError(t, err)
 		return msg
 	}
-	// Test command should be run in the root directory.
-	startDir, err := os.Getwd()
-	require.NoError(t, err)
-	includesDir := filepath.Join(startDir, "..", "lang", "includes")
 	stubKeywordCompletion := protocol.CompletionItem{Label: "!sentinel-keyword-completion-item"}
 	stubTypeCompletion := protocol.CompletionItem{Label: "!sentinel-type-completion-item"}
 	stubTypeCompletions := []protocol.CompletionItem{stubTypeCompletion}
@@ -984,8 +983,7 @@ Integer b) {}`,
 			t.Run(testCase.Desc, func(t *testing.T) {
 				defer goleak.VerifyNone(t)
 				assert := assert.New(t)
-				assert.NoError(err)
-				in, out, cleanUp := startServer("", nil, nil)
+				in, out, cleanUp := startServer("", nil, nil, nil)
 				defer cleanUp()
 
 				var id int64 = 1
@@ -1278,7 +1276,7 @@ void main() {
 				assert := assert.New(t)
 				logger, err := newLogger()
 				assert.NoError(err)
-				in, out, cleanUp := startServer(testCase.IncludesDir, langCompletions, logger)
+				in, out, cleanUp := startServer(testCase.IncludesDir, langCompletions, nil, logger)
 				defer cleanUp()
 
 				var id int64 = 1
@@ -1525,8 +1523,8 @@ void main() {
 				IncludesDir: includesDir,
 				Want: mustNewLocationResponseMessage(
 					protocol.URI(filepath.Join(includesDir, "set_ups.h")),
-					protocol.Position{Line: 354, Character: 8},
-					protocol.Position{Line: 354, Character: 29},
+					protocol.Position{Line: 0, Character: 8},
+					protocol.Position{Line: 0, Character: 29},
 				),
 			},
 			{
@@ -1583,7 +1581,7 @@ void main() {
 				assert := assert.New(t)
 				logger, err := newLogger()
 				assert.NoError(err)
-				in, out, cleanUp := startServer(testCase.IncludesDir, langCompletions, logger)
+				in, out, cleanUp := startServer(testCase.IncludesDir, langCompletions, mockIncludesResolver, logger)
 				defer cleanUp()
 
 				var id int64 = 1
@@ -2019,7 +2017,7 @@ Integer AddOne(Integer subject) {
 				assert := assert.New(t)
 				logger, err := newLogger()
 				assert.NoError(err)
-				in, out, cleanUp := startServer(testCase.IncludesDir, langCompletions, logger)
+				in, out, cleanUp := startServer(testCase.IncludesDir, langCompletions, nil, logger)
 				defer cleanUp()
 
 				var id int64 = 1
@@ -2141,7 +2139,7 @@ Integer AddOne(Integer subject) {
 				assert := assert.New(t)
 				logger, err := newLogger()
 				assert.NoError(err)
-				in, out, cleanUp := startServer("", langCompletions, logger)
+				in, out, cleanUp := startServer("", langCompletions, nil, logger)
 				defer cleanUp()
 
 				var id int64 = 1
@@ -2194,7 +2192,7 @@ Integer AddOne(Integer subject) {
 				assert := assert.New(t)
 				logger, err := newLogger()
 				assert.NoError(err)
-				in, out, cleanUp := startServer(testCase.IncludesDir, langCompletions, logger)
+				in, out, cleanUp := startServer(testCase.IncludesDir, langCompletions, nil, logger)
 				defer cleanUp()
 
 				var id int64 = 1
@@ -2223,7 +2221,7 @@ Integer AddOne(Integer subject) {
 		assert := assert.New(t)
 		logger, err := newLogger()
 		assert.NoError(err)
-		in, out, cleanUp := startServer("", nil, logger)
+		in, out, cleanUp := startServer("", nil, nil, logger)
 		defer cleanUp()
 
 		sourceCodeOnOpen := `void main() {
@@ -2525,7 +2523,7 @@ void main() {
 					assert := assert.New(t)
 					logger, err := newLogger()
 					assert.NoError(err)
-					in, out, cleanUp := startServer(testCase.IncludesDir, langCompletions, logger)
+					in, out, cleanUp := startServer(testCase.IncludesDir, langCompletions, mockIncludesResolver, logger)
 					defer cleanUp()
 
 					var openRequestID int64 = 1
@@ -2982,7 +2980,7 @@ void main() {
 					assert := assert.New(t)
 					logger, err := newLogger()
 					assert.NoError(err)
-					in, out, cleanUp := startServer(testCase.IncludesDir, langCompletions, logger)
+					in, out, cleanUp := startServer(testCase.IncludesDir, langCompletions, mockIncludesResolver, logger)
 					defer cleanUp()
 
 					var openRequestID int64 = 1
@@ -3363,8 +3361,8 @@ func newLogger() (func(msg string), error) {
 
 // Starts the language server in a goroutine and returns the input pipe, output
 // pipe and a clean up function.
-func startServer(includesDir string, langCompletions *server.LangCompletions, logger func(msg string)) (Pipe, Pipe, func()) {
-	serv := server.NewServer(includesDir, langCompletions, logger)
+func startServer(includesDir string, langCompletions *server.LangCompletions, includesResolver server.IncludesResolver, logger func(msg string)) (Pipe, Pipe, func()) {
+	serv := server.NewServer(includesDir, langCompletions, includesResolver, logger)
 	inReader, inWriter := io.Pipe()
 	outReader, outWriter := io.Pipe()
 	go (func() {
@@ -3417,4 +3415,27 @@ func getReponseMessage(rd io.Reader) (protocol.ResponseMessage, error) {
 		return protocol.ResponseMessage{}, err
 	}
 	return msg, nil
+}
+
+func newMockIncludesResolver(includesDir string) MockIncludesResolver {
+	return MockIncludesResolver{includesDir: includesDir}
+}
+
+type MockIncludesResolver struct {
+	includesDir string
+}
+
+func (rs MockIncludesResolver) Find(path string) (string, error) {
+	if filepath.Join(rs.includesDir, path) == filepath.Join("/12d", "set_ups.h") {
+		return filepath.Join("/12d", "set_ups.h"), nil
+	}
+	return "", errors.New("file does not exist")
+}
+
+func (rs MockIncludesResolver) Read(name string) ([]byte, error) {
+	if name == filepath.Join("/12d", "set_ups.h") {
+		return []byte(`#define ALL_WIDGETS_OWN_WIDTH 2
+#define TRUE  1`), nil
+	}
+	return nil, errors.New("file does not exist")
 }

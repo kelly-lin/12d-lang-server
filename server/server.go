@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/fs"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -16,6 +15,7 @@ import (
 
 	"github.com/kelly-lin/12d-lang-server/format"
 	"github.com/kelly-lin/12d-lang-server/lang"
+	parser "github.com/kelly-lin/12d-lang-server/parser/12dpl"
 	pl12d "github.com/kelly-lin/12d-lang-server/parser/12dpl"
 	doxygen "github.com/kelly-lin/12d-lang-server/parser/doxygen"
 	"github.com/kelly-lin/12d-lang-server/protocol"
@@ -43,45 +43,69 @@ var BuiltInLangCompletions LangCompletions = LangCompletions{
 // Creates a new language server. The logger function parameter specifies the
 // function to call for logging. If the logger is nil, will default to a
 // function that does not log anything. The includes directory is an absolute path.
-func NewServer(includesDir string, builtInCompletions *LangCompletions, logger func(msg string)) Server {
+func NewServer(
+	includesDir string,
+	builtInCompletions *LangCompletions,
+	includesResolver IncludesResolver,
+	logger func(msg string),
+) Server {
 	serverLogger := func(msg string) {}
 	if logger != nil {
 		serverLogger = logger
 	}
 	s := Server{
-		documents:   make(map[string]Document),
-		logger:      serverLogger,
-		includesDir: includesDir,
+		documents:        make(map[string]Document),
+		logger:           serverLogger,
+		includesDir:      includesDir,
+		includesResolver: includesResolver,
 	}
 	if builtInCompletions != nil {
 		s.builtInCompletions = *builtInCompletions
 	}
-	// TODO: hard coding in an includes directory for now. Need to move this to
-	// config in client and expose this via an option on the command line.
-	if s.includesDir != "" {
-		filesystem := os.DirFS(s.includesDir)
-		if includeFiles, err := fs.Glob(filesystem, "*.h"); err == nil {
-			for _, includeFile := range includeFiles {
-				filepath := filepath.Join(s.includesDir, includeFile)
-				contents, err := os.ReadFile(filepath)
-				if err != nil {
-					continue
-				}
-				// TODO: how do we handle this error? Should we signal to
-				// the user that we had issues updating the file?
-				_ = s.setDocument(protocol.URI(filepath), string(contents))
-			}
-		}
-	}
 	return s
+}
+
+type IncludesResolver interface {
+	Find(path string) (string, error)
+	Read(name string) ([]byte, error)
+}
+
+func NewFSResolver(includesDir string) FSResolver {
+	return FSResolver{includesDir: includesDir}
+}
+
+type FSResolver struct {
+	includesDir string
+}
+
+// Resolve the path into a filepath on the client machine by first looking
+// in the provided directory and it's subdirectories. If the file does not exist
+// in the directory (absolute path), then the file will be searched for in the
+// fallback directory.
+//
+// Returns path to the file if it exists or an error otherwise.
+func (rs FSResolver) Find(path string) (string, error) {
+	fullPath, err := filepath.Abs(filepath.Join(rs.includesDir, path))
+	if err != nil {
+		return "", err
+	}
+	if _, err := os.Stat(fullPath); err != nil {
+		return "", err
+	}
+	return fullPath, nil
+}
+
+func (rs FSResolver) Read(name string) ([]byte, error) {
+	return os.ReadFile(name)
 }
 
 // Language server.
 type Server struct {
-	documents          map[string]Document
-	logger             func(msg string)
-	includesDir        string
 	builtInCompletions LangCompletions
+	documents          map[string]Document
+	includesDir        string
+	logger             func(msg string)
+	includesResolver   IncludesResolver
 }
 
 // Serve reads JSONRPC from the reader, processes the message and responds by
@@ -676,7 +700,30 @@ func (s *Server) setDocument(uri string, content string) error {
 	if err != nil {
 		return err
 	}
-	s.documents[uri] = Document{RootNode: rootNode, SourceCode: []byte(content)}
+	sourceCode := []byte(content)
+	s.documents[uri] = Document{RootNode: rootNode, SourceCode: sourceCode}
+	ext := filepath.Ext(uri)
+	if ext == ".4dm" {
+		includeNodes, err := parser.FindChildren(rootNode, "preproc_include")
+		if err != nil {
+			return err
+		}
+		for _, includeNode := range includeNodes {
+			includePath := includeNode.ChildByFieldName("path").Child(1).Content(sourceCode)
+			resolvedFilepath, err := s.includesResolver.Find(includePath)
+			if err != nil {
+				return err
+			}
+			// TODO: how to handle this error?
+			contents, _ := s.includesResolver.Read(resolvedFilepath)
+			if err != nil {
+				continue
+			}
+			if err := s.setDocument(protocol.URI(resolvedFilepath), string(contents)); err != nil {
+				continue
+			}
+		}
+	}
 	return nil
 }
 

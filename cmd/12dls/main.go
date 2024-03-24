@@ -41,7 +41,7 @@ func main() {
 		log(fmt.Sprintf("failed to get absolute path to includes directory: %s\n", err.Error()))
 		os.Exit(1)
 	}
-	langServer := server.NewServer(includesDir, &server.BuiltInLangCompletions, log)
+	langServer := server.NewServer(includesDir, &server.BuiltInLangCompletions, server.NewFSResolver(includesDir), log)
 	if err := langServer.Serve(os.Stdin, os.Stdout); err != nil {
 		log(fmt.Sprintf("%s\n", err.Error()))
 		os.Exit(1)
