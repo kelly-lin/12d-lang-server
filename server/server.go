@@ -67,7 +67,7 @@ func NewServer(
 }
 
 type IncludesResolver interface {
-	Resolve(includesDir, path string) (string, error)
+	Exists(path string) bool
 	Read(name string) ([]byte, error)
 }
 
@@ -83,15 +83,15 @@ type FSResolver struct{}
 // fallback directory.
 //
 // Returns path to the file if it exists or an error otherwise.
-func (rs FSResolver) Resolve(includesDir, path string) (string, error) {
-	fullPath, err := filepath.Abs(filepath.Join(includesDir, path))
+func (rs FSResolver) Exists(path string) bool {
+	absPath, err := filepath.Abs(filepath.Join(path))
 	if err != nil {
-		return "", err
+		return false
 	}
-	if _, err := os.Stat(fullPath); err != nil {
-		return "", err
+	if _, err := os.Stat(absPath); err != nil {
+		return false
 	}
-	return fullPath, nil
+	return true
 }
 
 func (rs FSResolver) Read(name string) ([]byte, error) {
@@ -721,13 +721,13 @@ func (s *Server) parseIncludes(rootNode *sitter.Node, sourceCode []byte, include
 	}
 	for _, includeNode := range includeNodes {
 		includePath := includeNode.ChildByFieldName("path").Child(1).Content(sourceCode)
-		resolvedFilepath, err := s.includesResolver.Resolve(includesDir, includePath)
-		if err != nil {
-			return err
+		fullIncludePath := filepath.Join(includesDir, includePath)
+		if !s.includesResolver.Exists(fullIncludePath) {
+			return fmt.Errorf("file %s does not exist", fullIncludePath)
 		}
 		// TODO: how to handle this error?
-		contents, _ := s.includesResolver.Read(resolvedFilepath)
-		resolvedURI := protocol.URI(resolvedFilepath)
+		contents, _ := s.includesResolver.Read(fullIncludePath)
+		resolvedURI := protocol.URI(fullIncludePath)
 		if _, ok := s.documents[resolvedURI]; !ok {
 			_ = s.setDocument(resolvedURI, string(contents))
 		}

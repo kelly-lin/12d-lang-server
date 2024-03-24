@@ -3453,14 +3453,8 @@ func newMockIncludesResolver() MockIncludesResolver {
 
 type MockIncludesResolver struct{}
 
-func (rs MockIncludesResolver) Resolve(includesDir, path string) (string, error) {
-	if filepath.Join(includesDir, path) == filepath.Join("/12d", "set_ups.h") {
-		return filepath.Join("/12d", "set_ups.h"), nil
-	}
-	if filepath.Join(includesDir, path) == filepath.Join("/12d/proj", "lib.h") {
-		return filepath.Join("/12d/proj", "lib.h"), nil
-	}
-	return "", errors.New("file does not exist")
+func (rs MockIncludesResolver) Exists(path string) bool {
+	return path == filepath.Join("/12d", "set_ups.h") || path == filepath.Join("/12d/proj", "lib.h")
 }
 
 func (rs MockIncludesResolver) Read(name string) ([]byte, error) {
