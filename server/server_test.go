@@ -1543,6 +1543,21 @@ void main() {
 				),
 			},
 			{
+				Desc: "declaration in include file with include dirs as current dir - relative path",
+				SourceCode: `#include "../set_ups.h"
+
+void main() {
+    Integer hello = TRUE;
+}`,
+				Pos:         protocol.Position{Line: 3, Character: 20},
+				IncludesDir: server.SourceFileDirToken,
+				Want: mustNewLocationResponseMessage(
+					protocol.URI("/12d/set_ups.h"),
+					protocol.Position{Line: 1, Character: 8},
+					protocol.Position{Line: 1, Character: 12},
+				),
+			},
+			{
 				Desc: "preproc definition after include file",
 				SourceCode: `#include "set_ups.h"
 #define HELLO "hello"
