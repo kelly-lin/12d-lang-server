@@ -23,7 +23,7 @@ import (
 
 func TestServer(t *testing.T) {
 	includesDir := "/12d"
-	mockIncludesResolver := newMockIncludesResolver(includesDir)
+	mockIncludesResolver := newMockIncludesResolver()
 	// Helper returns the response message and fails if the test if the
 	// response message could not be created.
 	mustNewLocationResponseMessage := func(uri string, start, end protocol.Position) protocol.ResponseMessage {
@@ -987,12 +987,12 @@ Integer b) {}`,
 				defer cleanUp()
 
 				var id int64 = 1
-				didOpenMsgBytes, err := newDidOpenRequestMessageBytes(id, "file:///main.4dm", testCase.SourceCode)
+				didOpenMsgBytes, err := newDidOpenRequestMessageBytes(id, "file:///12d/proj/main.4dm", testCase.SourceCode)
 				assert.NoError(err)
 				_, err = in.Writer.Write([]byte(server.ToProtocolMessage(didOpenMsgBytes)))
 				assert.NoError(err)
 
-				msgBytes, err := newFormattingRequestMessageBytes(id, "file:///main.4dm")
+				msgBytes, err := newFormattingRequestMessageBytes(id, "file:///12d/proj/main.4dm")
 				assert.NoError(err)
 				_, err = in.Writer.Write([]byte(server.ToProtocolMessage(msgBytes)))
 				assert.NoError(err)
@@ -1280,12 +1280,12 @@ void main() {
 				defer cleanUp()
 
 				var id int64 = 1
-				didOpenMsgBytes, err := newDidOpenRequestMessageBytes(id, "file:///main.4dm", testCase.SourceCode)
+				didOpenMsgBytes, err := newDidOpenRequestMessageBytes(id, "file:///12d/proj/main.4dm", testCase.SourceCode)
 				assert.NoError(err)
 				_, err = in.Writer.Write([]byte(server.ToProtocolMessage(didOpenMsgBytes)))
 				assert.NoError(err)
 
-				msgBytes, err := newCompletionRequestMessageBytes(id, "file:///main.4dm", testCase.Pos)
+				msgBytes, err := newCompletionRequestMessageBytes(id, "file:///12d/proj/main.4dm", testCase.Pos)
 				assert.NoError(err)
 				_, err = in.Writer.Write([]byte(server.ToProtocolMessage(msgBytes)))
 				assert.NoError(err)
@@ -1317,7 +1317,7 @@ void main() {
 }`,
 				Pos: protocol.Position{Line: 5, Character: 21},
 				Want: mustNewLocationResponseMessage(
-					"file:///main.4dm",
+					"file:///12d/proj/main.4dm",
 					protocol.Position{Line: 0, Character: 8},
 					protocol.Position{Line: 0, Character: 11},
 				),
@@ -1335,7 +1335,7 @@ void main() {
 }`,
 				Pos: protocol.Position{Line: 2, Character: 11},
 				Want: mustNewLocationResponseMessage(
-					"file:///main.4dm",
+					"file:///12d/proj/main.4dm",
 					protocol.Position{Line: 0, Character: 20},
 					protocol.Position{Line: 0, Character: 26},
 				),
@@ -1350,7 +1350,7 @@ void main() {
 }`,
 				Pos: protocol.Position{Line: 4, Character: 11},
 				Want: mustNewLocationResponseMessage(
-					"file:///main.4dm",
+					"file:///12d/proj/main.4dm",
 					protocol.Position{Line: 1, Character: 12},
 					protocol.Position{Line: 1, Character: 18},
 				),
@@ -1362,7 +1362,7 @@ void main() {
 }`,
 				Pos: protocol.Position{Line: 1, Character: 13},
 				Want: mustNewLocationResponseMessage(
-					"file:///main.4dm",
+					"file:///12d/proj/main.4dm",
 					protocol.Position{Line: 0, Character: 26},
 					protocol.Position{Line: 0, Character: 28},
 				),
@@ -1375,7 +1375,7 @@ void main() {
 }`,
 				Pos: protocol.Position{Line: 2, Character: 11},
 				Want: mustNewLocationResponseMessage(
-					"file:///main.4dm",
+					"file:///12d/proj/main.4dm",
 					protocol.Position{Line: 1, Character: 12},
 					protocol.Position{Line: 1, Character: 18},
 				),
@@ -1388,7 +1388,7 @@ void main() {
 }`,
 				Pos: protocol.Position{Line: 2, Character: 11},
 				Want: mustNewLocationResponseMessage(
-					"file:///main.4dm",
+					"file:///12d/proj/main.4dm",
 					protocol.Position{Line: 1, Character: 12},
 					protocol.Position{Line: 1, Character: 18},
 				),
@@ -1402,7 +1402,7 @@ void main() {
 }`,
 				Pos: protocol.Position{Line: 2, Character: 20},
 				Want: mustNewLocationResponseMessage(
-					"file:///main.4dm",
+					"file:///12d/proj/main.4dm",
 					protocol.Position{Line: 1, Character: 17},
 					protocol.Position{Line: 1, Character: 18},
 				),
@@ -1417,7 +1417,7 @@ void main() {
 }`,
 				Pos: protocol.Position{Line: 3, Character: 20},
 				Want: mustNewLocationResponseMessage(
-					"file:///main.4dm",
+					"file:///12d/proj/main.4dm",
 					protocol.Position{Line: 1, Character: 12},
 					protocol.Position{Line: 1, Character: 13},
 				),
@@ -1432,7 +1432,7 @@ void main() {
 }`,
 				Pos: protocol.Position{Line: 3, Character: 20},
 				Want: mustNewLocationResponseMessage(
-					"file:///main.4dm",
+					"file:///12d/proj/main.4dm",
 					protocol.Position{Line: 2, Character: 16},
 					protocol.Position{Line: 2, Character: 17},
 				),
@@ -1445,7 +1445,7 @@ void main() {
 }`,
 				Pos: protocol.Position{Line: 2, Character: 25},
 				Want: mustNewLocationResponseMessage(
-					"file:///main.4dm",
+					"file:///12d/proj/main.4dm",
 					protocol.Position{Line: 1, Character: 20},
 					protocol.Position{Line: 1, Character: 24},
 				),
@@ -1461,7 +1461,7 @@ void main() {
 }`,
 				Pos: protocol.Position{Line: 3, Character: 8},
 				Want: mustNewLocationResponseMessage(
-					"file:///main.4dm",
+					"file:///12d/proj/main.4dm",
 					protocol.Position{Line: 0, Character: 8},
 					protocol.Position{Line: 0, Character: 13},
 				),
@@ -1477,7 +1477,7 @@ void main() {
 }`,
 				Pos: protocol.Position{Line: 5, Character: 21},
 				Want: mustNewLocationResponseMessage(
-					"file:///main.4dm",
+					"file:///12d/proj/main.4dm",
 					protocol.Position{Line: 1, Character: 12},
 					protocol.Position{Line: 1, Character: 21},
 				),
@@ -1492,7 +1492,7 @@ void main() {
 }`,
 				Pos: protocol.Position{Line: 3, Character: 14},
 				Want: mustNewLocationResponseMessage(
-					"file:///main.4dm",
+					"file:///12d/proj/main.4dm",
 					protocol.Position{Line: 1, Character: 9},
 					protocol.Position{Line: 1, Character: 10},
 				),
@@ -1507,7 +1507,7 @@ void main() {
 }`,
 				Pos: protocol.Position{Line: 4, Character: 14},
 				Want: mustNewLocationResponseMessage(
-					"file:///main.4dm",
+					"file:///12d/proj/main.4dm",
 					protocol.Position{Line: 1, Character: 16},
 					protocol.Position{Line: 1, Character: 17},
 				),
@@ -1528,6 +1528,21 @@ void main() {
 				),
 			},
 			{
+				Desc: "declaration in include file with include dirs as current dir",
+				SourceCode: `#include "lib.h"
+
+void main() {
+    Integer hello = WORLD;
+}`,
+				Pos:         protocol.Position{Line: 3, Character: 20},
+				IncludesDir: server.SourceFileDirToken,
+				Want: mustNewLocationResponseMessage(
+					protocol.URI("/12d/proj/lib.h"),
+					protocol.Position{Line: 0, Character: 8},
+					protocol.Position{Line: 0, Character: 13},
+				),
+			},
+			{
 				Desc: "preproc definition after include file",
 				SourceCode: `#include "set_ups.h"
 #define HELLO "hello"
@@ -1538,7 +1553,7 @@ void main() {
 				Pos:         protocol.Position{Line: 4, Character: 17},
 				IncludesDir: includesDir,
 				Want: mustNewLocationResponseMessage(
-					"file:///main.4dm",
+					"file:///12d/proj/main.4dm",
 					protocol.Position{Line: 1, Character: 8},
 					protocol.Position{Line: 1, Character: 13},
 				),
@@ -1554,7 +1569,7 @@ void main() {
 				Pos:         protocol.Position{Line: 4, Character: 17},
 				IncludesDir: includesDir,
 				Want: mustNewLocationResponseMessage(
-					"file:///main.4dm",
+					"file:///12d/proj/main.4dm",
 					protocol.Position{Line: 0, Character: 8},
 					protocol.Position{Line: 0, Character: 13},
 				),
@@ -1568,7 +1583,7 @@ void main() {
 }`,
 				Pos: protocol.Position{Line: 3, Character: 17},
 				Want: mustNewLocationResponseMessage(
-					"file:///main.4dm",
+					"file:///12d/proj/main.4dm",
 					protocol.Position{Line: 0, Character: 8},
 					protocol.Position{Line: 0, Character: 12},
 				),
@@ -1585,12 +1600,12 @@ void main() {
 				defer cleanUp()
 
 				var id int64 = 1
-				didOpenMsgBytes, err := newDidOpenRequestMessageBytes(id, "file:///main.4dm", testCase.SourceCode)
+				didOpenMsgBytes, err := newDidOpenRequestMessageBytes(id, "file:///12d/proj/main.4dm", testCase.SourceCode)
 				assert.NoError(err)
 				_, err = in.Writer.Write([]byte(server.ToProtocolMessage(didOpenMsgBytes)))
 				assert.NoError(err)
 
-				definitionMsgBytes, err := newDefinitionRequestMessageBytes(id, "file:///main.4dm", testCase.Pos)
+				definitionMsgBytes, err := newDefinitionRequestMessageBytes(id, "file:///12d/proj/main.4dm", testCase.Pos)
 				assert.NoError(err)
 				_, err = in.Writer.Write([]byte(server.ToProtocolMessage(definitionMsgBytes)))
 				assert.NoError(err)
@@ -1623,14 +1638,14 @@ void main() {
 				Want: mustNewLocationsResponseMessage(
 					[]protocol.Location{
 						{
-							URI: "file:///main.4dm",
+							URI: "file:///12d/proj/main.4dm",
 							Range: protocol.Range{
 								Start: protocol.Position{Line: 1, Character: 12},
 								End:   protocol.Position{Line: 1, Character: 13},
 							},
 						},
 						{
-							URI: "file:///main.4dm",
+							URI: "file:///12d/proj/main.4dm",
 							Range: protocol.Range{
 								Start: protocol.Position{Line: 2, Character: 21},
 								End:   protocol.Position{Line: 2, Character: 22},
@@ -1650,7 +1665,7 @@ void main() {
 				Want: mustNewLocationsResponseMessage(
 					[]protocol.Location{
 						{
-							URI: "file:///main.4dm",
+							URI: "file:///12d/proj/main.4dm",
 							Range: protocol.Range{
 								Start: protocol.Position{Line: 2, Character: 21},
 								End:   protocol.Position{Line: 2, Character: 22},
@@ -1673,14 +1688,14 @@ void main() {
 				Want: mustNewLocationsResponseMessage(
 					[]protocol.Location{
 						{
-							URI: "file:///main.4dm",
+							URI: "file:///12d/proj/main.4dm",
 							Range: protocol.Range{
 								Start: protocol.Position{Line: 0, Character: 8},
 								End:   protocol.Position{Line: 0, Character: 11},
 							},
 						},
 						{
-							URI: "file:///main.4dm",
+							URI: "file:///12d/proj/main.4dm",
 							Range: protocol.Range{
 								Start: protocol.Position{Line: 5, Character: 18},
 								End:   protocol.Position{Line: 5, Character: 21},
@@ -1703,7 +1718,7 @@ void main() {
 				Want: mustNewLocationsResponseMessage(
 					[]protocol.Location{
 						{
-							URI: "file:///main.4dm",
+							URI: "file:///12d/proj/main.4dm",
 							Range: protocol.Range{
 								Start: protocol.Position{Line: 5, Character: 18},
 								End:   protocol.Position{Line: 5, Character: 21},
@@ -1722,14 +1737,14 @@ void main() {
 				Want: mustNewLocationsResponseMessage(
 					[]protocol.Location{
 						{
-							URI: "file:///main.4dm",
+							URI: "file:///12d/proj/main.4dm",
 							Range: protocol.Range{
 								Start: protocol.Position{Line: 0, Character: 25},
 								End:   protocol.Position{Line: 0, Character: 32},
 							},
 						},
 						{
-							URI: "file:///main.4dm",
+							URI: "file:///12d/proj/main.4dm",
 							Range: protocol.Range{
 								Start: protocol.Position{Line: 1, Character: 11},
 								End:   protocol.Position{Line: 1, Character: 18},
@@ -1748,7 +1763,7 @@ void main() {
 				Want: mustNewLocationsResponseMessage(
 					[]protocol.Location{
 						{
-							URI: "file:///main.4dm",
+							URI: "file:///12d/proj/main.4dm",
 							Range: protocol.Range{
 								Start: protocol.Position{Line: 1, Character: 11},
 								End:   protocol.Position{Line: 1, Character: 18},
@@ -1772,14 +1787,14 @@ void main() {
 				Want: mustNewLocationsResponseMessage(
 					[]protocol.Location{
 						{
-							URI: "file:///main.4dm",
+							URI: "file:///12d/proj/main.4dm",
 							Range: protocol.Range{
 								Start: protocol.Position{Line: 0, Character: 25},
 								End:   protocol.Position{Line: 0, Character: 32},
 							},
 						},
 						{
-							URI: "file:///main.4dm",
+							URI: "file:///12d/proj/main.4dm",
 							Range: protocol.Range{
 								Start: protocol.Position{Line: 1, Character: 11},
 								End:   protocol.Position{Line: 1, Character: 18},
@@ -1803,14 +1818,14 @@ void main() {
 				Want: mustNewLocationsResponseMessage(
 					[]protocol.Location{
 						{
-							URI: "file:///main.4dm",
+							URI: "file:///12d/proj/main.4dm",
 							Range: protocol.Range{
 								Start: protocol.Position{Line: 5, Character: 12},
 								End:   protocol.Position{Line: 5, Character: 19},
 							},
 						},
 						{
-							URI: "file:///main.4dm",
+							URI: "file:///12d/proj/main.4dm",
 							Range: protocol.Range{
 								Start: protocol.Position{Line: 6, Character: 21},
 								End:   protocol.Position{Line: 6, Character: 28},
@@ -1834,14 +1849,14 @@ void main() {
 				Want: mustNewLocationsResponseMessage(
 					[]protocol.Location{
 						{
-							URI: "file:///main.4dm",
+							URI: "file:///12d/proj/main.4dm",
 							Range: protocol.Range{
 								Start: protocol.Position{Line: 0, Character: 26},
 								End:   protocol.Position{Line: 0, Character: 33},
 							},
 						},
 						{
-							URI: "file:///main.4dm",
+							URI: "file:///12d/proj/main.4dm",
 							Range: protocol.Range{
 								Start: protocol.Position{Line: 1, Character: 11},
 								End:   protocol.Position{Line: 1, Character: 18},
@@ -1864,14 +1879,14 @@ Integer AddOne(Integer subject) {
 				Want: mustNewLocationsResponseMessage(
 					[]protocol.Location{
 						{
-							URI: "file:///main.4dm",
+							URI: "file:///12d/proj/main.4dm",
 							Range: protocol.Range{
 								Start: protocol.Position{Line: 1, Character: 12},
 								End:   protocol.Position{Line: 1, Character: 15},
 							},
 						},
 						{
-							URI: "file:///main.4dm",
+							URI: "file:///12d/proj/main.4dm",
 							Range: protocol.Range{
 								Start: protocol.Position{Line: 5, Character: 21},
 								End:   protocol.Position{Line: 5, Character: 24},
@@ -1894,14 +1909,14 @@ Integer AddOne(Integer subject) {
 				Want: mustNewLocationsResponseMessage(
 					[]protocol.Location{
 						{
-							URI: "file:///main.4dm",
+							URI: "file:///12d/proj/main.4dm",
 							Range: protocol.Range{
 								Start: protocol.Position{Line: 1, Character: 12},
 								End:   protocol.Position{Line: 1, Character: 15},
 							},
 						},
 						{
-							URI: "file:///main.4dm",
+							URI: "file:///12d/proj/main.4dm",
 							Range: protocol.Range{
 								Start: protocol.Position{Line: 5, Character: 21},
 								End:   protocol.Position{Line: 5, Character: 24},
@@ -1924,7 +1939,7 @@ Integer AddOne(Integer subject) {
 				Want: mustNewLocationsResponseMessage(
 					[]protocol.Location{
 						{
-							URI: "file:///main.4dm",
+							URI: "file:///12d/proj/main.4dm",
 							Range: protocol.Range{
 								Start: protocol.Position{Line: 5, Character: 21},
 								End:   protocol.Position{Line: 5, Character: 24},
@@ -1945,14 +1960,14 @@ Integer AddOne(Integer subject) {
 				Want: mustNewLocationsResponseMessage(
 					[]protocol.Location{
 						{
-							URI: "file:///main.4dm",
+							URI: "file:///12d/proj/main.4dm",
 							Range: protocol.Range{
 								Start: protocol.Position{Line: 0, Character: 8},
 								End:   protocol.Position{Line: 0, Character: 11},
 							},
 						},
 						{
-							URI: "file:///main.4dm",
+							URI: "file:///12d/proj/main.4dm",
 							Range: protocol.Range{
 								Start: protocol.Position{Line: 3, Character: 21},
 								End:   protocol.Position{Line: 3, Character: 24},
@@ -1973,7 +1988,7 @@ Integer AddOne(Integer subject) {
 				Want: mustNewLocationsResponseMessage(
 					[]protocol.Location{
 						{
-							URI: "file:///main.4dm",
+							URI: "file:///12d/proj/main.4dm",
 							Range: protocol.Range{
 								Start: protocol.Position{Line: 3, Character: 21},
 								End:   protocol.Position{Line: 3, Character: 24},
@@ -1993,14 +2008,14 @@ Integer AddOne(Integer subject) {
 				Want: mustNewLocationsResponseMessage(
 					[]protocol.Location{
 						{
-							URI: "file:///main.4dm",
+							URI: "file:///12d/proj/main.4dm",
 							Range: protocol.Range{
 								Start: protocol.Position{Line: 2, Character: 4},
 								End:   protocol.Position{Line: 2, Character: 9},
 							},
 						},
 						{
-							URI: "file:///main.4dm",
+							URI: "file:///12d/proj/main.4dm",
 							Range: protocol.Range{
 								Start: protocol.Position{Line: 1, Character: 4},
 								End:   protocol.Position{Line: 1, Character: 9},
@@ -2021,12 +2036,12 @@ Integer AddOne(Integer subject) {
 				defer cleanUp()
 
 				var id int64 = 1
-				didOpenMsgBytes, err := newDidOpenRequestMessageBytes(id, "file:///main.4dm", testCase.SourceCode)
+				didOpenMsgBytes, err := newDidOpenRequestMessageBytes(id, "file:///12d/proj/main.4dm", testCase.SourceCode)
 				assert.NoError(err)
 				_, err = in.Writer.Write([]byte(server.ToProtocolMessage(didOpenMsgBytes)))
 				assert.NoError(err)
 
-				reqMsgBytes, err := newReferencesRequestMessageBytes(id, "file:///main.4dm", testCase.Pos, testCase.IncludeDeclaration)
+				reqMsgBytes, err := newReferencesRequestMessageBytes(id, "file:///12d/proj/main.4dm", testCase.Pos, testCase.IncludeDeclaration)
 				assert.NoError(err)
 				_, err = in.Writer.Write([]byte(server.ToProtocolMessage(reqMsgBytes)))
 				assert.NoError(err)
@@ -2143,12 +2158,12 @@ Integer AddOne(Integer subject) {
 				defer cleanUp()
 
 				var id int64 = 1
-				didOpenMsgBytes, err := newDidOpenRequestMessageBytes(id, "file:///main.4dm", testCase.SourceCode)
+				didOpenMsgBytes, err := newDidOpenRequestMessageBytes(id, "file:///12d/proj/main.4dm", testCase.SourceCode)
 				assert.NoError(err)
 				_, err = in.Writer.Write([]byte(server.ToProtocolMessage(didOpenMsgBytes)))
 				assert.NoError(err)
 
-				reqMsgBytes, err := newDiagnosticRequestMessageBytes(id, "file:///main.4dm")
+				reqMsgBytes, err := newDiagnosticRequestMessageBytes(id, "file:///12d/proj/main.4dm")
 				assert.NoError(err)
 				_, err = in.Writer.Write([]byte(server.ToProtocolMessage(reqMsgBytes)))
 				assert.NoError(err)
@@ -2177,7 +2192,7 @@ Integer AddOne(Integer subject) {
 }`,
 				Pos: protocol.Position{Line: 2, Character: 21},
 				Want: mustNewWorkspaceEditResponseMessage(
-					"file:///main.4dm",
+					"file:///12d/proj/main.4dm",
 					"newText",
 					[]protocol.Range{
 						{Start: protocol.Position{Line: 1, Character: 12}, End: protocol.Position{Line: 1, Character: 13}},
@@ -2196,12 +2211,12 @@ Integer AddOne(Integer subject) {
 				defer cleanUp()
 
 				var id int64 = 1
-				didOpenMsgBytes, err := newDidOpenRequestMessageBytes(id, "file:///main.4dm", testCase.SourceCode)
+				didOpenMsgBytes, err := newDidOpenRequestMessageBytes(id, "file:///12d/proj/main.4dm", testCase.SourceCode)
 				assert.NoError(err)
 				_, err = in.Writer.Write([]byte(server.ToProtocolMessage(didOpenMsgBytes)))
 				assert.NoError(err)
 
-				reqMsgBytes, err := newRenameRequestMessageBytes(id, "file:///main.4dm", "newText", testCase.Pos)
+				reqMsgBytes, err := newRenameRequestMessageBytes(id, "file:///12d/proj/main.4dm", "newText", testCase.Pos)
 				assert.NoError(err)
 				_, err = in.Writer.Write([]byte(server.ToProtocolMessage(reqMsgBytes)))
 				assert.NoError(err)
@@ -2228,14 +2243,14 @@ Integer AddOne(Integer subject) {
     Add(1, 1);
 }`
 		var openRequestID int64 = 1
-		didOpenMsgBytes, err := newDidOpenRequestMessageBytes(openRequestID, "file:///main.4dm", sourceCodeOnOpen)
+		didOpenMsgBytes, err := newDidOpenRequestMessageBytes(openRequestID, "file:///12d/proj/main.4dm", sourceCodeOnOpen)
 		assert.NoError(err)
 		_, err = in.Writer.Write([]byte(server.ToProtocolMessage(didOpenMsgBytes)))
 		assert.NoError(err)
 
 		pos1 := protocol.Position{Line: 1, Character: 4}
 		var defintionRequestID1 int64 = 2
-		definitionMsg1Bytes, err := newDefinitionRequestMessageBytes(defintionRequestID1, "file:///main.4dm", pos1)
+		definitionMsg1Bytes, err := newDefinitionRequestMessageBytes(defintionRequestID1, "file:///12d/proj/main.4dm", pos1)
 		assert.NoError(err)
 		_, err = in.Writer.Write([]byte(server.ToProtocolMessage(definitionMsg1Bytes)))
 		assert.NoError(err)
@@ -2256,14 +2271,14 @@ void main() {
     Add(1, 1);
 }`
 		var onChangeID int64 = 3
-		didChangeMsgBytes, err := newDidChangeRequestMessageBytes(onChangeID, "file:///main.4dm", sourceCodeOnChange)
+		didChangeMsgBytes, err := newDidChangeRequestMessageBytes(onChangeID, "file:///12d/proj/main.4dm", sourceCodeOnChange)
 		assert.NoError(err)
 		_, err = in.Writer.Write([]byte(server.ToProtocolMessage(didChangeMsgBytes)))
 		assert.NoError(err)
 
 		var definitionRequestID2 int64 = 1
 		pos2 := protocol.Position{Line: 5, Character: 4}
-		definitionMsg2Bytes, err := newDefinitionRequestMessageBytes(definitionRequestID2, "file:///main.4dm", pos2)
+		definitionMsg2Bytes, err := newDefinitionRequestMessageBytes(definitionRequestID2, "file:///12d/proj/main.4dm", pos2)
 		assert.NoError(err)
 		_, err = in.Writer.Write([]byte(server.ToProtocolMessage(definitionMsg2Bytes)))
 		assert.NoError(err)
@@ -2272,7 +2287,7 @@ void main() {
 		got, err = getReponseMessage(out.Reader)
 		assert.NoError(err)
 		want := mustNewLocationResponseMessage(
-			"file:///main.4dm",
+			"file:///12d/proj/main.4dm",
 			protocol.Position{Line: 0, Character: 8},
 			protocol.Position{Line: 0, Character: 11},
 		)
@@ -2527,13 +2542,13 @@ void main() {
 					defer cleanUp()
 
 					var openRequestID int64 = 1
-					didOpenMsgBytes, err := newDidOpenRequestMessageBytes(openRequestID, "file:///main.4dm", testCase.SourceCode)
+					didOpenMsgBytes, err := newDidOpenRequestMessageBytes(openRequestID, "file:///12d/proj/main.4dm", testCase.SourceCode)
 					assert.NoError(err)
 					_, err = in.Writer.Write([]byte(server.ToProtocolMessage(didOpenMsgBytes)))
 					assert.NoError(err)
 
 					var hoverRequestID int64 = 2
-					hoverMsgBytes, err := newHoverRequestMessageBytes(hoverRequestID, "file:///main.4dm", testCase.Position)
+					hoverMsgBytes, err := newHoverRequestMessageBytes(hoverRequestID, "file:///12d/proj/main.4dm", testCase.Position)
 					assert.NoError(err)
 					_, err = in.Writer.Write([]byte(server.ToProtocolMessage(hoverMsgBytes)))
 					assert.NoError(err)
@@ -2984,13 +2999,13 @@ void main() {
 					defer cleanUp()
 
 					var openRequestID int64 = 1
-					didOpenMsgBytes, err := newDidOpenRequestMessageBytes(openRequestID, "file:///main.4dm", testCase.SourceCode)
+					didOpenMsgBytes, err := newDidOpenRequestMessageBytes(openRequestID, "file:///12d/proj/main.4dm", testCase.SourceCode)
 					assert.NoError(err)
 					_, err = in.Writer.Write([]byte(server.ToProtocolMessage(didOpenMsgBytes)))
 					assert.NoError(err)
 
 					var hoverRequestID int64 = 2
-					hoverMsgBytes, err := newHoverRequestMessageBytes(hoverRequestID, "file:///main.4dm", testCase.Position)
+					hoverMsgBytes, err := newHoverRequestMessageBytes(hoverRequestID, "file:///12d/proj/main.4dm", testCase.Position)
 					assert.NoError(err)
 					_, err = in.Writer.Write([]byte(server.ToProtocolMessage(hoverMsgBytes)))
 					assert.NoError(err)
@@ -3417,17 +3432,18 @@ func getReponseMessage(rd io.Reader) (protocol.ResponseMessage, error) {
 	return msg, nil
 }
 
-func newMockIncludesResolver(includesDir string) MockIncludesResolver {
-	return MockIncludesResolver{includesDir: includesDir}
+func newMockIncludesResolver() MockIncludesResolver {
+	return MockIncludesResolver{}
 }
 
-type MockIncludesResolver struct {
-	includesDir string
-}
+type MockIncludesResolver struct{}
 
-func (rs MockIncludesResolver) Resolve(path string) (string, error) {
-	if filepath.Join(rs.includesDir, path) == filepath.Join("/12d", "set_ups.h") {
+func (rs MockIncludesResolver) Resolve(includesDir, path string) (string, error) {
+	if filepath.Join(includesDir, path) == filepath.Join("/12d", "set_ups.h") {
 		return filepath.Join("/12d", "set_ups.h"), nil
+	}
+	if filepath.Join(includesDir, path) == filepath.Join("/12d/proj", "lib.h") {
+		return filepath.Join("/12d/proj", "lib.h"), nil
 	}
 	return "", errors.New("file does not exist")
 }
@@ -3437,5 +3453,9 @@ func (rs MockIncludesResolver) Read(name string) ([]byte, error) {
 		return []byte(`#define ALL_WIDGETS_OWN_WIDTH 2
 #define TRUE  1`), nil
 	}
+	if name == filepath.Join("/12d/proj", "lib.h") {
+		return []byte(`#define WORLD "world"`), nil
+	}
+
 	return nil, errors.New("file does not exist")
 }

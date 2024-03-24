@@ -76,6 +76,11 @@ func URI(filepath string) string {
 	return fmt.Sprintf("%s://%s", scheme, path)
 }
 
+// Converts a uri into a filepath.
+func Filepath(uri string) string {
+	return strings.TrimPrefix(uri, "file://")
+}
+
 func GetCompletionItemKind(kind string) *uint {
 	var result uint
 	switch kind {

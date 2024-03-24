@@ -24,6 +24,7 @@ import (
 
 const contentLengthHeaderName = "Content-Length"
 const SourceName = "12d-lang-server"
+const SourceFileDirToken = "$PWD"
 
 // Unhandled LSP method error.
 var ErrUnhandledMethod = errors.New("unhandled method")
@@ -66,17 +67,15 @@ func NewServer(
 }
 
 type IncludesResolver interface {
-	Resolve(path string) (string, error)
+	Resolve(includesDir, path string) (string, error)
 	Read(name string) ([]byte, error)
 }
 
-func NewFSResolver(includesDir string) FSResolver {
-	return FSResolver{includesDir: includesDir}
+func NewFSResolver() FSResolver {
+	return FSResolver{}
 }
 
-type FSResolver struct {
-	includesDir string
-}
+type FSResolver struct{}
 
 // Resolve the path into a filepath on the client machine by first looking
 // in the provided directory and it's subdirectories. If the file does not exist
@@ -84,8 +83,8 @@ type FSResolver struct {
 // fallback directory.
 //
 // Returns path to the file if it exists or an error otherwise.
-func (rs FSResolver) Resolve(path string) (string, error) {
-	fullPath, err := filepath.Abs(filepath.Join(rs.includesDir, path))
+func (rs FSResolver) Resolve(includesDir, path string) (string, error) {
+	fullPath, err := filepath.Abs(filepath.Join(includesDir, path))
 	if err != nil {
 		return "", err
 	}
@@ -704,25 +703,33 @@ func (s *Server) setDocument(uri string, content string) error {
 	s.documents[uri] = Document{RootNode: rootNode, SourceCode: sourceCode}
 	ext := filepath.Ext(uri)
 	if ext == ".4dm" {
-		includeNodes, err := parser.FindChildren(rootNode, "preproc_include")
+		includesDir := s.includesDir
+		if includesDir == SourceFileDirToken {
+			includesDir = filepath.Dir(protocol.Filepath(uri))
+		}
+		if err := s.parseIncludes(rootNode, sourceCode, includesDir); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (s *Server) parseIncludes(rootNode *sitter.Node, sourceCode []byte, includesDir string) error {
+	includeNodes, err := parser.FindChildren(rootNode, "preproc_include")
+	if err != nil {
+		return err
+	}
+	for _, includeNode := range includeNodes {
+		includePath := includeNode.ChildByFieldName("path").Child(1).Content(sourceCode)
+		resolvedFilepath, err := s.includesResolver.Resolve(includesDir, includePath)
 		if err != nil {
 			return err
 		}
-		for _, includeNode := range includeNodes {
-			includePath := includeNode.ChildByFieldName("path").Child(1).Content(sourceCode)
-			resolvedFilepath, err := s.includesResolver.Resolve(includePath)
-			if err != nil {
-				return err
-			}
-			// TODO: how to handle this error?
-			contents, _ := s.includesResolver.Read(resolvedFilepath)
-			if err != nil {
-				continue
-			}
-			resolvedURI := protocol.URI(resolvedFilepath)
-			if _, ok := s.documents[resolvedURI]; !ok {
-				_ = s.setDocument(protocol.URI(resolvedFilepath), string(contents))
-			}
+		// TODO: how to handle this error?
+		contents, _ := s.includesResolver.Read(resolvedFilepath)
+		resolvedURI := protocol.URI(resolvedFilepath)
+		if _, ok := s.documents[resolvedURI]; !ok {
+			_ = s.setDocument(resolvedURI, string(contents))
 		}
 	}
 	return nil
@@ -1518,7 +1525,7 @@ func findDefinition(startNode *sitter.Node, identifier string, uri string, docum
 			}
 			if currentChildNode.Type() == "preproc_include" {
 				if pathNode := currentChildNode.ChildByFieldName("path"); pathNode != nil {
-					includeFilepath := getIncludeFilepath(pathNode, sourceCode, includesDir)
+					includeFilepath := getIncludeFilepath(pathNode, sourceCode, uri, includesDir)
 					includeURI := protocol.URI(includeFilepath)
 					if includeDoc, ok := documents[includeURI]; ok {
 						includeRootNode := includeDoc.RootNode
@@ -1560,10 +1567,14 @@ func findDefinition(startNode *sitter.Node, identifier string, uri string, docum
 }
 
 // Get the full filepath of the include file described by path node.
-func getIncludeFilepath(pathNode *sitter.Node, sourceCode []byte, includesDir string) string {
+func getIncludeFilepath(pathNode *sitter.Node, sourceCode []byte, uri, includesDir string) string {
 	pathQuoted := pathNode.Content(sourceCode)
 	pathUnquoted := pathQuoted[1 : len(pathQuoted)-1]
-	includeFilepath := filepath.Join(includesDir, pathUnquoted)
+	dir := includesDir
+	if includesDir == SourceFileDirToken {
+		dir = filepath.Dir(protocol.Filepath(uri))
+	}
+	includeFilepath := filepath.Join(dir, pathUnquoted)
 	return includeFilepath
 }
 
