@@ -2817,6 +2817,19 @@ void Forever(Integer subject) {
 					Pattern:  []string{"```12dpl\nvoid Forever(Integer subject)\n```\n---\nLoops forever."},
 				},
 				{
+					Desc: "user defined func - single line doc - with comment above",
+					SourceCode: `/*
+    Author: Kelly Lin
+*/
+
+// Loops forever.
+void Forever(Integer subject) {
+    return Forever(subject);
+}`,
+					Position: protocol.Position{Line: 5, Character: 11},
+					Pattern:  []string{"```12dpl\nvoid Forever(Integer subject)\n```\n---\nLoops forever."},
+				},
+				{
 					Desc: "user defined func - single line comment not a doc if not directly above definition",
 					SourceCode: `// Loops forever.
 

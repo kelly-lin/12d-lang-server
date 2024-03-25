@@ -1170,7 +1170,7 @@ func getFuncDocDesc(docNode *sitter.Node, sourceCode []byte) string {
 		return ""
 	}
 	isJavadoc := strings.HasPrefix(docText, "/**")
-	docDesc := getDesc(rootNode, sourceCode, isJavadoc)
+	docDesc := getDesc(rootNode, []byte(docText), isJavadoc)
 	paramText := getParamText(rootNode, sourceCode)
 	result := format(docDesc, paramText)
 	return result
