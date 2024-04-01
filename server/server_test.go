@@ -3405,7 +3405,7 @@ func newLogger() (func(msg string), error) {
 // Starts the language server in a goroutine and returns the input pipe, output
 // pipe and a clean up function.
 func startServer(includesDir string, langCompletions *server.LangCompletions, includesResolver server.IncludesResolver, logger func(msg string)) (Pipe, Pipe, func()) {
-	serv := server.NewServer(includesDir, langCompletions, includesResolver, logger)
+	serv := server.NewServer(includesDir, langCompletions, includesResolver, true, logger)
 	inReader, inWriter := io.Pipe()
 	outReader, outWriter := io.Pipe()
 	go (func() {

@@ -185,7 +185,7 @@ type MarkupContent struct {
 type ServerCapabilities struct {
 	CompletionProvider         *CompletionOptions `json:"completionProvider,omitempty"`
 	DefinitionProvider         *bool              `json:"definitionProvider,omitempty"`
-	DiagnosticProvider         DiagnosticOptions  `json:"diagnosticProvider"`
+	DiagnosticProvider         *DiagnosticOptions `json:"diagnosticProvider"`
 	DocumentFormattingProvider *bool              `json:"documentFormattingProvider,omitempty"`
 	HoverProvider              bool               `json:"hoverProvider"`
 	ReferencesProvider         bool               `json:"referencesProvider"`

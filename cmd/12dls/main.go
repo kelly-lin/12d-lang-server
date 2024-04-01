@@ -16,6 +16,7 @@ var logFileFlag = flag.String("l", "", "server logs to file, useful for debuggin
 var includesDirFlag = flag.String("i", "", "includes directory")
 var helpFlag = flag.Bool("h", false, "show help")
 var versionFlag = flag.Bool("v", false, "show version")
+var experimentalFlag = flag.Bool("x", false, "enable experimental features")
 
 func main() {
 	flag.Parse()
@@ -41,7 +42,7 @@ func main() {
 		log(fmt.Sprintf("failed to get absolute path to includes directory: %s\n", err.Error()))
 		os.Exit(1)
 	}
-	langServer := server.NewServer(includesDir, &server.BuiltInLangCompletions, server.NewFSResolver(), log)
+	langServer := server.NewServer(includesDir, &server.BuiltInLangCompletions, server.NewFSResolver(), *experimentalFlag, log)
 	if err := langServer.Serve(os.Stdin, os.Stdout); err != nil {
 		log(fmt.Sprintf("%s\n", err.Error()))
 		os.Exit(1)

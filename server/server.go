@@ -48,6 +48,7 @@ func NewServer(
 	includesDir string,
 	builtInCompletions *LangCompletions,
 	includesResolver IncludesResolver,
+	enableExperimentalFeatures bool,
 	logger func(msg string),
 ) Server {
 	serverLogger := func(msg string) {}
@@ -55,10 +56,11 @@ func NewServer(
 		serverLogger = logger
 	}
 	s := Server{
-		documents:        make(map[string]Document),
-		logger:           serverLogger,
-		includesDir:      includesDir,
-		includesResolver: includesResolver,
+		documents:                  make(map[string]Document),
+		logger:                     serverLogger,
+		includesDir:                includesDir,
+		includesResolver:           includesResolver,
+		enableExperimentalFeatures: enableExperimentalFeatures,
 	}
 	if builtInCompletions != nil {
 		s.builtInCompletions = *builtInCompletions
@@ -100,11 +102,12 @@ func (rs FSResolver) Read(name string) ([]byte, error) {
 
 // Language server.
 type Server struct {
-	builtInCompletions LangCompletions
-	documents          map[string]Document
-	includesDir        string
-	logger             func(msg string)
-	includesResolver   IncludesResolver
+	builtInCompletions         LangCompletions
+	documents                  map[string]Document
+	includesDir                string
+	logger                     func(msg string)
+	includesResolver           IncludesResolver
+	enableExperimentalFeatures bool
 }
 
 // Serve reads JSONRPC from the reader, processes the message and responds by
@@ -197,7 +200,7 @@ func (s *Server) handleMessage(msg protocol.RequestMessage) (protocol.ResponseMe
 	switch msg.Method {
 	case "initialize":
 		result := protocol.InitializeResult{
-			Capabilities: newServerCapabilities(),
+			Capabilities: newServerCapabilities(s.enableExperimentalFeatures),
 		}
 		resultBytes, err := json.Marshal(result)
 		if err != nil {
@@ -1702,7 +1705,7 @@ func stringifyRequestMessage(msg protocol.RequestMessage) string {
 	return fmt.Sprintf("    id: %d\n    method: %s\n    params: %s", msg.ID, msg.Method, string(msg.Params))
 }
 
-func newServerCapabilities() protocol.ServerCapabilities {
+func newServerCapabilities(enableExperimentalFeatures bool) protocol.ServerCapabilities {
 	// Disabling resolve provider so that it simplifies our implementation by
 	// not having to calculate the documentation in a separate goroutine and
 	// resolving at a later time. We should enable this if we find generating
@@ -1718,15 +1721,17 @@ func newServerCapabilities() protocol.ServerCapabilities {
 			ResolveProvider: &resolveProvider,
 		},
 		DefinitionProvider: &definitionProvider,
-		DiagnosticProvider: protocol.DiagnosticOptions{
+		HoverProvider:      true,
+		ReferencesProvider: true,
+		RenameProvider:     true,
+		TextDocumentSync:   &textDocumentSyncKind,
+	}
+	if enableExperimentalFeatures {
+		result.DiagnosticProvider = &protocol.DiagnosticOptions{
 			InterFileDependencies: true,
 			WorkspaceDiagnostics:  true,
-		},
-		DocumentFormattingProvider: &documentFormattingProvider,
-		HoverProvider:              true,
-		ReferencesProvider:         true,
-		RenameProvider:             true,
-		TextDocumentSync:           &textDocumentSyncKind,
+		}
+		result.DocumentFormattingProvider = &documentFormattingProvider
 	}
 	return result
 }
